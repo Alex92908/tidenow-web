@@ -10,12 +10,39 @@ export const meta: SourceMeta = {
   expandCount: 25,
 }
 
-export async function fetch(): Promise<NewsItem[]> {
-  const res = await myFetch("https://www.reddit.com/r/popular.json?limit=30", {
-    headers: { Accept: "application/json" },
+async function getAccessToken(): Promise<string | null> {
+  const id = process.env.REDDIT_CLIENT_ID
+  const secret = process.env.REDDIT_CLIENT_SECRET
+  if (!id || !secret) return null
+  const res = await myFetch("https://www.reddit.com/api/v1/access_token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "TideNow/1.0 (by tidenow-web)",
+    },
+    body: "grant_type=client_credentials",
   })
-  const data = await res.json()
-  return data.data.children.map((c: { data: { id: string; title: string; permalink: string; subreddit: string; score: number } }) => ({
+  if (!res.ok) return null
+  const data = await res.json() as { access_token?: string }
+  return data.access_token ?? null
+}
+
+export async function fetch(): Promise<NewsItem[]> {
+  const token = await getAccessToken()
+  const headers: Record<string, string> = {
+    "User-Agent": "TideNow/1.0 (by tidenow-web)",
+    Accept: "application/json",
+  }
+  if (token) headers["Authorization"] = `Bearer ${token}`
+
+  const url = token
+    ? "https://oauth.reddit.com/r/popular?limit=30"
+    : "https://www.reddit.com/r/popular.json?limit=30"
+
+  const res = await myFetch(url, { headers })
+  const data = await res.json() as { data: { children: Array<{ data: { id: string; title: string; permalink: string; subreddit: string; score: number } }> } }
+  return data.data.children.map((c) => ({
     id: c.data.id,
     title: c.data.title,
     url: `https://www.reddit.com${c.data.permalink}`,

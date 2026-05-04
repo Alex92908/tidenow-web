@@ -1,4 +1,3 @@
-import * as cheerio from "cheerio"
 import { myFetch } from "@/lib/fetch"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
@@ -9,24 +8,25 @@ export const meta: SourceMeta = {
 }
 
 export async function fetch(): Promise<NewsItem[]> {
-  const res = await myFetch("https://www.freebuf.com", {
-    headers: {
-      Referer: "https://www.freebuf.com/",
-      Accept: "text/html,application/xhtml+xml",
-    },
+  const res = await myFetch("https://www.freebuf.com/feed", {
+    headers: { Accept: "application/rss+xml, text/xml" },
   })
-  const html = await res.text()
-  const $ = cheerio.load(html)
-  const seen = new Set<string>()
+  const xml = await res.text()
   const items: NewsItem[] = []
-  $("a[href*='/articles/']").each((_, el) => {
-    const href = $(el).attr("href") ?? ""
-    const text = $(el).text().trim().replace(/\s+/g, " ")
-    const url = href.startsWith("http") ? href : `https://www.freebuf.com${href}`
-    if (text.length > 10 && !seen.has(url)) {
-      seen.add(url)
-      items.push({ id: `freebuf-${items.length}`, title: text.substring(0, 100), url })
+  const entries = xml.matchAll(/<item>([\s\S]*?)<\/item>/g)
+  let i = 0
+  for (const match of entries) {
+    const block = match[1]
+    const title = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1]?.trim()
+      ?? block.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim() ?? ""
+    const link = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim()
+      ?? block.match(/<guid[^>]*>([\s\S]*?)<\/guid>/)?.[1]?.trim() ?? ""
+    const category = block.match(/<category><!\[CDATA\[(.*?)\]\]><\/category>/)?.[1]?.trim()
+    if (title && link) {
+      items.push({ id: `freebuf-${i}`, title, url: link, extra: category || undefined })
     }
-  })
-  return items.slice(0, 25)
+    i++
+    if (i >= 25) break
+  }
+  return items
 }

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation"
-
+// Handled by next-intl middleware (locale detection + redirect)
 export default function RootPage() {
-  redirect("/zh")
+  return null
 }
