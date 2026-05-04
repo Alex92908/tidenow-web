@@ -2,7 +2,8 @@ import Database from "better-sqlite3"
 import path from "path"
 import type { CachedSource, NewsItem } from "./types"
 
-const DB_PATH = path.join(process.cwd(), "tidenow.db")
+// Vercel's /var/task (cwd) is read-only; use /tmp when running on Vercel
+const DB_PATH = process.env.VERCEL ? "/tmp/tidenow.db" : path.join(process.cwd(), "tidenow.db")
 
 let db: Database.Database | null = null
 
