@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { getMessages, getTranslations } from "next-intl/server"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "@/components/ThemeProvider"
+import Script from "next/script"
 import "./tide.css"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tidenow.app"
@@ -89,6 +90,12 @@ export default async function LocaleLayout({
             <TooltipProvider>{children}</TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2701427752265946"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
