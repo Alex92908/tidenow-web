@@ -2,7 +2,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hkg1", "sin1"],
   "crons": [
     {
       "path": "/api/cron/warm",
