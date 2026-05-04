@@ -66,6 +66,9 @@ export async function generateMetadata({
         "max-video-preview": -1,
       },
     },
+    verification: {
+      google: "0TCc1xvtUO12tpsgdTcfCptVmLEhv9eb5CxtIB1hKqU",
+    },
     other: {
       "theme-color": "#0ea5e9",
     },
