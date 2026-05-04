@@ -63,11 +63,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-pink-500 to-fuchsia-400",
     interval: 5 * 60 * 1000, defaultCount: 10, expandCount: 30,
   },
-  kuaishou: {
-    id: "kuaishou", icon: "⚡", column: "china",
-    accentColor: "bg-gradient-to-r from-orange-400 to-yellow-300",
-    interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
   ifeng: {
     id: "ifeng", icon: "🦅", column: "china",
     accentColor: "bg-gradient-to-r from-orange-600 to-red-400",
@@ -87,11 +82,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     id: "nowcoder", icon: "💻", column: "china",
     accentColor: "bg-gradient-to-r from-green-500 to-emerald-400",
     interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
-  chongbuluo: {
-    id: "chongbuluo", icon: "🐛", column: "china",
-    accentColor: "bg-gradient-to-r from-lime-500 to-green-400",
-    interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   douban: {
     id: "douban", icon: "🎬", column: "china",
@@ -178,11 +168,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     id: "hackernews", icon: "🔶", column: "tech",
     accentColor: "bg-gradient-to-r from-orange-500 to-yellow-400",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 30,
-  },
-  freebuf: {
-    id: "freebuf", icon: "🔐", column: "tech",
-    accentColor: "bg-gradient-to-r from-red-600 to-orange-500",
-    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   // ── Finance ────────────────────────────────────────────
   wallstreetcn: {
@@ -342,21 +327,21 @@ export const SOURCE_IDS_EN: string[] = [
   // Finance
   "wallstreetcn",
   // Chinese content (at the end for EN users)
-  "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin", "kuaishou",
-  "ifeng", "thepaper", "tencent", "nowcoder", "chongbuluo", "douban", "iqiyi",
+  "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
+  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "kaopu", "hupu",
-  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo", "freebuf",
+  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
 ]
 
 // China-first order (default for zh locale)
 export const SOURCE_IDS_ZH: string[] = [
   // China
-  "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin", "kuaishou",
-  "ifeng", "thepaper", "tencent", "nowcoder", "chongbuluo", "douban", "iqiyi",
+  "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
+  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi",
   // Tech
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
-  "github", "hackernews", "freebuf",
+  "github", "hackernews",
   // Finance
   "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // Chinese international news

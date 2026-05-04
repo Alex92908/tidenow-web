@@ -23,12 +23,9 @@ import * as hupu from "./hupu"
 import * as iqiyi from "./iqiyi"
 import * as xueqiu from "./xueqiu"
 import * as douyin from "./douyin"
-import * as kuaishou from "./kuaishou"
 import * as ifeng from "./ifeng"
 import * as nowcoder from "./nowcoder"
 import * as tencent from "./tencent"
-import * as chongbuluo from "./chongbuluo"
-import * as freebuf from "./freebuf"
 import * as solidot from "./solidot"
 import * as pcbeta from "./pcbeta"
 import * as linuxdo from "./linuxdo"
@@ -66,12 +63,10 @@ export const sources = {
   toutiao,
   tieba,
   douyin,
-  kuaishou,
   ifeng,
   thepaper,
   tencent,
   nowcoder,
-  chongbuluo,
   douban,
   iqiyi,
   // Tech
@@ -112,7 +107,6 @@ export const sources = {
   youtube,
   spotify,
   devto,
-  freebuf,
   // AI
   huggingface,
   openai,
