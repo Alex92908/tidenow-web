@@ -1,0 +1,74 @@
+@import "../../app/globals.css";
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile: horizontal snap carousel - v2 */
+@media (max-width: 767px) {
+  .cards-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow: scroll hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+  }
+  .cards-container::-webkit-scrollbar { display: none; }
+  .cards-container > .card-item {
+    flex-shrink: 0;
+    flex-grow: 0;
+    flex-basis: 100%;
+    width: 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+}
+
+/* Desktop: grid */
+@media (min-width: 768px) {
+  .cards-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+  }
+  .cards-container > .card-item {
+    min-width: 0;
+    width: 100%;
+  }
+}
+@media (min-width: 1024px) {
+  .cards-container { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+  .cards-container { grid-template-columns: repeat(4, 1fr); }
+}
+
