@@ -17,7 +17,7 @@ export default async function HomePage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "site" })
-  const siteUrl = locale === "zh" ? SITE_URL : `${SITE_URL}/en`
+  const siteUrl = locale === "zh" ? `${SITE_URL}/zh` : SITE_URL
 
   // Read cached data server-side so crawlers get full content in the HTML
   const initialData: Record<string, { items: import("@/lib/types").NewsItem[]; updatedAt: number }> = {}

@@ -16,7 +16,8 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "site" })
   const title = t("title")
   const description = t("description")
-  const url = locale === "zh" ? SITE_URL : `${SITE_URL}/en`
+  // English is at /, Chinese is at /zh (localePrefix: as-needed)
+  const url = locale === "zh" ? `${SITE_URL}/zh` : SITE_URL
 
   return {
     title: { default: title, template: `%s · ${title}` },
@@ -25,8 +26,8 @@ export async function generateMetadata({
     alternates: {
       canonical: url,
       languages: {
-        "zh-Hans": SITE_URL,
-        "en": `${SITE_URL}/en`,
+        "zh-Hans": `${SITE_URL}/zh`,
+        "en": SITE_URL,
         "x-default": SITE_URL,
       },
     },

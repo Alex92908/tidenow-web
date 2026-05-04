@@ -11,20 +11,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       alternates: {
         languages: {
-          "zh-Hans": SITE_URL,
-          en: `${SITE_URL}/en`,
+          "zh-Hans": `${SITE_URL}/zh`,
+          en: SITE_URL,
         },
       },
     },
     {
-      url: `${SITE_URL}/en`,
+      url: `${SITE_URL}/zh`,
       lastModified: new Date(),
       changeFrequency: "hourly",
       priority: 0.9,
       alternates: {
         languages: {
-          "zh-Hans": SITE_URL,
-          en: `${SITE_URL}/en`,
+          "zh-Hans": `${SITE_URL}/zh`,
+          en: SITE_URL,
         },
       },
     },
