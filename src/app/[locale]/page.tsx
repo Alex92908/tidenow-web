@@ -62,19 +62,19 @@ export default async function HomePage({
       <header className="sticky top-0 z-20 border-b border-gray-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#0a0a0f]/80 backdrop-blur-xl">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="relative">
-              <span className="text-2xl">🌊</span>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-            </div>
-            <div>
-              <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight">
-                Tide
-              </span>
-              <span className="text-base font-bold bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent tracking-tight">
-                Now
-              </span>
-            </div>
+          <div className="flex items-center shrink-0 select-none">
+            <span
+              className="text-[1.35rem] font-bold text-gray-900 dark:text-white tracking-tight leading-none"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
+              Tide
+            </span>
+            <span
+              className="text-[1.35rem] font-normal text-sky-500 dark:text-sky-400 tracking-tight leading-none"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
+              Now
+            </span>
           </div>
 
           {/* Tagline */}

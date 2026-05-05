@@ -1,0 +1,8 @@
+<svg width="440" height="120" viewBox="0 0 440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="440" height="120" fill="#0a0a0f"/>
+  <path d="M16 76 C28 52, 44 52, 56 76 C68 100, 84 100, 96 76 C108 52, 124 52, 136 76" stroke="#0ea5e9" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.35"/>
+  <path d="M16 62 C28 38, 44 38, 56 62 C68 86, 84 86, 96 62 C108 38, 124 38, 136 62" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <circle cx="152" cy="62" r="6" fill="#38bdf8"/>
+  <text x="174" y="76" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="white" letter-spacing="-1.5">tide</text>
+  <text x="302" y="76" font-family="Arial, sans-serif" font-size="44" font-weight="300" fill="#38bdf8" letter-spacing="-1.5">now</text>
+</svg>
