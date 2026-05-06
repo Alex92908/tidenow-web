@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
+import { getAISettings } from "@/lib/ai-settings"
 
 interface SourceCardProps {
   meta: SourceMeta
@@ -115,12 +116,19 @@ function NewsItemRow({
 
   const loadSummary = useCallback(async () => {
     if (summary !== null || summaryLoading) return
+    const settings = getAISettings()
+    if (!settings) return
     setSummaryLoading(true)
     try {
       const res = await fetch("/api/summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: item.title, locale }),
+        body: JSON.stringify({
+          title: item.title,
+          locale,
+          provider: settings.provider,
+          apiKey: settings.apiKey,
+        }),
       })
       if (res.ok) {
         const data = await res.json()
