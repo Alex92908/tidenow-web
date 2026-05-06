@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { background: #111; display: flex; flex-wrap: wrap; gap: 40px; padding: 40px; font-family: sans-serif; }
+  .card { background: #1a1a1a; border-radius: 16px; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .label { color: #666; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Option A: Wave + dot -->
+<div class="card">
+  <svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Wave icon -->
+    <path d="M8 36 C14 24, 22 24, 28 36 C34 48, 42 48, 48 36 C54 24, 62 24, 68 36" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <!-- Live dot -->
+    <circle cx="76" cy="36" r="4" fill="#38bdf8"/>
+    <circle cx="76" cy="36" r="7" fill="#38bdf8" opacity="0.25"/>
+    <!-- Text -->
+    <text x="92" y="42" font-family="'SF Pro Display', 'Inter', sans-serif" font-size="22" font-weight="700" fill="white" letter-spacing="-0.5">tide</text>
+    <text x="140" y="42" font-family="'SF Pro Display', 'Inter', sans-serif" font-size="22" font-weight="400" fill="#38bdf8" letter-spacing="-0.5">now</text>
+  </svg>
+  <span class="label">方案 A — Wave + live dot</span>
+</div>
+
+<!-- Option B: Icon mark -->
+<div class="card">
+  <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="60" height="60" rx="14" fill="#0ea5e9"/>
+    <path d="M10 38 C16 24, 26 24, 30 32 C34 40, 44 24, 50 24" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    <circle cx="50" cy="24" r="4" fill="white"/>
+  </svg>
+  <span class="label">方案 B — App icon</span>
+</div>
+
+<!-- Option C: Wordmark minimal -->
+<div class="card">
+  <svg width="180" height="50" viewBox="0 0 180 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Underline wave -->
+    <path d="M0 42 C12 34, 20 34, 32 42 C44 50, 52 50, 64 42" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <text x="0" y="30" font-family="'SF Pro Display', 'Inter', sans-serif" font-size="26" font-weight="800" fill="white" letter-spacing="-1">tidenow</text>
+  </svg>
+  <span class="label">方案 C — Wordmark + wave</span>
+</div>
+
+<!-- Option D: Dark background icon -->
+<div class="card" style="background:#0a0a0f">
+  <svg width="220" height="64" viewBox="0 0 220 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Layered waves -->
+    <path d="M6 40 C12 28, 20 28, 26 40 C32 52, 40 52, 46 40 C52 28, 60 28, 66 40" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.4"/>
+    <path d="M6 34 C12 22, 20 22, 26 34 C32 46, 40 46, 46 34 C52 22, 60 22, 66 34" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- dot -->
+    <circle cx="74" cy="34" r="3.5" fill="#38bdf8"/>
+    <text x="88" y="40" font-family="'SF Pro Display', 'Inter', sans-serif" font-size="24" font-weight="700" fill="white" letter-spacing="-0.8">tide</text>
+    <text x="140" y="40" font-family="'SF Pro Display', 'Inter', sans-serif" font-size="24" font-weight="300" fill="#38bdf8" letter-spacing="-0.8">now</text>
+  </svg>
+  <span class="label">方案 D — Layered waves (dark)</span>
+</div>
+
+</body>
+</html>

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { SourceCard } from "./SourceCard"
 import { ShareButton } from "./ShareButton"
+import { TrendingTopics } from "./TrendingTopics"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
 import type { NewsItem, SourceColumn } from "@/lib/types"
 
@@ -285,6 +286,18 @@ export function TideBoard({
         </div>
       ) : (
         <>
+          {/* Trending topics — shown only on "all" filter with enough loaded sources */}
+          {activeFilter === "all" && (
+            <TrendingTopics
+              sourceData={Object.fromEntries(
+                Object.entries(state)
+                  .filter(([, s]) => s.items.length > 0)
+                  .map(([id, s]) => [id, { items: s.items }])
+              )}
+              locale={locale}
+            />
+          )}
+
           {/* Cards — horizontal snap on mobile, grid on md+ */}
           <div
             ref={scrollRef}
@@ -300,6 +313,7 @@ export function TideBoard({
                   updatedAt={state[id]?.updatedAt ?? 0}
                   loading={state[id]?.loading ?? true}
                   error={state[id]?.error ?? false}
+                  locale={locale}
                   onRefresh={() => loadSource(id)}
                 />
               </div>

@@ -1,6 +1,6 @@
 "use client"
 
-
+import { useState, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,6 +15,7 @@ interface SourceCardProps {
   updatedAt: number
   loading?: boolean
   error?: boolean
+  locale?: string
   onRefresh: () => void
 }
 
@@ -25,6 +26,7 @@ export function SourceCard({
   updatedAt,
   loading,
   error,
+  locale = "en",
   onRefresh,
 }: SourceCardProps) {
   const t = useTranslations("source")
@@ -88,7 +90,7 @@ export function SourceCard({
           </div>
         ) : (
           visible.map((item, i) => (
-            <NewsItemRow key={item.id} item={item} rank={i + 1} accentColor={meta.accentColor} />
+            <NewsItemRow key={item.id} item={item} rank={i + 1} accentColor={meta.accentColor} locale={locale} />
           ))
         )}
       </div>
@@ -100,15 +102,40 @@ function NewsItemRow({
   item,
   rank,
   accentColor,
+  locale,
 }: {
   item: NewsItem
   rank: number
   accentColor: string
+  locale: string
 }) {
   const isTop3 = rank <= 3
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+
+  const loadSummary = useCallback(async () => {
+    if (summary !== null || summaryLoading) return
+    setSummaryLoading(true)
+    try {
+      const res = await fetch("/api/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: item.title, locale }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSummary(data.summary)
+      }
+    } finally {
+      setSummaryLoading(false)
+    }
+  }, [item.title, locale, summary, summaryLoading])
 
   return (
-    <div className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group">
+    <div
+      className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group"
+      onMouseEnter={loadSummary}
+    >
       <a
         href={item.url}
         target="_blank"
@@ -126,7 +153,18 @@ function NewsItemRow({
           <p className="text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
             {item.title}
           </p>
-          {item.extra && (
+          {/* AI summary — shown on hover */}
+          {summaryLoading && (
+            <p className="text-[11px] text-sky-400/60 mt-0.5 animate-pulse">
+              {locale === "zh" ? "AI 解读中…" : "AI summarizing…"}
+            </p>
+          )}
+          {summary && !summaryLoading && (
+            <p className="text-[11px] text-sky-500 dark:text-sky-400 mt-0.5 leading-snug">
+              ✦ {summary}
+            </p>
+          )}
+          {item.extra && !summary && (
             <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 truncate">{item.extra}</p>
           )}
         </div>
