@@ -8,7 +8,7 @@
     "settings": "设置"
   },
   "source": {
-    "updated": "{time}前更新",
+    "updated": "{time}",
     "expand": "展开更多",
     "collapse": "收起",
     "loading": "加载中...",
