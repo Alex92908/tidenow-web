@@ -7,7 +7,9 @@ import { SourceCard } from "./SourceCard"
 import { AppleMusicCard } from "./AppleMusicCard"
 import { ShareButton } from "./ShareButton"
 import { TrendingTopics } from "./TrendingTopics"
+import { AddFeedModal } from "./AddFeedModal"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
+import { getCustomFeeds, type CustomFeed } from "@/lib/custom-feeds"
 import type { NewsItem, SourceColumn } from "@/lib/types"
 
 interface SourceState {
@@ -79,6 +81,42 @@ export function TideBoard({
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+
+  // Custom RSS feeds
+  const [customFeeds, setCustomFeeds] = useState<CustomFeed[]>([])
+  const [customState, setCustomState] = useState<Record<string, SourceState>>({})
+  const [addFeedOpen, setAddFeedOpen] = useState(false)
+
+  useEffect(() => {
+    setCustomFeeds(getCustomFeeds())
+  }, [])
+
+  const loadCustomFeed = useCallback(async (feed: CustomFeed) => {
+    setCustomState((prev) => ({ ...prev, [feed.id]: { items: [], updatedAt: 0, loading: true, error: false } }))
+    try {
+      const res = await fetch(`/api/rss?url=${encodeURIComponent(feed.url)}`)
+      if (!res.ok) throw new Error("failed")
+      const data = await res.json()
+      setCustomState((prev) => ({ ...prev, [feed.id]: { items: data.items, updatedAt: data.updatedAt, loading: false, error: false } }))
+    } catch {
+      setCustomState((prev) => ({ ...prev, [feed.id]: { items: [], updatedAt: 0, loading: false, error: true } }))
+    }
+  }, [])
+
+  useEffect(() => {
+    customFeeds.forEach((feed) => {
+      if (!customState[feed.id]) loadCustomFeed(feed)
+    })
+  }, [customFeeds, customState, loadCustomFeed])
+
+  function handleFeedsChanged() {
+    const updated = getCustomFeeds()
+    setCustomFeeds(updated)
+    // load any new feeds
+    updated.forEach((feed) => {
+      if (!customState[feed.id]) loadCustomFeed(feed)
+    })
+  }
 
   const trimmed = query.trim()
 
@@ -227,6 +265,15 @@ export function TideBoard({
                 </button>
               )
             })}
+            {/* + RSS button */}
+            <button
+              onClick={() => setAddFeedOpen(true)}
+              className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-full text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800/60 transition-all border border-dashed border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500"
+              title={locale === "zh" ? "添加 RSS 订阅" : "Add RSS Feed"}
+            >
+              + RSS
+            </button>
+
             {/* Search icon */}
             <button
               onClick={openSearch}
@@ -334,6 +381,33 @@ export function TideBoard({
             ))}
           </div>
 
+          {/* Custom RSS feed cards */}
+          {customFeeds.length > 0 && activeFilter === "all" && (
+            <div className="cards-container mt-0">
+              {customFeeds.map((feed) => (
+                <div key={feed.id} className="card-item">
+                  <SourceCard
+                    meta={{
+                      id: feed.id,
+                      icon: feed.icon,
+                      accentColor: "bg-gradient-to-r from-emerald-400 to-teal-500",
+                      interval: 5 * 60 * 1000,
+                      defaultCount: 10,
+                      expandCount: 20,
+                    }}
+                    sourceName={feed.title}
+                    items={customState[feed.id]?.items ?? []}
+                    updatedAt={customState[feed.id]?.updatedAt ?? 0}
+                    loading={customState[feed.id]?.loading ?? true}
+                    error={customState[feed.id]?.error ?? false}
+                    locale={locale}
+                    onRefresh={() => loadCustomFeed(feed)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Position indicator — mobile only */}
           {visibleIds.length > 1 && (
             <div className="flex md:hidden justify-center items-center gap-1 -mt-2">
@@ -354,6 +428,13 @@ export function TideBoard({
           )}
         </>
       )}
+    {addFeedOpen && (
+      <AddFeedModal
+        locale={locale}
+        onClose={() => setAddFeedOpen(false)}
+        onFeedsChanged={handleFeedsChanged}
+      />
+    )}
     </div>
   )
 }
