@@ -88,7 +88,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className="min-h-screen bg-gray-50 dark:bg-[#0a0a0f] text-gray-900 dark:text-zinc-100 antialiased">
+      <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-zinc-100 antialiased">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <TooltipProvider>{children}</TooltipProvider>
