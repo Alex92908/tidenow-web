@@ -157,9 +157,12 @@ export function TideBoard({
   }, [])
 
   useEffect(() => {
-    // Sources without SSR data fetch immediately; sources with SSR data skip initial fetch
     SOURCE_IDS.forEach((id, i) => {
-      if (!initialData?.[id]) {
+      const pre = initialData?.[id]
+      const interval = sourceMeta[id]?.interval ?? 5 * 60 * 1000
+      const isStale = pre && Date.now() - pre.updatedAt > interval
+      // Fetch if no SSR data, or if SSR data is older than the source's TTL
+      if (!pre || isStale) {
         setTimeout(() => loadSource(id), i * 120)
       }
     })
