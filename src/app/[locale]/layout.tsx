@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/next"
 import Script from "next/script"
 import "./tide.css"
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tidenow.app"
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
 
 export async function generateMetadata({
   params,
