@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { SourceCard } from "./SourceCard"
+import { AppleMusicCard } from "./AppleMusicCard"
 import { ShareButton } from "./ShareButton"
 import { TrendingTopics } from "./TrendingTopics"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
@@ -102,10 +103,10 @@ export function TideBoard({
     setQuery("")
   }
 
-  const loadSource = useCallback(async (id: string) => {
+  const loadSource = useCallback(async (id: string, force = false) => {
     setState((prev) => ({ ...prev, [id]: { ...prev[id], loading: true, error: false } }))
     try {
-      const res = await fetch(`/api/sources/${id}`)
+      const res = await fetch(`/api/sources/${id}${force ? "?force=1" : ""}`)
       if (!res.ok) throw new Error("failed")
       const data = await res.json()
       setState((prev) => ({
@@ -306,16 +307,29 @@ export function TideBoard({
           >
             {visibleIds.map((id) => (
               <div key={id} id={`source-card-${id}`} className="card-item scroll-mt-20">
-                <SourceCard
-                  meta={sourceMeta[id]}
-                  sourceName={t(id)}
-                  items={state[id]?.items ?? []}
-                  updatedAt={state[id]?.updatedAt ?? 0}
-                  loading={state[id]?.loading ?? true}
-                  error={state[id]?.error ?? false}
-                  locale={locale}
-                  onRefresh={() => loadSource(id)}
-                />
+                {id === "applemusic" ? (
+                  <AppleMusicCard
+                    meta={sourceMeta[id]}
+                    sourceName={t(id)}
+                    items={state[id]?.items ?? []}
+                    updatedAt={state[id]?.updatedAt ?? 0}
+                    loading={state[id]?.loading ?? true}
+                    error={state[id]?.error ?? false}
+                    locale={locale}
+                    onRefresh={() => loadSource(id, true)}
+                  />
+                ) : (
+                  <SourceCard
+                    meta={sourceMeta[id]}
+                    sourceName={t(id)}
+                    items={state[id]?.items ?? []}
+                    updatedAt={state[id]?.updatedAt ?? 0}
+                    loading={state[id]?.loading ?? true}
+                    error={state[id]?.error ?? false}
+                    locale={locale}
+                    onRefresh={() => loadSource(id, true)}
+                  />
+                )}
               </div>
             ))}
           </div>

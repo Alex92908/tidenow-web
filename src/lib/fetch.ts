@@ -1,3 +1,14 @@
+import { ProxyAgent, setGlobalDispatcher } from "undici"
+
+const proxyUrl =
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy
+if (proxyUrl) {
+  setGlobalDispatcher(new ProxyAgent(proxyUrl))
+}
+
 const DEFAULT_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

@@ -9,7 +9,7 @@ import * as producthunt from "./producthunt"
 import * as kr36 from "./36kr"
 import * as ithome from "./ithome"
 import * as baidu from "./baidu"
-import * as spotify from "./spotify"
+import * as applemusic from "./applemusic"
 import * as toutiao from "./toutiao"
 import * as tieba from "./tieba"
 import * as v2ex from "./v2ex"
@@ -105,7 +105,7 @@ export const sources = {
   reddit,
   producthunt,
   youtube,
-  spotify,
+  applemusic,
   devto,
   // AI
   huggingface,

@@ -246,9 +246,9 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-red-500 to-pink-500",
     interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  spotify: {
-    id: "spotify", icon: "🎵", column: "global",
-    accentColor: "bg-gradient-to-r from-green-400 to-emerald-400",
+  applemusic: {
+    id: "applemusic", icon: "🎵", column: "global",
+    accentColor: "bg-gradient-to-r from-pink-500 to-rose-400",
     interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   steam: {
@@ -318,7 +318,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Trends & discovery
   "googletrends", "reddit", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
-  "youtube", "spotify", "steam",
+  "youtube", "applemusic", "steam",
   // AI
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
   "deepseek", "doubao", "qwen", "kimi",
@@ -349,7 +349,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian",
   // Global platforms
-  "googletrends", "reddit", "producthunt", "youtube", "devto", "spotify", "steam", "hupu",
+  "googletrends", "reddit", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
   // AI
   "deepseek", "doubao", "qwen", "kimi",
   "openai", "anthropic", "googleai", "tldrai", "huggingface",

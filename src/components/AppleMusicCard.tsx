@@ -1,15 +1,29 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
-import { getAISettings } from "@/lib/ai-settings"
 
-interface SourceCardProps {
+type Chart = "songs" | "albums"
+type Region = "us" | "gb" | "jp" | "cn"
+
+const CHARTS: { id: Chart; en: string; zh: string }[] = [
+  { id: "songs", en: "Songs", zh: "单曲" },
+  { id: "albums", en: "Albums", zh: "专辑" },
+]
+
+const REGIONS: { id: Region; flag: string; en: string; zh: string }[] = [
+  { id: "us", flag: "🇺🇸", en: "US", zh: "美国" },
+  { id: "gb", flag: "🇬🇧", en: "UK", zh: "英国" },
+  { id: "jp", flag: "🇯🇵", en: "JP", zh: "日本" },
+  { id: "cn", flag: "🀄", en: "Chinese", zh: "中文" },
+]
+
+interface Props {
   meta: SourceMeta
   sourceName: string
   items: NewsItem[]
@@ -20,7 +34,7 @@ interface SourceCardProps {
   onRefresh: () => void
 }
 
-export function SourceCard({
+export function AppleMusicCard({
   meta,
   sourceName,
   items,
@@ -29,10 +43,15 @@ export function SourceCard({
   error,
   locale = "en",
   onRefresh,
-}: SourceCardProps) {
+}: Props) {
   const t = useTranslations("source")
+  const [chart, setChart] = useState<Chart>("songs")
+  const [region, setRegion] = useState<Region>("us")
 
-  const visible = items.slice(0, meta.expandCount)
+  const filtered = useMemo(() => {
+    const prefix = `applemusic|${chart}|${region}|`
+    return items.filter((it) => it.id.startsWith(prefix)).slice(0, meta.expandCount)
+  }, [items, chart, region, meta.expandCount])
 
   return (
     <motion.div
@@ -42,10 +61,8 @@ export function SourceCard({
       transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30"
     >
-      {/* Accent bar */}
       <div className={`h-0.5 w-full ${meta.accentColor}`} />
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-2">
           <span className="text-lg leading-none">{meta.icon}</span>
@@ -72,7 +89,41 @@ export function SourceCard({
         </div>
       </div>
 
-      {/* Items */}
+      {/* Segments */}
+      <div className="px-3 pt-2.5 pb-2 flex flex-col gap-1.5 border-b border-gray-100 dark:border-white/5">
+        <div className="flex gap-1">
+          {CHARTS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setChart(c.id)}
+              className={`flex-1 text-[11px] font-medium py-1 rounded-md transition-colors ${
+                chart === c.id
+                  ? "bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                  : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/5"
+              }`}
+            >
+              {locale === "zh" ? c.zh : c.en}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {REGIONS.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setRegion(r.id)}
+              className={`flex-1 text-[11px] font-medium py-1 rounded-md transition-colors flex items-center justify-center gap-1 ${
+                region === r.id
+                  ? "bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                  : "text-gray-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/5"
+              }`}
+              title={locale === "zh" ? r.zh : r.en}
+            >
+              <span className="text-sm leading-none">{r.flag}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="overflow-y-auto max-h-[420px] thin-scroll divide-y divide-gray-100 dark:divide-white/[0.04]">
         {loading ? (
           Array.from({ length: meta.defaultCount }).map((_, i) => (
@@ -92,9 +143,13 @@ export function SourceCard({
               {t("retry")}
             </button>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="px-4 py-10 text-center text-xs text-gray-400 dark:text-zinc-500">
+            {locale === "zh" ? "暂无数据" : "No data"}
+          </div>
         ) : (
-          visible.map((item, i) => (
-            <NewsItemRow key={item.id} item={item} rank={i + 1} accentColor={meta.accentColor} locale={locale} />
+          filtered.map((item, i) => (
+            <Row key={item.id} item={item} rank={i + 1} />
           ))
         )}
       </div>
@@ -102,51 +157,10 @@ export function SourceCard({
   )
 }
 
-function NewsItemRow({
-  item,
-  rank,
-  accentColor,
-  locale,
-}: {
-  item: NewsItem
-  rank: number
-  accentColor: string
-  locale: string
-}) {
+function Row({ item, rank }: { item: NewsItem; rank: number }) {
   const isTop3 = rank <= 3
-  const [summary, setSummary] = useState<string | null>(null)
-  const [summaryLoading, setSummaryLoading] = useState(false)
-
-  const loadSummary = useCallback(async () => {
-    if (summary !== null || summaryLoading) return
-    const settings = getAISettings()
-    if (!settings) return
-    setSummaryLoading(true)
-    try {
-      const res = await fetch("/api/summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: item.title,
-          locale,
-          provider: settings.provider,
-          apiKey: settings.apiKey,
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setSummary(data.summary)
-      }
-    } finally {
-      setSummaryLoading(false)
-    }
-  }, [item.title, locale, summary, summaryLoading])
-
   return (
-    <div
-      className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group"
-      onMouseEnter={loadSummary}
-    >
+    <div className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group">
       <a
         href={item.url}
         target="_blank"
@@ -160,25 +174,9 @@ function NewsItemRow({
         >
           {rank}
         </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
-            {item.title}
-          </p>
-          {/* AI summary — shown on hover */}
-          {summaryLoading && (
-            <p className="text-[11px] text-sky-400/60 mt-0.5 animate-pulse">
-              {locale === "zh" ? "AI 解读中…" : "AI summarizing…"}
-            </p>
-          )}
-          {summary && !summaryLoading && (
-            <p className="text-[11px] text-sky-500 dark:text-sky-400 mt-0.5 leading-snug">
-              ✦ {summary}
-            </p>
-          )}
-          {item.extra && !summary && (
-            <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 truncate">{item.extra}</p>
-          )}
-        </div>
+        <p className="flex-1 min-w-0 text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
+          {item.title}
+        </p>
       </a>
       <ShareButton item={item} />
     </div>
