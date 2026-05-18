@@ -7,8 +7,10 @@ import { getCached, setCached } from "@/lib/cache"
 import type { NextRequest } from "next/server"
 
 export async function GET(req: NextRequest) {
-  // Vercel Cron sends the CRON_SECRET as Authorization header
-  const auth = req.headers.get("authorization")
+  // Accept Bearer token via Authorization header OR ?token= query param
+  const authHeader = req.headers.get("authorization")
+  const tokenParam = req.nextUrl.searchParams.get("token")
+  const auth = authHeader ?? (tokenParam ? `Bearer ${tokenParam}` : null)
   if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
