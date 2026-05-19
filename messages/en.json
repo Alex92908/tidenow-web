@@ -3,6 +3,11 @@
     "title": "TideNow",
     "description": "Real-time hot trending aggregator — GitHub, Reddit, Hacker News, YouTube, Weibo, Zhihu, Bilibili and 50+ sources in one place"
   },
+  "footer": {
+    "feedback": "Feedback",
+    "feedbackSubject": "TideNow feedback",
+    "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n"
+  },
   "nav": {
     "refresh": "Refresh",
     "settings": "Settings"

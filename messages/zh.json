@@ -3,6 +3,11 @@
     "title": "TideNow",
     "description": "实时热点聚合导航 — 微博、知乎、B站、抖音、GitHub、Reddit 等50+平台热搜榜单一站看尽"
   },
+  "footer": {
+    "feedback": "反馈建议",
+    "feedbackSubject": "TideNow 反馈",
+    "feedbackBody": "你好，\n\n关于 TideNow（www.tide-now.com）的反馈：\n\n"
+  },
   "nav": {
     "refresh": "刷新",
     "settings": "设置"

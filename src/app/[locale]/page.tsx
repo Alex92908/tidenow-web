@@ -1,12 +1,12 @@
 import { getTranslations } from "next-intl/server"
 import { LocaleSwitch } from "@/components/LocaleSwitch"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { AISettingsButton } from "@/components/AISettingsButton"
 import { TideApp } from "@/components/TideApp"
 import { getStale } from "@/lib/cache"
 import { SOURCE_IDS } from "@/sources/metadata"
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tidenow.app"
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
+const FEEDBACK_EMAIL = "alex.chu0206@gmail.com"
 
 // ISR: revalidate every 5 minutes so crawlers always get fresh content
 export const revalidate = 300
@@ -18,7 +18,11 @@ export default async function HomePage({
 }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "site" })
+  const tFooter = await getTranslations({ locale, namespace: "footer" })
   const siteUrl = locale === "zh" ? `${SITE_URL}/zh` : SITE_URL
+  const feedbackHref = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(
+    tFooter("feedbackSubject")
+  )}&body=${encodeURIComponent(tFooter("feedbackBody"))}`
 
   // Read cached data server-side so crawlers get full content in the HTML
   const initialData: Record<string, { items: import("@/lib/types").NewsItem[]; updatedAt: number }> = {}
@@ -85,7 +89,14 @@ export default async function HomePage({
 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <AISettingsButton locale={locale} />
+            <a
+              href={feedbackHref}
+              title={tFooter("feedback")}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+            >
+              <span className="text-sm leading-none">💬</span>
+              <span>{tFooter("feedback")}</span>
+            </a>
             <ThemeToggle />
             <LocaleSwitch />
           </div>
