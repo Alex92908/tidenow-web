@@ -13,7 +13,7 @@
     "settings": "Settings"
   },
   "source": {
-    "updated": "Updated {time} ago",
+    "updated": "{time}",
     "expand": "Show more",
     "collapse": "Collapse",
     "loading": "Loading...",
