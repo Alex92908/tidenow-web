@@ -76,7 +76,7 @@ export function AppleMusicCard({
               className="text-[11px] text-gray-400 dark:text-zinc-600"
               suppressHydrationWarning
             >
-              {t("updated", { time: formatDistanceToNow(updatedAt) })}
+              {t("updated", { time: formatDistanceToNow(updatedAt, locale) })}
             </span>
           )}
           <button
