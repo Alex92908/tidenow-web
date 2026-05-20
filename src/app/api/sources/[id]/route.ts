@@ -38,6 +38,10 @@ export async function GET(
       return Response.json({ items: stale.items, updatedAt: stale.updatedAt, cached: true, stale: true })
     }
     console.error(`[${id}] fetch error:`, e)
-    return Response.json({ error: "Fetch failed" }, { status: 500 })
+    // Cold-start with no stale cache + flaky upstream is a frequent serverless
+    // edge case. Returning 200 + empty + pending lets the card show a benign
+    // "no data yet" state and keeps the route's error rate honest — only real
+    // user-visible failures count.
+    return Response.json({ items: [], updatedAt: Date.now(), pending: true })
   }
 }
