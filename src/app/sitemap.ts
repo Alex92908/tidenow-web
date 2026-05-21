@@ -59,5 +59,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ]
   })
 
-  return [...homepages, ...sourcePages]
+  const changelogPages: MetadataRoute.Sitemap = [
+    {
+      url: `${SITE_URL}/changelog`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+      alternates: {
+        languages: {
+          en: `${SITE_URL}/changelog`,
+          "zh-Hans": `${SITE_URL}/zh/changelog`,
+        },
+      },
+    },
+    {
+      url: `${SITE_URL}/zh/changelog`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+      alternates: {
+        languages: {
+          en: `${SITE_URL}/changelog`,
+          "zh-Hans": `${SITE_URL}/zh/changelog`,
+        },
+      },
+    },
+  ]
+
+  return [...homepages, ...sourcePages, ...changelogPages]
 }

@@ -108,8 +108,15 @@ export default async function HomePage({
         <TideApp locale={locale} initialData={initialData} />
       </main>
 
-      <footer className="text-center py-8 text-gray-300 dark:text-zinc-700 text-xs tracking-wide">
-        TideNow · {new Date().getFullYear()}
+      <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-8 text-gray-400 dark:text-zinc-700 text-xs tracking-wide">
+        <span>TideNow · {new Date().getFullYear()}</span>
+        <span className="text-gray-300 dark:text-zinc-800">·</span>
+        <a
+          href={locale === "zh" ? "/zh/changelog" : "/changelog"}
+          className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
+        >
+          {tFooter("changelog")}
+        </a>
       </footer>
     </div>
   )

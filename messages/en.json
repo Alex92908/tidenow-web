@@ -6,7 +6,8 @@
   "footer": {
     "feedback": "Feedback",
     "feedbackSubject": "TideNow feedback",
-    "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n"
+    "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n",
+    "changelog": "Changelog"
   },
   "nav": {
     "refresh": "Refresh",

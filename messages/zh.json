@@ -6,7 +6,8 @@
   "footer": {
     "feedback": "反馈建议",
     "feedbackSubject": "TideNow 反馈",
-    "feedbackBody": "你好，\n\n关于 TideNow（www.tide-now.com）的反馈：\n\n"
+    "feedbackBody": "你好，\n\n关于 TideNow（www.tide-now.com）的反馈：\n\n",
+    "changelog": "更新日志"
   },
   "nav": {
     "refresh": "刷新",
