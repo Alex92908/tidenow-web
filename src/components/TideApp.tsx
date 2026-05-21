@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { SourceSidebar } from "./SourceSidebar"
 import { TideBoard } from "./TideBoard"
 import { SOURCE_IDS, SOURCE_IDS_EN, SOURCE_IDS_ZH } from "@/sources/metadata"
-import type { NewsItem, SourceColumn } from "@/lib/types"
+import type { NewsItem, FilterId } from "@/lib/types"
 
 type PreloadedData = Record<string, { items: NewsItem[]; updatedAt: number }>
 
@@ -19,7 +19,7 @@ function mergeOrder(saved: string[], base: string[]): string[] {
 export function TideApp({ locale, initialData }: { locale: string; initialData?: PreloadedData }) {
   const defaultOrder = locale === "zh" ? SOURCE_IDS_ZH : SOURCE_IDS_EN
   const [order, setOrder] = useState<string[]>(defaultOrder)
-  const [activeFilter, setActiveFilter] = useState<SourceColumn | "all">("all")
+  const [activeFilter, setActiveFilter] = useState<FilterId>("all")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -27,6 +27,13 @@ export function TideApp({ locale, initialData }: { locale: string; initialData?:
   useEffect(() => {
     setMounted(true)
     try {
+      // One-time migration: an earlier build stored a separate per-board order
+      // under "tidenow-source-order". Fold it into the canonical key and clean up.
+      const legacy = localStorage.getItem("tidenow-source-order")
+      if (legacy && !localStorage.getItem("tidenow-order")) {
+        localStorage.setItem("tidenow-order", legacy)
+      }
+      if (legacy) localStorage.removeItem("tidenow-source-order")
       const saved = localStorage.getItem("tidenow-order")
       if (saved) setOrder(mergeOrder(JSON.parse(saved) as string[], defaultOrder))
     } catch {}
@@ -35,6 +42,9 @@ export function TideApp({ locale, initialData }: { locale: string; initialData?:
   useEffect(() => {
     if (mounted) localStorage.setItem("tidenow-order", JSON.stringify(order))
   }, [order, mounted])
+
+  const orderDirty = order.length !== defaultOrder.length || order.some((id, i) => id !== defaultOrder[i])
+  const resetOrder = () => setOrder(defaultOrder)
 
   return (
     <div className="flex gap-0">
@@ -62,6 +72,9 @@ export function TideApp({ locale, initialData }: { locale: string; initialData?:
           locale={locale}
           initialData={initialData}
           order={order}
+          setOrder={setOrder}
+          orderDirty={orderDirty}
+          onResetOrder={resetOrder}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
           showTabs={!sidebarOpen}

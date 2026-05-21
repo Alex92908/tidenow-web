@@ -9,9 +9,10 @@ import { sourceMeta } from "@/sources/metadata"
 interface TrendingTopicsProps {
   sourceData: Record<string, { items: NewsItem[] }>
   locale: string
+  onHide?: () => void
 }
 
-export function TrendingTopics({ sourceData, locale }: TrendingTopicsProps) {
+export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsProps) {
   const t = useTranslations("sources")
 
   const topics = useMemo(() => aggregateTrending(sourceData, 2, 8), [sourceData])
@@ -34,6 +35,15 @@ export function TrendingTopics({ sourceData, locale }: TrendingTopicsProps) {
         <span className="ml-auto text-[11px] text-gray-400 dark:text-zinc-600">
           {locale === "zh" ? `${topics.length} 个热议话题` : `${topics.length} hot topics`}
         </span>
+        {onHide && (
+          <button
+            onClick={onHide}
+            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all text-xs"
+            title={locale === "zh" ? "隐藏多源热议" : "Hide trending"}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Topics list */}

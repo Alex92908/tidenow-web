@@ -8,6 +8,10 @@ export interface NewsItem {
 
 export type SourceColumn = "china" | "tech" | "finance" | "global" | "ai"
 
+// Active filter for the top tab bar: "all" / "favorites" (user-pinned) /
+// "hidden" (user-hidden sources) / a specific category column.
+export type FilterId = SourceColumn | "all" | "favorites" | "hidden"
+
 export interface SourceMeta {
   id: string
   icon: string

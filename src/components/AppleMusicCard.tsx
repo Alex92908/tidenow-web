@@ -32,6 +32,10 @@ interface Props {
   error?: boolean
   locale?: string
   onRefresh: () => void
+  onHide?: () => void
+  isHidden?: boolean
+  isPinned?: boolean
+  onTogglePin?: () => void
 }
 
 export function AppleMusicCard({
@@ -43,6 +47,10 @@ export function AppleMusicCard({
   error,
   locale = "en",
   onRefresh,
+  onHide,
+  isHidden,
+  isPinned,
+  onTogglePin,
 }: Props) {
   const t = useTranslations("source")
   const [chart, setChart] = useState<Chart>("songs")
@@ -86,6 +94,42 @@ export function AppleMusicCard({
           >
             ↻
           </button>
+          {onTogglePin && (
+            <button
+              onClick={onTogglePin}
+              className={[
+                "w-6 h-6 flex items-center justify-center rounded-full transition-all text-xs",
+                isPinned
+                  ? "text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                  : "text-gray-300 dark:text-zinc-700 hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-white/5",
+              ].join(" ")}
+              title={
+                isPinned
+                  ? (locale === "zh" ? "从自选移除" : "Unpin from Pinned")
+                  : (locale === "zh" ? "加入自选" : "Pin to Pinned tab")
+              }
+            >
+              {isPinned ? "★" : "☆"}
+            </button>
+          )}
+          {onHide && (
+            <button
+              onClick={onHide}
+              className={[
+                "w-6 h-6 flex items-center justify-center rounded-full transition-all text-xs",
+                isHidden
+                  ? "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                  : "text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5",
+              ].join(" ")}
+              title={
+                isHidden
+                  ? (locale === "zh" ? "恢复到主页" : "Restore to home")
+                  : (locale === "zh" ? "隐藏此来源" : "Hide this source")
+              }
+            >
+              {isHidden ? "↩" : "✕"}
+            </button>
+          )}
         </div>
       </div>
 

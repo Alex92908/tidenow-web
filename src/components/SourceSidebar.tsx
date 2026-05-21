@@ -19,13 +19,13 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { sourceMeta, getColumns } from "@/sources/metadata"
-import type { SourceColumn } from "@/lib/types"
+import type { FilterId } from "@/lib/types"
 
 interface SidebarProps {
   order: string[]
   setOrder: (order: string[]) => void
-  activeFilter: SourceColumn | "all"
-  setActiveFilter: (f: SourceColumn | "all") => void
+  activeFilter: FilterId
+  setActiveFilter: (f: FilterId) => void
   locale: string
   open: boolean
   onToggle: () => void
@@ -225,7 +225,7 @@ function SortableItem({
       <span
         {...listeners}
         {...attributes}
-        className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 dark:text-zinc-700 hover:text-gray-500 dark:hover:text-zinc-500 transition-opacity text-[10px] px-0.5"
+        className="opacity-40 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-opacity text-[11px] px-0.5"
         title="拖动排序"
       >
         ⋮⋮
