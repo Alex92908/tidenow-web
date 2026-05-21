@@ -5,6 +5,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -48,6 +49,8 @@ export function SourceSidebar({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Touch: 200ms long-press on the drag handle to start reorder
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -221,11 +224,11 @@ function SortableItem({
       {/* Icon + name */}
       <span className="text-sm leading-none">{icon}</span>
       <span className="flex-1 truncate">{name}</span>
-      {/* Drag handle */}
+      {/* Drag handle — larger touch target on mobile */}
       <span
         {...listeners}
         {...attributes}
-        className="opacity-40 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-opacity text-[11px] px-0.5"
+        className="touch-none shrink-0 flex items-center justify-center w-6 h-6 rounded cursor-grab active:cursor-grabbing text-gray-300 dark:text-zinc-600 hover:text-gray-500 dark:hover:text-zinc-400 opacity-40 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-[11px]"
         title="拖动排序"
       >
         ⋮⋮
