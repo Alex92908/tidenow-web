@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server"
 import { LocaleSwitch } from "@/components/LocaleSwitch"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { AISettingsButton } from "@/components/AISettingsButton"
 import { TideApp } from "@/components/TideApp"
 import { getStale } from "@/lib/cache"
 import { SOURCE_IDS } from "@/sources/metadata"
@@ -97,6 +98,7 @@ export default async function HomePage({
               <span className="text-sm leading-none">💬</span>
               <span>{tFooter("feedback")}</span>
             </a>
+            <AISettingsButton locale={locale} />
             <ThemeToggle />
             <LocaleSwitch />
           </div>
