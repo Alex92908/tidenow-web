@@ -22,6 +22,8 @@ interface SourceCardProps {
   isHidden?: boolean
   isPinned?: boolean
   onTogglePin?: () => void
+  /** dnd-kit listeners + attributes forwarded from SortableCard (desktop only) */
+  dragHandleProps?: React.HTMLAttributes<HTMLElement>
 }
 
 export function SourceCard({
@@ -37,6 +39,7 @@ export function SourceCard({
   isHidden,
   isPinned,
   onTogglePin,
+  dragHandleProps,
 }: SourceCardProps) {
   const t = useTranslations("source")
 
@@ -69,6 +72,16 @@ export function SourceCard({
             >
               {t("updated", { time: formatDistanceToNow(updatedAt, locale) })}
             </span>
+          )}
+          {/* Drag handle — desktop only, injected by SortableCard */}
+          {dragHandleProps && (
+            <div
+              {...dragHandleProps}
+              className="hidden md:flex w-5 h-5 items-center justify-center rounded cursor-grab active:cursor-grabbing text-gray-300 dark:text-zinc-700 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all touch-none select-none text-sm"
+              title="Drag to reorder"
+            >
+              ⠿
+            </div>
           )}
           <button
             onClick={onRefresh}

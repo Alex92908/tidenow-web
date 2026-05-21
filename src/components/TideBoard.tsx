@@ -227,8 +227,9 @@ export function TideBoard({
   const dndSensors = useSensors(
     // 6px movement threshold so single-clicks on links/buttons don't start a drag
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    // 250ms long-press on touch before drag starts (lets normal taps through)
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    // TouchSensor kept for stylus/hybrid devices; drag handle (desktop-only)
+    // is the primary reorder affordance on touch screens.
+    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
   const onDndDragStart = useCallback((e: DragStartEvent) => {
@@ -603,37 +604,41 @@ export function TideBoard({
               >
                 {visibleIds.map((id) => (
                   <SortableCard key={id} id={id}>
-                    {id === "applemusic" ? (
-                      <AppleMusicCard
-                        meta={sourceMeta[id]}
-                        sourceName={t(id)}
-                        items={state[id]?.items ?? []}
-                        updatedAt={state[id]?.updatedAt ?? 0}
-                        loading={state[id]?.loading ?? true}
-                        error={state[id]?.error ?? false}
-                        locale={locale}
-                        onRefresh={() => loadSource(id, true)}
-                        onHide={() => toggleHide(id)}
-                        isHidden={hiddenIds.has(id)}
-                        isPinned={favoriteIds.has(id)}
-                        onTogglePin={() => togglePin(id)}
-                      />
-                    ) : (
-                      <SourceCard
-                        meta={sourceMeta[id]}
-                        sourceName={t(id)}
-                        items={state[id]?.items ?? []}
-                        updatedAt={state[id]?.updatedAt ?? 0}
-                        loading={state[id]?.loading ?? true}
-                        error={state[id]?.error ?? false}
-                        locale={locale}
-                        onRefresh={() => loadSource(id, true)}
-                        onHide={() => toggleHide(id)}
-                        isHidden={hiddenIds.has(id)}
-                        isPinned={favoriteIds.has(id)}
-                        onTogglePin={() => togglePin(id)}
-                      />
-                    )}
+                    {(dragHandleProps) =>
+                      id === "applemusic" ? (
+                        <AppleMusicCard
+                          meta={sourceMeta[id]}
+                          sourceName={t(id)}
+                          items={state[id]?.items ?? []}
+                          updatedAt={state[id]?.updatedAt ?? 0}
+                          loading={state[id]?.loading ?? true}
+                          error={state[id]?.error ?? false}
+                          locale={locale}
+                          onRefresh={() => loadSource(id, true)}
+                          onHide={() => toggleHide(id)}
+                          isHidden={hiddenIds.has(id)}
+                          isPinned={favoriteIds.has(id)}
+                          onTogglePin={() => togglePin(id)}
+                          dragHandleProps={dragHandleProps}
+                        />
+                      ) : (
+                        <SourceCard
+                          meta={sourceMeta[id]}
+                          sourceName={t(id)}
+                          items={state[id]?.items ?? []}
+                          updatedAt={state[id]?.updatedAt ?? 0}
+                          loading={state[id]?.loading ?? true}
+                          error={state[id]?.error ?? false}
+                          locale={locale}
+                          onRefresh={() => loadSource(id, true)}
+                          onHide={() => toggleHide(id)}
+                          isHidden={hiddenIds.has(id)}
+                          isPinned={favoriteIds.has(id)}
+                          onTogglePin={() => togglePin(id)}
+                          dragHandleProps={dragHandleProps}
+                        />
+                      )
+                    }
                   </SortableCard>
                 ))}
               </div>
@@ -725,10 +730,18 @@ export function TideBoard({
   )
 }
 
-// Wraps a card in the dnd-kit sortable transform / drag listeners.
-// The card stays in flow while not being dragged; the active card is
-// rendered translucent so the <DragOverlay> can carry its visual.
-function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
+// Wraps a card in the dnd-kit sortable transform.
+// Listeners are forwarded to the card via render-prop so they can be
+// placed on a dedicated drag handle inside the card header — this avoids
+// putting touch-none on the whole card which blocks mobile horizontal
+// snap-scroll.
+function SortableCard({
+  id,
+  children,
+}: {
+  id: string
+  children: (dragHandleProps: React.HTMLAttributes<HTMLElement>) => React.ReactNode
+}) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -740,11 +753,10 @@ function SortableCard({ id, children }: { id: string; children: React.ReactNode 
       ref={setNodeRef}
       style={style}
       id={`source-card-${id}`}
-      className="card-item scroll-mt-20 touch-none"
+      className="card-item scroll-mt-20"
       {...attributes}
-      {...listeners}
     >
-      {children}
+      {children(listeners ?? {})}
     </div>
   )
 }
