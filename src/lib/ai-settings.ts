@@ -1,11 +1,21 @@
-export type AIProvider = "anthropic" | "openai" | "deepseek" | "zhipu" | "gemini"
+export type AIProvider = "gemini-nano" | "anthropic" | "openai" | "deepseek" | "zhipu" | "gemini"
 
 export interface AISettings {
   provider: AIProvider
+  /** Empty string for gemini-nano (no key needed) */
   apiKey: string
 }
 
-export const PROVIDER_META: Record<AIProvider, { label: string; placeholder: string; url: string }> = {
+export const PROVIDER_META: Record<
+  AIProvider,
+  { label: string; placeholder: string; url: string; local?: boolean }
+> = {
+  "gemini-nano": {
+    label: "Gemini Nano (Local)",
+    placeholder: "",
+    url: "https://developer.chrome.com/docs/ai/built-in",
+    local: true,
+  },
   anthropic: {
     label: "Anthropic (Claude)",
     placeholder: "sk-ant-...",

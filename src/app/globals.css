@@ -126,6 +126,7 @@
   }
   html {
     @apply font-sans;
+    --news-font-size: 13px;
   }
 }
 

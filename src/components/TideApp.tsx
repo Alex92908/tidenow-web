@@ -6,6 +6,7 @@ import { SourceSidebar } from "./SourceSidebar"
 import { TideBoard } from "./TideBoard"
 import { SOURCE_IDS, SOURCE_IDS_EN, SOURCE_IDS_ZH } from "@/sources/metadata"
 import type { NewsItem, FilterId } from "@/lib/types"
+import { getFontSize, applyFontSize } from "@/lib/font-settings"
 
 type PreloadedData = Record<string, { items: NewsItem[]; updatedAt: number }>
 
@@ -26,6 +27,8 @@ export function TideApp({ locale, initialData }: { locale: string; initialData?:
 
   useEffect(() => {
     setMounted(true)
+    // Restore user font size preference immediately
+    applyFontSize(getFontSize())
     try {
       // One-time migration: an earlier build stored a separate per-board order
       // under "tidenow-source-order". Fold it into the canonical key and clean up.

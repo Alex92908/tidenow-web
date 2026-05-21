@@ -180,6 +180,22 @@ function NewsItemRow({
     if (!settings) return
     setSummaryLoading(true)
     try {
+      // Gemini Nano runs fully on-device via Chrome's built-in AI API
+      if (settings.provider === "gemini-nano") {
+        // @ts-expect-error Chrome AI API not yet in TS lib
+        const session = await window?.ai?.languageModel?.create({
+          systemPrompt: locale === "zh"
+            ? "你是一个新闻摘要助手。用一句话简要解释新闻标题的背景或意义，不超过30个字。只输出这句话，不要其他内容。"
+            : "You are a news summarizer. Give a one-sentence background or context for the news headline. Max 20 words. Output only the sentence.",
+        })
+        if (!session) return
+        const result = await session.prompt(item.title)
+        session.destroy()
+        setSummary(result?.trim() ?? null)
+        return
+      }
+
+      // Cloud providers go through the server-side proxy
       const res = await fetch("/api/summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -218,7 +234,7 @@ function NewsItemRow({
           {rank}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
+          <p className="text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors" style={{ fontSize: "var(--news-font-size, 13px)" }}>
             {item.title}
           </p>
           {/* AI summary — shown on hover */}

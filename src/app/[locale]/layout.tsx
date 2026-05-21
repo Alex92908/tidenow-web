@@ -88,6 +88,10 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/* Chrome Origin Trial token for Prompt API (Gemini Nano), valid Chrome 139-147 */}
+        <meta httpEquiv="origin-trial" content="A10XD32KIPyWlzOO95IQ73abnFQ9hz5BfEAuXKWjQ4HnGZOKeQ4Y35TT7sRZOmXarBx6GX0BvGNI10NZDL37RgIAAACLeyJvcmlnaW4iOiJodHRwczovL3d3dy50aWRlLW5vdy5jb206NDQzIiwiZmVhdHVyZSI6IkFJUHJvbXB0QVBJTXVsdGltb2RhbElucHV0IiwiZXhwaXJ5IjoxNzgxNTY4MDAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ==" />
+      </head>
       <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-zinc-100 antialiased">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
