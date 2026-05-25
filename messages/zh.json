@@ -86,6 +86,14 @@
     "cnn": "CNN",
     "theguardian": "卫报",
     "reuters": "路透社",
-    "apnews": "美联社"
+    "apnews": "美联社",
+    "tmdb-movies": "热门电影",
+    "tmdb-tv": "热门剧集",
+    "anilist": "热门番剧",
+    "twitch": "Twitch 热门游戏",
+    "awwwards": "Awwwards 设计奖",
+    "behance": "Behance 创意",
+    "bbcsport": "BBC 体育",
+    "bilifood": "B站美食"
   }
 }

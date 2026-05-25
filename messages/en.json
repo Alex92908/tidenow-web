@@ -86,6 +86,14 @@
     "cnn": "CNN",
     "theguardian": "The Guardian",
     "reuters": "Reuters",
-    "apnews": "AP News"
+    "apnews": "AP News",
+    "tmdb-movies": "Trending Movies",
+    "tmdb-tv": "Trending TV",
+    "anilist": "Trending Anime",
+    "twitch": "Twitch Top Games",
+    "awwwards": "Awwwards",
+    "behance": "Behance",
+    "bbcsport": "BBC Sport",
+    "bilifood": "Bilibili Food"
   }
 }

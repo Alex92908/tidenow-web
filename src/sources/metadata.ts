@@ -2,11 +2,12 @@
 import type { SourceMeta, SourceColumn } from "@/lib/types"
 
 const ALL_COLUMNS: { id: SourceColumn; label: string; labelEn: string }[] = [
-  { id: "china",   label: "中国",   labelEn: "China"   },
-  { id: "tech",    label: "科技",   labelEn: "Tech"    },
-  { id: "finance", label: "财经",   labelEn: "Finance" },
-  { id: "global",  label: "全球",   labelEn: "Global"  },
-  { id: "ai",      label: "AI",     labelEn: "AI"      },
+  { id: "china",         label: "中国",   labelEn: "China"         },
+  { id: "tech",          label: "科技",   labelEn: "Tech"          },
+  { id: "finance",       label: "财经",   labelEn: "Finance"       },
+  { id: "global",        label: "全球",   labelEn: "Global"        },
+  { id: "ai",            label: "AI",     labelEn: "AI"            },
+  { id: "entertainment", label: "娱乐",   labelEn: "Entertainment" },
 ]
 
 // zh: China first   en: Global / AI first, China last
@@ -16,6 +17,7 @@ export const COLUMNS_EN = [
   ALL_COLUMNS.find((c) => c.id === "ai")!,
   ALL_COLUMNS.find((c) => c.id === "tech")!,
   ALL_COLUMNS.find((c) => c.id === "finance")!,
+  ALL_COLUMNS.find((c) => c.id === "entertainment")!,
   ALL_COLUMNS.find((c) => c.id === "china")!,
 ]
 
@@ -307,6 +309,46 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-indigo-500 to-blue-400",
     interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
+  // ── Entertainment ─────────────────────────────────────
+  "tmdb-movies": {
+    id: "tmdb-movies", icon: "🎬", column: "entertainment",
+    accentColor: "bg-gradient-to-r from-emerald-500 to-teal-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  "tmdb-tv": {
+    id: "tmdb-tv", icon: "📽️", column: "entertainment",
+    accentColor: "bg-gradient-to-r from-teal-500 to-emerald-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  anilist: {
+    id: "anilist", icon: "🌸", column: "entertainment",
+    accentColor: "bg-gradient-to-r from-blue-500 to-cyan-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  // twitch: disabled (2FA blocker — needs non-CN phone to register a dev app)
+  // ── Design (tech-adjacent) ────────────────────────────
+  awwwards: {
+    id: "awwwards", icon: "🏆", column: "tech",
+    accentColor: "bg-gradient-to-r from-rose-500 to-pink-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  behance: {
+    id: "behance", icon: "🎨", column: "tech",
+    accentColor: "bg-gradient-to-r from-blue-600 to-indigo-500",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  // ── Sports (global) ───────────────────────────────────
+  bbcsport: {
+    id: "bbcsport", icon: "⚽", column: "global",
+    accentColor: "bg-gradient-to-r from-red-600 to-rose-500",
+    interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  // ── Food (china) ──────────────────────────────────────
+  bilifood: {
+    id: "bilifood", icon: "🍜", column: "china",
+    accentColor: "bg-gradient-to-r from-orange-500 to-red-400",
+    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
 }
 
 export const SOURCE_IDS = Object.keys(sourceMeta)
@@ -314,21 +356,22 @@ export const SOURCE_IDS = Object.keys(sourceMeta)
 // International-first order (default for non-zh locales)
 export const SOURCE_IDS_EN: string[] = [
   // Global news
-  "bbc", "reuters", "apnews", "cnn", "theguardian",
+  "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Trends & discovery
   "googletrends", "reddit", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
+  "tmdb-movies", "tmdb-tv", "anilist",
   "youtube", "applemusic", "steam",
   // AI
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
   "deepseek", "doubao", "qwen", "kimi",
-  // Tech
-  "github",
+  // Tech / design
+  "github", "awwwards", "behance",
   // Finance
   "wallstreetcn",
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
-  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi",
+  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi", "bilifood",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "kaopu", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
@@ -338,18 +381,20 @@ export const SOURCE_IDS_EN: string[] = [
 export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
-  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi",
-  // Tech
+  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi", "bilifood",
+  // Tech / design
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
-  "github", "hackernews",
+  "github", "hackernews", "awwwards", "behance",
   // Finance
   "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // Chinese international news
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "kaopu",
   // Global news
-  "bbc", "reuters", "apnews", "cnn", "theguardian",
+  "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms
   "googletrends", "reddit", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
+  // Entertainment
+  "tmdb-movies", "tmdb-tv", "anilist",
   // AI
   "deepseek", "doubao", "qwen", "kimi",
   "openai", "anthropic", "googleai", "tldrai", "huggingface",

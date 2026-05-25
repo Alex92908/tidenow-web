@@ -53,6 +53,14 @@ import * as cnn from "./cnn"
 import * as theguardian from "./theguardian"
 import * as reuters from "./reuters"
 import * as apnews from "./apnews"
+import * as anilist from "./anilist"
+import * as tmdbMovies from "./tmdb-movies"
+import * as tmdbTv from "./tmdb-tv"
+import * as awwwards from "./awwwards"
+import * as behance from "./behance"
+import * as bbcsport from "./bbcsport"
+import * as bilifood from "./bilifood"
+// twitch source file kept in src/sources/ for future use, not registered here.
 
 export const sources = {
   // China
@@ -117,6 +125,18 @@ export const sources = {
   doubao,
   qwen,
   kimi,
+  // Entertainment
+  "tmdb-movies": tmdbMovies,
+  "tmdb-tv": tmdbTv,
+  anilist,
+  // twitch — disabled until a non-CN phone is available to clear 2FA
+  // Design (tech-adjacent)
+  awwwards,
+  behance,
+  // Sports
+  bbcsport,
+  // Chinese food (Bilibili 美食区)
+  bilifood,
 } as const
 
 export type SourceId = keyof typeof sources

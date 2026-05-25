@@ -6,7 +6,7 @@ export interface NewsItem {
   mobileUrl?: string
 }
 
-export type SourceColumn = "china" | "tech" | "finance" | "global" | "ai"
+export type SourceColumn = "china" | "tech" | "finance" | "global" | "ai" | "entertainment"
 
 // Active filter for the top tab bar: "all" / "favorites" (user-pinned) /
 // "hidden" (user-hidden sources) / a specific category column.
