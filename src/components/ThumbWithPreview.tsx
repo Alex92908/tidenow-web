@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 /**
  * Small in-row thumbnail that fades up a larger preview on hover.
  *
@@ -8,8 +10,9 @@
  *   `[@media(hover:hover)]:` Tailwind variant).
  * - 300ms enter delay so quick mouse passes don't flash previews.
  * - Preview is `pointer-events-none` so it never blocks the row click.
- * - On 404 / hotlink reject, both the thumb and any visible preview
- *   are hidden via the `onError` handler.
+ * - On 404 / hotlink reject, the entire thumb is unmounted via React
+ *   state (so the layout reclaims the space cleanly — no broken-image
+ *   icon, no half-collapsed row).
  */
 export function ThumbWithPreview({
   src,
@@ -20,17 +23,29 @@ export function ThumbWithPreview({
   srcLarge?: string
   size?: 32 | 40
 }) {
+  // Two-stage fallback: try the small src first (fast). If it errors —
+  // usually a 403/hotlink reject from a thumb-specific CDN like
+  // b.thumbs.redditmedia.com — try the larger variant which often comes
+  // from a more permissive host (i.redd.it, img.tmdb.org, etc). Only after
+  // BOTH fail do we unmount and reclaim the space.
+  const hasFallback = !!srcLarge && srcLarge !== src
+  const [stage, setStage] = useState<"primary" | "fallback" | "failed">("primary")
+  if (stage === "failed") return null
+  const currentSrc = stage === "primary" ? src : srcLarge!
   const sizeClass = size === 32 ? "w-8 h-8" : "w-10 h-10"
   return (
     <div className={`shrink-0 relative group/thumb ${sizeClass}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        src={currentSrc}
         alt=""
         loading="lazy"
         referrerPolicy="strict-origin-when-cross-origin"
         className={`${sizeClass} rounded object-cover bg-gray-100 dark:bg-zinc-800`}
-        onError={(e) => { e.currentTarget.parentElement!.style.display = "none" }}
+        onError={() => {
+          if (stage === "primary" && hasFallback) setStage("fallback")
+          else setStage("failed")
+        }}
       />
       {/* Hover preview — only attaches on real pointer devices */}
       <div
