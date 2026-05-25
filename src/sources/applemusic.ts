@@ -72,6 +72,9 @@ export async function fetch(): Promise<NewsItem[]> {
   const out: NewsItem[] = []
   for (const { chart, region, items } of results) {
     items.forEach((s, i) => {
+      // Apple's CDN takes an explicit size in the URL — bump 100x100 to
+      // 512x512 for the hover preview.
+      const imageLarge = s.artworkUrl100?.replace(/100x100/g, "512x512")
       out.push({
         // Encode segment in id so the card can group: applemusic|chart|region|songId
         id: `applemusic|${chart}|${region}|${s.id}`,
@@ -79,6 +82,7 @@ export async function fetch(): Promise<NewsItem[]> {
         url: s.url,
         extra: `#${i + 1}`,
         image: s.artworkUrl100,
+        imageLarge,
       })
     })
   }

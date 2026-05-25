@@ -8,6 +8,11 @@ export interface NewsItem {
    *  cover art / media:thumbnail / og:image). Renders as a small image
    *  next to the title in SourceCard when present. */
   image?: string
+  /** Optional higher-resolution variant of `image`. Many CDNs let us cheaply
+   *  build a bigger URL (TMDB w92→w342, Apple Music 100x100bb→512x512bb,
+   *  AniList coverImage.large, Douban s_ratio_poster→m_ratio_poster). Used
+   *  for the hover preview overlay on desktop. */
+  imageLarge?: string
 }
 
 export type SourceColumn = "china" | "tech" | "finance" | "global" | "ai" | "entertainment"

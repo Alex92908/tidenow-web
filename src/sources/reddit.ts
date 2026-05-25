@@ -70,7 +70,9 @@ export async function fetch(): Promise<NewsItem[]> {
       title: c.data.title,
       url: `https://www.reddit.com${c.data.permalink}`,
       extra: `r/${c.data.subreddit} · ▲${c.data.score.toLocaleString()}`,
-      image: previewUrl || thumb,
+      // Thumbnail is small (140x140-ish); preview.source.url is full-res.
+      image: thumb || previewUrl,
+      imageLarge: previewUrl || thumb,
     }
   })
 }

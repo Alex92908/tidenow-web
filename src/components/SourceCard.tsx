@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
+import { ThumbWithPreview } from "@/components/ThumbWithPreview"
 import { getAISettings } from "@/lib/ai-settings"
 
 interface SourceCardProps {
@@ -234,18 +235,7 @@ function NewsItemRow({
           {rank}
         </span>
         {item.image && (
-          // Tiny thumbnail when the source provided one (TMDB poster, RSS
-          // media:thumbnail, Bilibili pic, Apple Music artwork, …).
-          // Lazy-loaded so off-screen rows don't bloat first paint.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image}
-            alt=""
-            loading="lazy"
-            referrerPolicy="strict-origin-when-cross-origin"
-            className="shrink-0 w-10 h-10 rounded object-cover bg-gray-100 dark:bg-zinc-800"
-            onError={(e) => { e.currentTarget.style.display = "none" }}
-          />
+          <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={40} />
         )}
         <div className="flex-1 min-w-0">
           <p className="text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors" style={{ fontSize: "var(--news-font-size, 13px)" }}>

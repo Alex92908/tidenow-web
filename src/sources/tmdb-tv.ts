@@ -37,5 +37,6 @@ export async function fetch(): Promise<NewsItem[]> {
     url: `https://www.themoviedb.org/tv/${m.id}`,
     extra: m.vote_average ? `★ ${m.vote_average.toFixed(1)}` : m.first_air_date,
     image: m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : undefined,
+    imageLarge: m.poster_path ? `https://image.tmdb.org/t/p/w342${m.poster_path}` : undefined,
   }))
 }

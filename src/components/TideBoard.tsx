@@ -26,6 +26,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { SourceCard } from "./SourceCard"
 import { AppleMusicCard } from "./AppleMusicCard"
 import { ShareButton } from "./ShareButton"
+import { ThumbWithPreview } from "./ThumbWithPreview"
 import { TrendingTopics } from "./TrendingTopics"
 import { AddFeedModal } from "./AddFeedModal"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
@@ -529,15 +530,7 @@ export function TideBoard({
                         </span>
                       </span>
                       {item.image && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.image}
-                          alt=""
-                          loading="lazy"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          className="shrink-0 w-8 h-8 rounded object-cover bg-gray-100 dark:bg-zinc-800"
-                          onError={(e) => { e.currentTarget.style.display = "none" }}
-                        />
+                        <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={32} />
                       )}
                       <p className="flex-1 min-w-0 text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug transition-colors">
                         {highlight(item.title, trimmed)}

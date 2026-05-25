@@ -28,5 +28,6 @@ export async function fetch(): Promise<NewsItem[]> {
     url: `https://movie.douban.com/subject/${item.id}`,
     extra: item.rating?.value ? `⭐ ${item.rating.value} · ${item.card_subtitle ?? ""}` : item.card_subtitle,
     image: item.pic?.normal || item.pic?.large || item.cover?.url,
+    imageLarge: item.pic?.large || item.pic?.normal || item.cover?.url,
   }))
 }
