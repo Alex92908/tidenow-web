@@ -1,4 +1,5 @@
 import { myFetch } from "@/lib/fetch"
+import { extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {
@@ -30,7 +31,13 @@ export async function fetch(): Promise<NewsItem[]> {
     const summary = block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)?.[1]
       ?.replace(/<[^>]+>/g, "").trim().slice(0, 80) ?? ""
     if (title && url) {
-      items.push({ id: `ph-${i}`, title, url, extra: summary || undefined })
+      items.push({
+        id: `ph-${i}`,
+        title,
+        url,
+        extra: summary || undefined,
+        image: extractImageFromRss(block),
+      })
     }
     i++
   }

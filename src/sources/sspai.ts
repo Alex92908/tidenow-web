@@ -14,9 +14,10 @@ export async function fetch(): Promise<NewsItem[]> {
     { headers: { Referer: "https://sspai.com/" } }
   )
   const data = await res.json()
-  return (data.data ?? []).map((item: { id: number; title: string }) => ({
+  return (data.data ?? []).map((item: { id: number; title: string; banner?: string }) => ({
     id: `sspai-${item.id}`,
     title: item.title,
     url: `https://sspai.com/post/${item.id}`,
+    image: item.banner ? `https://cdn.sspai.com/${item.banner}` : undefined,
   }))
 }

@@ -15,10 +15,18 @@ export async function fetch(): Promise<NewsItem[]> {
     },
   })
   const data = await res.json()
-  return (data.items ?? []).map((item: { id: string; title: string; rating?: { value: number }; card_subtitle?: string }) => ({
+  return (data.items ?? []).map((item: {
+    id: string
+    title: string
+    rating?: { value: number }
+    card_subtitle?: string
+    pic?: { normal?: string; large?: string }
+    cover?: { url?: string }
+  }) => ({
     id: `douban-${item.id}`,
     title: item.title,
     url: `https://movie.douban.com/subject/${item.id}`,
     extra: item.rating?.value ? `⭐ ${item.rating.value} · ${item.card_subtitle ?? ""}` : item.card_subtitle,
+    image: item.pic?.normal || item.pic?.large || item.cover?.url,
   }))
 }

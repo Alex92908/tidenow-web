@@ -10,24 +10,41 @@ export const meta: SourceMeta = {
   expandCount: 25,
 }
 
-export async function fetch(): Promise<NewsItem[]> {
-  const res = await myFetch("https://36kr.com/feed", {
-    headers: { Accept: "application/rss+xml, application/xml, text/xml" },
-  })
-  const xml = await res.text()
-  const items: NewsItem[] = []
-  const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g)
-  let i = 0
-  for (const match of itemMatches) {
-    const block = match[1]
-    const title = block.match(/<title>(.*?)<\/title>/)?.[1]?.trim() ?? ""
-    const linkMatch = block.match(/<!\[CDATA\[(https?:\/\/[^\]]+)\]\]>/)
-      ?? block.match(/<link>(https?:\/\/[^<]+)<\/link>/)
-    const url = linkMatch?.[1]?.trim() ?? ""
-    if (title && url) {
-      items.push({ id: `36kr-${i}`, title, url })
-    }
-    i++
+interface HotRankItem {
+  itemId: number
+  route?: string
+  templateMaterial?: {
+    widgetTitle: string
+    widgetImage?: string
+    authorName?: string
+    statRead?: number
   }
-  return items
+}
+
+// 36kr 的「热榜」JSON 接口比 RSS 信息丰富（带 widgetImage 封面图）。
+export async function fetch(): Promise<NewsItem[]> {
+  const res = await myFetch("https://gateway.36kr.com/api/mis/nav/home/nav/rank/hot", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://36kr.com/",
+    },
+    body: JSON.stringify({
+      partner_id: "wap",
+      param: { siteId: 1, platformId: 2 },
+      timestamp: 1,
+      key: "a",
+    }),
+  })
+  const data = (await res.json()) as { data?: { hotRankList?: HotRankItem[] } }
+  const list = data.data?.hotRankList ?? []
+  return list.slice(0, 25).map((item) => ({
+    id: `36kr-${item.itemId}`,
+    title: item.templateMaterial?.widgetTitle ?? "",
+    url: `https://36kr.com/p/${item.itemId}`,
+    extra: item.templateMaterial?.statRead
+      ? `👁 ${item.templateMaterial.statRead.toLocaleString()}`
+      : item.templateMaterial?.authorName,
+    image: item.templateMaterial?.widgetImage,
+  }))
 }

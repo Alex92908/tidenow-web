@@ -1,4 +1,5 @@
 import { myFetch } from "@/lib/fetch"
+import { extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {
@@ -29,6 +30,7 @@ export async function fetch(): Promise<NewsItem[]> {
         title,
         url: link || `https://trends.google.com/trends/explore?q=${encodeURIComponent(title)}`,
         extra: traffic ? `${traffic} searches` : undefined,
+        image: extractImageFromRss(block),
       })
     }
     i++

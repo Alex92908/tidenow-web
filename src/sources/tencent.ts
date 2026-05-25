@@ -14,10 +14,17 @@ export async function fetch(): Promise<NewsItem[]> {
   )
   const data = await res.json()
   return (data?.data?.tabs?.[0]?.articleList ?? []).map(
-    (item: { id: string; title: string; link_info?: { url?: string }; desc?: string }) => ({
+    (item: {
+      id: string
+      title: string
+      link_info?: { url?: string }
+      desc?: string
+      pic_info?: { small_img?: string[]; big_img?: string[] }
+    }) => ({
       id: `tencent-${item.id}`,
       title: item.title,
       url: item.link_info?.url ?? `https://news.qq.com/`,
+      image: item.pic_info?.small_img?.[0] || item.pic_info?.big_img?.[0],
     })
   )
 }

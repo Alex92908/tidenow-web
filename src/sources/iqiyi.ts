@@ -23,6 +23,7 @@ export async function fetch(): Promise<NewsItem[]> {
             title: v.title,
             url: v.page_url ?? v.url ?? `https://www.iqiyi.com/`,
             extra: v.hot_score ? `🔥 ${Number(v.hot_score).toLocaleString()}` : undefined,
+            image: v.image_url_normal || v.image_cover || v.album_image_url_hover,
           })
         }
       }

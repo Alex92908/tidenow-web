@@ -110,11 +110,12 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-blue-700 to-indigo-600",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  kaopu: {
-    id: "kaopu", icon: "✅", column: "china",
-    accentColor: "bg-gradient-to-r from-teal-500 to-cyan-400",
-    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
+  // kaopu disabled — upstream stays too stale even with the 48h filter
+  // kaopu: {
+  //   id: "kaopu", icon: "✅", column: "china",
+  //   accentColor: "bg-gradient-to-r from-teal-500 to-cyan-400",
+  //   interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  // },
   hupu: {
     id: "hupu", icon: "🏀", column: "china",
     accentColor: "bg-gradient-to-r from-orange-500 to-amber-400",
@@ -372,7 +373,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi", "bilifood",
-  "zaobao", "cankaoxiaoxi", "sputniknewscn", "kaopu", "hupu",
+  "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
 ]
@@ -388,7 +389,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // Finance
   "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // Chinese international news
-  "zaobao", "cankaoxiaoxi", "sputniknewscn", "kaopu",
+  "zaobao", "cankaoxiaoxi", "sputniknewscn",
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms

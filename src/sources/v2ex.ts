@@ -16,8 +16,24 @@ export async function fetch(): Promise<NewsItem[]> {
   const items: NewsItem[] = []
   for (const r of results) {
     if (r.status !== "fulfilled") continue
-    for (const item of (r.value.items ?? []) as { id: string; title: string; url: string; date_modified?: string; date_published?: string }[]) {
-      items.push({ id: item.id, title: item.title, url: item.url })
+    for (const item of (r.value.items ?? []) as {
+      id: string
+      title: string
+      url: string
+      date_modified?: string
+      date_published?: string
+      author?: { avatar?: string }
+      content_html?: string
+    }[]) {
+      // Prefer the first inline <img> from the post body; fall back to
+      // the poster's gravatar so every row has visual identity.
+      const inlineImg = item.content_html?.match(/<img[^>]+src=["']([^"']+)["']/)?.[1]
+      items.push({
+        id: item.id,
+        title: item.title,
+        url: item.url,
+        image: inlineImg || item.author?.avatar,
+      })
     }
   }
   return items.slice(0, 50)

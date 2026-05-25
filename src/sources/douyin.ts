@@ -26,11 +26,17 @@ export async function fetch(): Promise<NewsItem[]> {
   )
   const data = await res.json()
   return (data?.data?.word_list ?? []).map(
-    (item: { sentence_id: string; word: string; hot_value?: number }) => ({
+    (item: {
+      sentence_id: string
+      word: string
+      hot_value?: number
+      word_cover?: { url_list?: string[] }
+    }) => ({
       id: `douyin-${item.sentence_id}`,
       title: item.word,
       url: `https://www.douyin.com/search/${encodeURIComponent(item.word)}`,
       extra: item.hot_value ? `🔥 ${item.hot_value.toLocaleString()}` : undefined,
+      image: item.word_cover?.url_list?.[0],
     })
   )
 }

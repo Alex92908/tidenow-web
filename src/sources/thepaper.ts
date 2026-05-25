@@ -13,9 +13,10 @@ export async function fetch(): Promise<NewsItem[]> {
   })
   const data = await res.json()
   const hotNews = data?.data?.hotNews ?? []
-  return hotNews.map((item: { contId: string; name: string }) => ({
+  return hotNews.map((item: { contId: string; name: string; pic?: string; smallPic?: string; sharePic?: string }) => ({
     id: `thepaper-${item.contId}`,
     title: item.name,
     url: `https://www.thepaper.cn/newsDetail_forward_${item.contId}`,
+    image: item.smallPic || item.pic || item.sharePic,
   }))
 }

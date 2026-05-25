@@ -18,8 +18,12 @@ export async function fetch(): Promise<NewsItem[]> {
     try {
       const allData = JSON.parse(m[1])
       // newsstream array contains live top news items
-      const stream: { id?: string; title?: string; url?: string }[] =
-        allData?.newsstream ?? allData?.realData?.hotNews1 ?? []
+      const stream: {
+        id?: string
+        title?: string
+        url?: string
+        thumbnails?: { image?: { url?: string }[] }
+      }[] = allData?.newsstream ?? allData?.realData?.hotNews1 ?? []
       const items = stream
         .filter((item) => item.title && item.url)
         .slice(0, 30)
@@ -27,6 +31,7 @@ export async function fetch(): Promise<NewsItem[]> {
           id: `ifeng-${item.id ?? i}`,
           title: item.title!,
           url: item.url!,
+          image: item.thumbnails?.image?.[0]?.url,
         }))
       if (items.length > 0) return items
     } catch { /* fall through */ }

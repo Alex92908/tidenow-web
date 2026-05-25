@@ -18,8 +18,12 @@ export async function fetch(): Promise<NewsItem[]> {
   $("item").each((i, el) => {
     const title = $(el).find("title").text().trim()
     const link = $(el).find("link").text().trim()
+    // Discourse RSS embeds the post body as HTML inside <description>;
+    // pull the first <img src=…> as a thumbnail when present.
+    const desc = $(el).find("description").text()
+    const img = desc.match(/<img[^>]+src=["']([^"']+)["']/)?.[1]
     if (title && link) {
-      items.push({ id: `linuxdo-${i}`, title, url: link })
+      items.push({ id: `linuxdo-${i}`, title, url: link, image: img })
     }
   })
   return items

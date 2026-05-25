@@ -1,4 +1,5 @@
 import { myFetch } from "@/lib/fetch"
+import { extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {
@@ -34,6 +35,7 @@ export async function fetch(): Promise<NewsItem[]> {
         title,
         url: link,
         extra: desc || undefined,
+        image: extractImageFromRss(block),
       })
       if (items.length >= 25) break
     }

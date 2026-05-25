@@ -13,10 +13,14 @@ export async function fetch(): Promise<NewsItem[]> {
     { headers: { Referer: "https://juejin.cn/" } }
   )
   const data = await res.json()
-  return (data.data ?? []).map((item: { content: { content_id: string; title: string; view_count?: number } }) => ({
+  return (data.data ?? []).map((item: {
+    content: { content_id: string; title: string; view_count?: number }
+    author?: { avatar?: string; name?: string }
+  }) => ({
     id: `juejin-${item.content.content_id}`,
     title: item.content.title,
     url: `https://juejin.cn/post/${item.content.content_id}`,
     extra: item.content.view_count ? `👁 ${item.content.view_count.toLocaleString()}` : undefined,
+    image: item.author?.avatar,
   }))
 }

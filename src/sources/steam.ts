@@ -23,6 +23,7 @@ export async function fetch(): Promise<NewsItem[]> {
         url: appId
           ? `https://store.steampowered.com/app/${appId}/`
           : "https://store.steampowered.com/charts/topselling/",
+        image: item.logo,
       }
     }
   )

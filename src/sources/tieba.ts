@@ -13,10 +13,11 @@ export async function fetch(): Promise<NewsItem[]> {
   })
   const data = await res.json()
   const list = data?.data?.bang_topic?.topic_list ?? []
-  return list.map((item: { topic_id: string; topic_name: string; topic_url: string; discuss_num?: number }) => ({
+  return list.map((item: { topic_id: string; topic_name: string; topic_url: string; discuss_num?: number; topic_pic?: string; topic_avatar?: string }) => ({
     id: `tieba-${item.topic_id}`,
     title: item.topic_name,
     url: item.topic_url,
     extra: item.discuss_num ? `${item.discuss_num.toLocaleString()} 讨论` : undefined,
+    image: item.topic_pic || item.topic_avatar,
   }))
 }

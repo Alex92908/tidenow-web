@@ -27,6 +27,7 @@ type AppleEntry = {
   name: string
   artistName: string
   url: string
+  artworkUrl100?: string
 }
 
 async function fetchOne(region: string, chart: Chart): Promise<AppleEntry[]> {
@@ -77,6 +78,7 @@ export async function fetch(): Promise<NewsItem[]> {
         title: `${s.artistName} - ${s.name}`,
         url: s.url,
         extra: `#${i + 1}`,
+        image: s.artworkUrl100,
       })
     })
   }

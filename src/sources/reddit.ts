@@ -41,11 +41,36 @@ export async function fetch(): Promise<NewsItem[]> {
     : "https://www.reddit.com/r/popular.json?limit=30"
 
   const res = await myFetch(url, { headers })
-  const data = await res.json() as { data: { children: Array<{ data: { id: string; title: string; permalink: string; subreddit: string; score: number } }> } }
-  return data.data.children.map((c) => ({
-    id: c.data.id,
-    title: c.data.title,
-    url: `https://www.reddit.com${c.data.permalink}`,
-    extra: `r/${c.data.subreddit} · ▲${c.data.score.toLocaleString()}`,
-  }))
+  const data = await res.json() as {
+    data: {
+      children: Array<{
+        data: {
+          id: string
+          title: string
+          permalink: string
+          subreddit: string
+          score: number
+          thumbnail?: string
+          preview?: { images?: Array<{ source?: { url?: string } }> }
+        }
+      }>
+    }
+  }
+  return data.data.children.map((c) => {
+    // Prefer preview (high-res), fall back to thumbnail. Reddit's thumbnail
+    // field sometimes contains "self" / "default" / "nsfw" sentinels — only
+    // accept real URLs.
+    const previewUrl = c.data.preview?.images?.[0]?.source?.url
+      ?.replace(/&amp;/g, "&") // Reddit HTML-encodes ampersands
+    const thumb = c.data.thumbnail && /^https?:\/\//.test(c.data.thumbnail)
+      ? c.data.thumbnail
+      : undefined
+    return {
+      id: c.data.id,
+      title: c.data.title,
+      url: `https://www.reddit.com${c.data.permalink}`,
+      extra: `r/${c.data.subreddit} · ▲${c.data.score.toLocaleString()}`,
+      image: previewUrl || thumb,
+    }
+  })
 }

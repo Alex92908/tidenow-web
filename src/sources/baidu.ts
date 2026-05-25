@@ -29,14 +29,28 @@ export async function fetch(): Promise<NewsItem[]> {
     if (!wordMatch) return
     const word = decodeURIComponent(wordMatch[1].replace(/\+/g, " "))
     const hotIndex = $(el).find(".hot-index_1Bl1a").text().trim()
+    // Baidu puts the topic image inside an <img> within the wrapper
+    const img = $(el).find("img").first().attr("src") ?? undefined
     if (word) {
       items.push({
         id: `baidu-${i}`,
         title: word,
         url: `https://www.baidu.com/s?wd=${encodeURIComponent(word)}`,
         extra: hotIndex ? `🔥 ${Number(hotIndex).toLocaleString()}` : undefined,
+        image: img,
       })
     }
   })
+
+  // Fallback: the SSR HTML embeds a JSON blob with hot list — if cheerio
+  // selectors above missed images (markup changes), pull `img` URLs from
+  // the JSON-in-HTML.
+  if (items.some((it) => !it.image)) {
+    const imgMatches = [...html.matchAll(/"img":"([^"]+)"/g)]
+    for (let i = 0; i < items.length && i < imgMatches.length; i++) {
+      if (!items[i].image) items[i].image = imgMatches[i][1].replace(/\\u002F/g, "/")
+    }
+  }
+
   return items
 }

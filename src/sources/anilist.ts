@@ -21,6 +21,7 @@ query {
       siteUrl
       averageScore
       trending
+      coverImage { medium }
     }
   }
 }`
@@ -43,6 +44,7 @@ export async function fetch(): Promise<NewsItem[]> {
           siteUrl: string
           averageScore?: number
           trending?: number
+          coverImage?: { medium?: string }
         }>
       }
     }
@@ -53,5 +55,6 @@ export async function fetch(): Promise<NewsItem[]> {
     url: m.siteUrl,
     extra:
       m.averageScore != null ? `★ ${m.averageScore} · 🔥 ${m.trending ?? 0}` : undefined,
+    image: m.coverImage?.medium,
   }))
 }

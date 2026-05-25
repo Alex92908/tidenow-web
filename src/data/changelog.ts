@@ -19,6 +19,91 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.6.0",
+    date: "2026-05-25",
+    title: {
+      en: "Thumbnails almost everywhere",
+      zh: "几乎全员上图",
+    },
+    changes: [
+      {
+        kind: "feat",
+        en: "Every card row now shows a small thumbnail when the source provides one — movie posters, album art, news photos, video stills, GitHub avatars, even per-link favicons for Hacker News.",
+        zh: "每张卡的每条新闻现在都会显示缩略图（如果源给的话）——电影海报、专辑封面、新闻配图、视频封面、GitHub 头像，连 Hacker News 都用了目标网站的 favicon。",
+      },
+      {
+        kind: "feat",
+        en: "30+ sources extract images: TMDB Movies/TV, AniList, Apple Music, Bilibili, Bilibili Food, Douyin, Toutiao, Tieba, ThePaper, Baidu, Tencent, iFeng, sspai, Douban, Linux.do, BBC, BBC Sport, CNN, Reuters, AP, Guardian, Awwwards, Behance, Product Hunt, Reddit, YouTube, Steam, V2EX, Juejin, 36kr, iQiyi, Hugging Face papers.",
+        zh: "30+ 源开始提图：TMDB 电影/剧、AniList、Apple Music、B站、B站美食、抖音、头条、贴吧、澎湃、百度、腾讯、凤凰、少数派、豆瓣、Linux.do、BBC、BBC Sport、CNN、Reuters、AP、卫报、Awwwards、Behance、Product Hunt、Reddit、YouTube、Steam、V2EX、掘金、36氪、爱奇艺、HuggingFace 论文。",
+      },
+      {
+        kind: "fix",
+        en: "Card image referrer policy switched to strict-origin-when-cross-origin so hotlink-protected CDNs (Douban being the loudest) actually serve their images.",
+        zh: "卡片图片 referrer 策略改成 strict-origin-when-cross-origin，让带防盗链的 CDN（豆瓣最典型）能正常加载。",
+      },
+      {
+        kind: "polish",
+        en: "Thumbnails are lazy-loaded and gracefully hide on 404 — no broken-image placeholders.",
+        zh: "缩略图按需懒加载，加载失败自动隐藏，不会留破图占位。",
+      },
+    ],
+  },
+  {
+    version: "0.5.0",
+    date: "2026-05-22",
+    title: {
+      en: "Entertainment column & 6 new sources",
+      zh: "新增「娱乐」分类和 6 个源",
+    },
+    changes: [
+      {
+        kind: "feat",
+        en: "New \"Entertainment / 娱乐\" tab in the top filter bar.",
+        zh: "顶部分类栏新增「娱乐 / Entertainment」tab。",
+      },
+      {
+        kind: "feat",
+        en: "TMDB Movies + TV trending (needs TMDB_API_KEY env var).",
+        zh: "TMDB 电影 + 剧集每日热门榜（需要 TMDB_API_KEY 环境变量）。",
+      },
+      {
+        kind: "feat",
+        en: "AniList trending anime — no auth, public GraphQL.",
+        zh: "AniList 番剧热度榜——免 key，公开 GraphQL。",
+      },
+      {
+        kind: "feat",
+        en: "Awwwards (blog feed) and Behance for design inspiration.",
+        zh: "Awwwards（blog feed）和 Behance 设计灵感。",
+      },
+      {
+        kind: "feat",
+        en: "BBC Sport for sports headlines (replaces ESPN which blocked non-browser clients).",
+        zh: "BBC Sport 体育头条（替代被屏蔽非浏览器请求的 ESPN）。",
+      },
+      {
+        kind: "feat",
+        en: "Bilibili Food (美食区) trending videos, via the official region API.",
+        zh: "B站美食区热门视频，使用官方 region 接口。",
+      },
+      {
+        kind: "polish",
+        en: "Bilibili Hot now shows trending videos (with thumbnails) instead of just hot search keywords.",
+        zh: "B站热门从「热搜词」改成「全站热门视频」，每条都有视频封面。",
+      },
+      {
+        kind: "fix",
+        en: "AI summary button (✦) restored in the header — was hidden during the launch period out of trust concerns.",
+        zh: "AI 摘要按钮（✦）回到 header——之前出于信任考虑临时下线。",
+      },
+      {
+        kind: "infra",
+        en: "Kaopu News disabled — upstream stays stale even with the 48h filter. Source file kept for future reuse.",
+        zh: "靠谱新闻下线——上游内容即便加 48 小时过滤后依然太旧。源文件保留备用。",
+      },
+    ],
+  },
+  {
     version: "0.4.0",
     date: "2026-05-21",
     title: {

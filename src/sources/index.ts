@@ -36,7 +36,8 @@ import * as mktnews from "./mktnews"
 import * as zaobao from "./zaobao"
 import * as cankaoxiaoxi from "./cankaoxiaoxi"
 import * as sputniknewscn from "./sputniknewscn"
-import * as kaopu from "./kaopu"
+// kaopu disabled — upstream feed stays stale even with 48h filter
+// import * as kaopu from "./kaopu"
 import * as googletrends from "./googletrends"
 import * as devto from "./devto"
 import * as huggingface from "./huggingface"
@@ -102,7 +103,7 @@ export const sources = {
   zaobao,
   cankaoxiaoxi,
   sputniknewscn,
-  kaopu,
+  // kaopu — disabled (stale upstream)
   // Global
   googletrends,
   bbc,

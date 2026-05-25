@@ -1,4 +1,5 @@
 import { myFetch } from "@/lib/fetch"
+import { extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {

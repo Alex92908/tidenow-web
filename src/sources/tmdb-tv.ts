@@ -17,6 +17,7 @@ interface TmdbTv {
   original_name: string
   vote_average: number
   first_air_date: string
+  poster_path?: string | null
 }
 
 export async function fetch(): Promise<NewsItem[]> {
@@ -35,5 +36,6 @@ export async function fetch(): Promise<NewsItem[]> {
     title: m.name || m.original_name,
     url: `https://www.themoviedb.org/tv/${m.id}`,
     extra: m.vote_average ? `★ ${m.vote_average.toFixed(1)}` : m.first_air_date,
+    image: m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : undefined,
   }))
 }

@@ -528,6 +528,17 @@ export function TideBoard({
                           <span className="hidden sm:inline">{t(sourceId)}</span>
                         </span>
                       </span>
+                      {item.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.image}
+                          alt=""
+                          loading="lazy"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          className="shrink-0 w-8 h-8 rounded object-cover bg-gray-100 dark:bg-zinc-800"
+                          onError={(e) => { e.currentTarget.style.display = "none" }}
+                        />
+                      )}
                       <p className="flex-1 min-w-0 text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug transition-colors">
                         {highlight(item.title, trimmed)}
                       </p>

@@ -19,6 +19,7 @@ export async function fetch(): Promise<NewsItem[]> {
     id: string
     title: string
     upvotes: number
+    thumbnailUrl?: string
   }>
   return data
     .sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
@@ -28,5 +29,6 @@ export async function fetch(): Promise<NewsItem[]> {
       title: item.title,
       url: `https://huggingface.co/papers/${item.id}`,
       extra: `▲ ${item.upvotes ?? 0}`,
+      image: item.thumbnailUrl,
     }))
 }

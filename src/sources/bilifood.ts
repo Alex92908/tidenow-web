@@ -15,6 +15,7 @@ interface BiliArchive {
   aid: number
   bvid: string
   title: string
+  pic: string
   owner: { name: string }
   stat: { view: number }
 }
@@ -35,11 +36,14 @@ export async function fetch(): Promise<NewsItem[]> {
       v.stat.view >= 10000
         ? `${(v.stat.view / 10000).toFixed(1)}万播放`
         : `${v.stat.view} 播放`
+    // Bilibili 的 pic 默认是 http，统一升 https；规避 next/image 拒绝混合内容
+    const image = v.pic ? v.pic.replace(/^http:\/\//, "https://") : undefined
     return {
       id: `bilifood-${v.bvid}`,
       title: v.title,
       url: `https://www.bilibili.com/video/${v.bvid}`,
       extra: `${v.owner.name} · ${views}`,
+      image,
     }
   })
 }

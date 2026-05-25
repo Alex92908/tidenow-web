@@ -24,10 +24,22 @@ export async function fetch(): Promise<NewsItem[]> {
 
   return items
     .filter((s) => s && s.title && s.url)
-    .map((s) => ({
-      id: String(s.id),
-      title: s.title,
-      url: s.url,
-      extra: `▲${s.score}  ${s.descendants ?? 0} comments`,
-    }))
+    .map((s) => {
+      // Use the linked site's favicon as a tiny visual identifier — Google's
+      // s2 favicons service is free, fast, no auth.
+      let image: string | undefined
+      try {
+        const host = new URL(s.url).hostname
+        image = `https://www.google.com/s2/favicons?domain=${host}&sz=128`
+      } catch {
+        // ignore unparseable URLs
+      }
+      return {
+        id: String(s.id),
+        title: s.title,
+        url: s.url,
+        extra: `▲${s.score}  ${s.descendants ?? 0} comments`,
+        image,
+      }
+    })
 }

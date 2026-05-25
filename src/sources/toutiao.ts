@@ -12,10 +12,16 @@ export async function fetch(): Promise<NewsItem[]> {
     headers: { Referer: "https://www.toutiao.com/" },
   })
   const data = await res.json()
-  return (data.data as { ClusterIdStr: string; Title: string; HotValue: string }[]).map((item, i) => ({
+  return (data.data as {
+    ClusterIdStr: string
+    Title: string
+    HotValue: string
+    Image?: { url?: string }
+  }[]).map((item) => ({
     id: `toutiao-${item.ClusterIdStr}`,
     title: item.Title,
     url: `https://www.toutiao.com/trending/${item.ClusterIdStr}/`,
     extra: item.HotValue ? `🔥 ${Number(item.HotValue).toLocaleString()}` : undefined,
+    image: item.Image?.url,
   }))
 }

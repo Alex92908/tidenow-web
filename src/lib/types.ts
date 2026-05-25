@@ -4,6 +4,10 @@ export interface NewsItem {
   url: string
   extra?: string
   mobileUrl?: string
+  /** Optional thumbnail URL extracted from the upstream source (poster /
+   *  cover art / media:thumbnail / og:image). Renders as a small image
+   *  next to the title in SourceCard when present. */
+  image?: string
 }
 
 export type SourceColumn = "china" | "tech" | "finance" | "global" | "ai" | "entertainment"
