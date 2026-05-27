@@ -15,7 +15,31 @@ interface TrendingTopicsProps {
 export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsProps) {
   const t = useTranslations("sources")
 
-  const topics = useMemo(() => aggregateTrending(sourceData, 2, 8), [sourceData])
+  // aggregateTrending returns ~24 candidates across both languages; we present
+  // an 80/20 mix favoring the user's locale: 6 of the user's language plus 2
+  // cross-language picks out of 8 total. Falls back to whichever side has more
+  // when one side is short (e.g., quiet English news day on zh locale).
+  const allTopics = useMemo(() => aggregateTrending(sourceData, 2, 8), [sourceData])
+  const TOTAL = 8
+  const PRIMARY_QUOTA = 6 // 80% of 8 ≈ 6
+  const topics = useMemo(() => {
+    const wantLang: "zh" | "en" = locale === "zh" ? "zh" : "en"
+    const primary = allTopics.filter((t) => t.lang === wantLang)
+    const secondary = allTopics.filter((t) => t.lang !== wantLang)
+    const primaryPicked = primary.slice(0, PRIMARY_QUOTA)
+    const secondaryPicked = secondary.slice(0, TOTAL - primaryPicked.length)
+    let merged = [...primaryPicked, ...secondaryPicked]
+    // If still short (e.g. primary < 6 AND secondary < 2), top up from
+    // whichever leftover bucket has more.
+    if (merged.length < TOTAL) {
+      const used = new Set(merged.map((t) => t.keyword))
+      const leftover = allTopics.filter((t) => !used.has(t.keyword))
+      merged = [...merged, ...leftover.slice(0, TOTAL - merged.length)]
+    }
+    // Preserve overall hotness order across the mix so the top slot is the
+    // hottest topic (regardless of language), not always a primary-language one.
+    return merged.sort((a, b) => b.score - a.score)
+  }, [allTopics, locale])
 
   if (topics.length === 0) return null
 
@@ -50,15 +74,19 @@ export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsPro
       <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
         {topics.map((topic, i) => {
           const best = topic.mentions.reduce((a, b) => (a.rank < b.rank ? a : b))
-          const uniqueSources = [...new Set(topic.mentions.map((m) => m.sourceId))].slice(0, 4)
+          // Per-source best URL — clicking a source badge opens THAT source's
+          // version of the story, not the overall winner's URL.
+          const bestPerSource = new Map<string, string>()
+          for (const m of topic.mentions) {
+            const existing = bestPerSource.get(m.sourceId)
+            if (!existing) bestPerSource.set(m.sourceId, m.item.url)
+          }
+          const sourceLinks = Array.from(bestPerSource.entries()).slice(0, 4)
 
           return (
-            <a
+            <div
               key={topic.keyword}
-              href={best.item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group"
+              className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
             >
               {/* Rank */}
               <span
@@ -71,20 +99,30 @@ export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsPro
 
               {/* Title + source badges */}
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
+                {/* Title link → the highest-ranked mention overall */}
+                <a
+                  href={best.item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-[13px] text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100 leading-snug line-clamp-2 transition-colors"
+                >
                   {topic.displayTitle}
-                </p>
+                </a>
                 <div className="flex items-center gap-1 mt-1 flex-wrap">
-                  {uniqueSources.map((sid) => {
+                  {sourceLinks.map(([sid, url]) => {
                     const meta = sourceMeta[sid]
                     return (
-                      <span
+                      <a
                         key={sid}
-                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white/90 ${meta?.accentColor ?? "bg-gray-400"}`}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={t(sid)}
+                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white/90 hover:brightness-110 hover:scale-[1.04] transition-transform ${meta?.accentColor ?? "bg-gray-400"}`}
                       >
                         <span>{meta?.icon}</span>
                         <span className="hidden sm:inline">{t(sid)}</span>
-                      </span>
+                      </a>
                     )
                   })}
                   {topic.mentions.length > 4 && (
@@ -98,7 +136,7 @@ export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsPro
                   </span>
                 </div>
               </div>
-            </a>
+            </div>
           )
         })}
       </div>

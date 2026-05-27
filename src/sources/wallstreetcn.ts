@@ -16,9 +16,18 @@ export async function fetch(): Promise<NewsItem[]> {
   const items = data?.data?.day_items ?? data?.data?.items ?? []
   return items
     .filter((item: { resource_type?: string }) => item.resource_type !== "theme" && item.resource_type !== "ad")
-    .map((item: { id: string; title: string; uri?: string }) => ({
-      id: `wsj-${item.id}`,
-      title: item.title,
-      url: item.uri ? `https://wallstreetcn.com${item.uri}` : `https://wallstreetcn.com/articles/${item.id}`,
-    }))
+    .map((item: { id: string; title: string; uri?: string }) => {
+      // The API returns `uri` as a fully-qualified URL ("https://wallstreetcn.com/articles/123")
+      // most of the time, but occasionally as a relative path. Handle both
+      // without double-prefixing.
+      let url: string
+      if (!item.uri) {
+        url = `https://wallstreetcn.com/articles/${item.id}`
+      } else if (/^https?:\/\//.test(item.uri)) {
+        url = item.uri
+      } else {
+        url = `https://wallstreetcn.com${item.uri.startsWith("/") ? "" : "/"}${item.uri}`
+      }
+      return { id: `wsj-${item.id}`, title: item.title, url }
+    })
 }
