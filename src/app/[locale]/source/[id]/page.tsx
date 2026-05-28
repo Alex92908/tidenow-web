@@ -31,8 +31,8 @@ export async function generateMetadata({
   const title = locale === "zh" ? `${sourceName} - 实时热榜 | TideNow` : `${sourceName} - Live Trending | TideNow`
   const description =
     locale === "zh"
-      ? `${sourceName} 最新实时热榜，与 ${tSite("title")} 上 50+ 信息源同步聚合。`
-      : `Live ${sourceName} trending list, aggregated alongside 50+ other sources on ${tSite("title")}.`
+      ? `${sourceName} 最新实时热榜，与 ${tSite("title")} 上多个信息源同步聚合。`
+      : `Live ${sourceName} trending list, aggregated alongside other sources on ${tSite("title")}.`
   const canonical = locale === "zh" ? `${SITE_URL}/zh/source/${id}` : `${SITE_URL}/source/${id}`
   return {
     title,

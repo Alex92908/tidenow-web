@@ -190,6 +190,45 @@ export function TideBoard({
     [favoriteIds, persistFavorites]
   )
 
+  // Keyword mute list — hide any item whose title contains one of these
+  // words (case-insensitive). The list itself is owned by the header's
+  // FilterSettingsModal (so it's reachable from any page, not just here).
+  // We mirror it into local state and re-read on the modal's custom
+  // change event so card filtering reacts immediately.
+  const [muteKeywords, setMuteKeywords] = useState<string[]>([])
+  useEffect(() => {
+    function read() {
+      try {
+        const raw = localStorage.getItem("tidenow-mute-keywords")
+        if (!raw) return setMuteKeywords([])
+        const parsed = JSON.parse(raw) as string[]
+        setMuteKeywords(
+          Array.isArray(parsed)
+            ? parsed.filter((s): s is string => typeof s === "string" && s.length > 0)
+            : []
+        )
+      } catch {
+        setMuteKeywords([])
+      }
+    }
+    read()
+    window.addEventListener("tidenow-mutes-changed", read)
+    return () => window.removeEventListener("tidenow-mutes-changed", read)
+  }, [])
+
+  // Apply mute filter to a single item list. Memoize the lowercased keyword
+  // list once so the inner per-item filter is a cheap String#includes loop.
+  const muteLower = useMemo(() => muteKeywords.map((k) => k.toLowerCase()), [muteKeywords])
+  const passesMute = useCallback(
+    (title: string) => {
+      if (muteLower.length === 0) return true
+      const t = title.toLowerCase()
+      for (const k of muteLower) if (t.includes(k)) return false
+      return true
+    },
+    [muteLower]
+  )
+
   // Whether the user has reordered cards away from the default. We only know
   // this is "non-default" if the parent provided onResetOrder *and* the order
   // prop differs from SOURCE_IDS — but the cheap heuristic below (compare to
@@ -345,13 +384,14 @@ export function TideBoard({
     for (const id of SOURCE_IDS) {
       const items = state[id]?.items ?? []
       for (const item of items) {
+        if (!passesMute(item.title)) continue
         if (item.title.toLowerCase().includes(q)) {
           results.push({ item, sourceId: id })
         }
       }
     }
     return results.slice(0, 120)
-  }, [trimmed, state])
+  }, [trimmed, state, passesMute])
 
   const columns = getColumns(locale)
   const visibleIds = useMemo(
@@ -550,8 +590,8 @@ export function TideBoard({
             <TrendingTopics
               sourceData={Object.fromEntries(
                 Object.entries(state)
+                  .map(([id, s]) => [id, { items: s.items.filter((it) => passesMute(it.title)) }] as const)
                   .filter(([, s]) => s.items.length > 0)
-                  .map(([id, s]) => [id, { items: s.items }])
               )}
               locale={locale}
               onHide={() => persistTrendingHidden(true)}
@@ -613,7 +653,7 @@ export function TideBoard({
                         <AppleMusicCard
                           meta={sourceMeta[id]}
                           sourceName={t(id)}
-                          items={state[id]?.items ?? []}
+                          items={(state[id]?.items ?? []).filter((it) => passesMute(it.title))}
                           updatedAt={state[id]?.updatedAt ?? 0}
                           loading={state[id]?.loading ?? true}
                           error={state[id]?.error ?? false}
@@ -629,7 +669,7 @@ export function TideBoard({
                         <SourceCard
                           meta={sourceMeta[id]}
                           sourceName={t(id)}
-                          items={state[id]?.items ?? []}
+                          items={(state[id]?.items ?? []).filter((it) => passesMute(it.title))}
                           updatedAt={state[id]?.updatedAt ?? 0}
                           loading={state[id]?.loading ?? true}
                           error={state[id]?.error ?? false}

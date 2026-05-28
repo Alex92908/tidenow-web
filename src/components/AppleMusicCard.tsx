@@ -101,6 +101,15 @@ export function AppleMusicCard({
               ⠿
             </div>
           )}
+          <ShareButton
+            item={{
+              title: `${sourceName} · TideNow`,
+              url:
+                (typeof window !== "undefined" ? window.location.origin : "https://www.tide-now.com") +
+                (locale === "zh" ? `/zh/source/${meta.id}` : `/source/${meta.id}`),
+            }}
+            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+          />
           <button
             onClick={onRefresh}
             className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all text-sm"
