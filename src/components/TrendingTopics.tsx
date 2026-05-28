@@ -3,8 +3,9 @@
 import { useMemo } from "react"
 import { useTranslations } from "next-intl"
 import type { NewsItem } from "@/lib/types"
-import { aggregateTrending } from "@/lib/aggregate"
+import { aggregateTrending, type TrendingTopic } from "@/lib/aggregate"
 import { sourceMeta } from "@/sources/metadata"
+import { useAISummary } from "@/lib/use-ai-summary"
 
 interface TrendingTopicsProps {
   sourceData: Record<string, { items: NewsItem[] }>
@@ -72,73 +73,95 @@ export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsPro
 
       {/* Topics list */}
       <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
-        {topics.map((topic, i) => {
-          const best = topic.mentions.reduce((a, b) => (a.rank < b.rank ? a : b))
-          // Per-source best URL — clicking a source badge opens THAT source's
-          // version of the story, not the overall winner's URL.
-          const bestPerSource = new Map<string, string>()
-          for (const m of topic.mentions) {
-            const existing = bestPerSource.get(m.sourceId)
-            if (!existing) bestPerSource.set(m.sourceId, m.item.url)
-          }
-          const sourceLinks = Array.from(bestPerSource.entries()).slice(0, 4)
+        {topics.map((topic, i) => (
+          <TopicRow key={topic.keyword} topic={topic} rank={i + 1} locale={locale} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
-          return (
-            <div
-              key={topic.keyword}
-              className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
-            >
-              {/* Rank */}
-              <span
-                className={`text-[11px] font-mono w-4 shrink-0 mt-0.5 text-right font-bold ${
-                  i < 3 ? "text-orange-400" : "text-gray-300 dark:text-zinc-700"
-                }`}
+function TopicRow({ topic, rank, locale }: { topic: TrendingTopic; rank: number; locale: string }) {
+  const t = useTranslations("sources")
+  const best = topic.mentions.reduce((a, b) => (a.rank < b.rank ? a : b))
+  // Per-source best URL — clicking a source badge opens THAT source's
+  // version of the story, not the overall winner's URL.
+  const bestPerSource = new Map<string, string>()
+  for (const m of topic.mentions) {
+    if (!bestPerSource.has(m.sourceId)) bestPerSource.set(m.sourceId, m.item.url)
+  }
+  const sourceLinks = Array.from(bestPerSource.entries()).slice(0, 4)
+
+  // AI summary — lazy-loaded on hover (after 600ms dwell so a quick scan
+  // doesn't fan out a wall of API calls). Same plumbing as SourceCard rows.
+  const { summary, loading: summaryLoading, hoverProps } = useAISummary(
+    topic.displayTitle,
+    locale
+  )
+
+  return (
+    <div
+      {...hoverProps}
+      className="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
+    >
+      {/* Rank */}
+      <span
+        className={`text-[11px] font-mono w-4 shrink-0 mt-0.5 text-right font-bold ${
+          rank <= 3 ? "text-orange-400" : "text-gray-300 dark:text-zinc-700"
+        }`}
+      >
+        {rank}
+      </span>
+
+      {/* Title + source badges */}
+      <div className="flex-1 min-w-0">
+        {/* Title link → the highest-ranked mention overall */}
+        <a
+          href={best.item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-[13px] text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100 leading-snug line-clamp-2 transition-colors"
+        >
+          {topic.displayTitle}
+        </a>
+        {/* AI summary — appears on hover when the user has a key configured */}
+        {summaryLoading && (
+          <p className="text-[11px] text-sky-400/60 mt-0.5 animate-pulse">
+            {locale === "zh" ? "AI 解读中…" : "AI summarizing…"}
+          </p>
+        )}
+        {summary && !summaryLoading && (
+          <p className="text-[11px] text-sky-500 dark:text-sky-400 mt-0.5 leading-snug">
+            ✦ {summary}
+          </p>
+        )}
+        <div className="flex items-center gap-1 mt-1 flex-wrap">
+          {sourceLinks.map(([sid, url]) => {
+            const meta = sourceMeta[sid]
+            return (
+              <a
+                key={sid}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t(sid)}
+                className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white/90 hover:brightness-110 hover:scale-[1.04] transition-transform ${meta?.accentColor ?? "bg-gray-400"}`}
               >
-                {i + 1}
-              </span>
-
-              {/* Title + source badges */}
-              <div className="flex-1 min-w-0">
-                {/* Title link → the highest-ranked mention overall */}
-                <a
-                  href={best.item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-[13px] text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-zinc-100 leading-snug line-clamp-2 transition-colors"
-                >
-                  {topic.displayTitle}
-                </a>
-                <div className="flex items-center gap-1 mt-1 flex-wrap">
-                  {sourceLinks.map(([sid, url]) => {
-                    const meta = sourceMeta[sid]
-                    return (
-                      <a
-                        key={sid}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={t(sid)}
-                        className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white/90 hover:brightness-110 hover:scale-[1.04] transition-transform ${meta?.accentColor ?? "bg-gray-400"}`}
-                      >
-                        <span>{meta?.icon}</span>
-                        <span className="hidden sm:inline">{t(sid)}</span>
-                      </a>
-                    )
-                  })}
-                  {topic.mentions.length > 4 && (
-                    <span className="text-[10px] text-gray-400 dark:text-zinc-600">
-                      +{topic.mentions.length - 4}
-                    </span>
-                  )}
-                  {/* Heat score */}
-                  <span className="ml-auto text-[10px] text-orange-400 font-medium tabular-nums">
-                    🔥 {topic.score}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+                <span>{meta?.icon}</span>
+                <span className="hidden sm:inline">{t(sid)}</span>
+              </a>
+            )
+          })}
+          {topic.mentions.length > 4 && (
+            <span className="text-[10px] text-gray-400 dark:text-zinc-600">
+              +{topic.mentions.length - 4}
+            </span>
+          )}
+          {/* Heat score */}
+          <span className="ml-auto text-[10px] text-orange-400 font-medium tabular-nums">
+            🔥 {topic.score}
+          </span>
+        </div>
       </div>
     </div>
   )

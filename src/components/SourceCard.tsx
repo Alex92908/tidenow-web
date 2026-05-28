@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useAISummary } from "@/lib/use-ai-summary"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -8,7 +8,6 @@ import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
-import { getAISettings } from "@/lib/ai-settings"
 
 interface SourceCardProps {
   meta: SourceMeta
@@ -172,54 +171,12 @@ function NewsItemRow({
   locale: string
 }) {
   const isTop3 = rank <= 3
-  const [summary, setSummary] = useState<string | null>(null)
-  const [summaryLoading, setSummaryLoading] = useState(false)
-
-  const loadSummary = useCallback(async () => {
-    if (summary !== null || summaryLoading) return
-    const settings = getAISettings()
-    if (!settings) return
-    setSummaryLoading(true)
-    try {
-      // Gemini Nano runs fully on-device via Chrome's built-in AI API
-      if (settings.provider === "gemini-nano") {
-        // @ts-expect-error Chrome AI API not yet in TS lib
-        const session = await window?.ai?.languageModel?.create({
-          systemPrompt: locale === "zh"
-            ? "你是一个新闻摘要助手。用一句话简要解释新闻标题的背景或意义，不超过30个字。只输出这句话，不要其他内容。"
-            : "You are a news summarizer. Give a one-sentence background or context for the news headline. Max 20 words. Output only the sentence.",
-        })
-        if (!session) return
-        const result = await session.prompt(item.title)
-        session.destroy()
-        setSummary(result?.trim() ?? null)
-        return
-      }
-
-      // Cloud providers go through the server-side proxy
-      const res = await fetch("/api/summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: item.title,
-          locale,
-          provider: settings.provider,
-          apiKey: settings.apiKey,
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setSummary(data.summary)
-      }
-    } finally {
-      setSummaryLoading(false)
-    }
-  }, [item.title, locale, summary, summaryLoading])
+  const { summary, loading: summaryLoading, hoverProps } = useAISummary(item.title, locale)
 
   return (
     <div
       className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group"
-      onMouseEnter={loadSummary}
+      {...hoverProps}
     >
       <a
         href={item.url}
