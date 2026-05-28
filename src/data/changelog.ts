@@ -19,6 +19,71 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.7.0",
+    date: "2026-05-28",
+    title: {
+      en: "Sharper trending, keyword mute, per-card share",
+      zh: "更准的多源热议、关键词屏蔽、卡片分享",
+    },
+    changes: [
+      {
+        kind: "feat",
+        en: "New keyword mute filter (⚙ in the header). Comma- or newline-separated keywords are matched case-insensitively against every title across all cards, search, and the cross-source trending panel. Stored only in your browser — no account, no server.",
+        zh: "新增关键词屏蔽（header 里的 ⚙）。逗号或换行分隔，标题包含任意一个的会全站隐藏——卡片、搜索、多源热议都生效。仅保存在你的浏览器里，无账号、无服务端。",
+      },
+      {
+        kind: "feat",
+        en: "Per-card share button in every card header. Shares the source's TideNow landing page so clicks come back into the site (with proper OG metadata) instead of bouncing to the publisher.",
+        zh: "每张卡的 header 加了分享按钮。分享的是该源在 TideNow 的详情页（带完整 OG 元数据），点击的人会回到站内，而不是跳到原网站。",
+      },
+      {
+        kind: "feat",
+        en: "AI summaries on the cross-source Trending panel — same hover-with-300ms-dwell behavior as regular card rows, locale-enforced output (UK user reading a Chinese headline gets an English summary back, and vice versa).",
+        zh: "多源热议条目也支持 AI 摘要——和卡片行一样 hover 600ms 触发，按界面语言输出（中文界面看英文标题也会回中文摘要，反之亦然）。",
+      },
+      {
+        kind: "fix",
+        en: "Trending Across Sources clustering rewritten. Old algorithm grouped by any single shared keyword, surfacing the same article as 3 separate \"topics\" with unrelated source badges. New algorithm uses keyword-set overlap (≥4 Chinese bigrams or ≥2 stemmed English words) via union-find. Each source badge now links to that source's own version of the story.",
+        zh: "多源热议聚合算法重写。旧版本只要共享 1 个关键词就合并，导致同一篇文章被拆成 3 行，下面挂着完全不相关的源标签。新版用「整段关键词集相似度」（中文 ≥4 个共同 bigram，英文 ≥2 个共同词干）+ union-find 聚类。每个源标签现在跳转到该源自己的版本。",
+      },
+      {
+        kind: "feat",
+        en: "80/20 locale mix on trending — English UI gets 6 English + 2 Chinese topics, Chinese UI gets the reverse. The cross-source panel no longer looks like a wall of one language to the wrong audience.",
+        zh: "多源热议按界面语言 8:2 混合——英文界面 6 英文 + 2 中文，中文界面反过来。不会再让一种语言用户看到全是另一种语言的话题。",
+      },
+      {
+        kind: "feat",
+        en: "Hover any card thumbnail to preview a higher-resolution version (TMDB 342px posters, Apple Music 512px artwork, AniList large covers, Douban large posters, Reddit preview-size images). Desktop only, 300ms dwell, never blocks clicks.",
+        zh: "鼠标 hover 任意卡片缩略图，会在右侧弹出高清版（TMDB 342px 海报、Apple Music 512px 唱片、AniList 大尺寸封面、豆瓣大图、Reddit preview 原图）。仅桌面端，300ms 防误触，不挡点击。",
+      },
+      {
+        kind: "fix",
+        en: "Thumbnail fallback chain — if the small image URL is hotlink-blocked (Reddit's b.thumbs CDN is the loudest), automatically retry with the high-res variant before unmounting. Killed broken-image placeholders on most Reddit rows.",
+        zh: "缩略图加载失败时自动 fallback 到高清版（Reddit 小图 CDN 经常防盗链，大图 CDN 反而开放）。Reddit 卡片不再出现破图占位。",
+      },
+      {
+        kind: "fix",
+        en: "wallstreetcn URLs were double-prefixed (https://wallstreetcn.comhttps://wallstreetcn.com/articles/123) because the upstream API already returned absolute URLs. Now detected and used as-is.",
+        zh: "华尔街见闻链接被双重前缀（https://wallstreetcn.comhttps://wallstreetcn.com/...），因为上游接口本来就给完整 URL。现在自动识别绝对 URL 不再前缀。",
+      },
+      {
+        kind: "fix",
+        en: "Behance feed was actually RSS (not Atom) with CDATA-wrapped <link>; the old parser surfaced \"<![CDATA[https://...]]>\" as the URL. Parser rewritten, also extracts the project thumbnail from <description>.",
+        zh: "Behance 实际是 RSS（不是 Atom）且 <link> 被 CDATA 包裹，旧解析器把 \"<![CDATA[https://...]]>\" 当成 URL 输出。重写解析，顺便从 <description> 提项目缩略图。",
+      },
+      {
+        kind: "polish",
+        en: "AI summary now respects user locale strictly — prompts explicitly tell the model \"respond in {locale} only\" so summaries always match the UI language regardless of headline language. Cache key includes locale so en/zh summaries don't overwrite each other.",
+        zh: "AI 摘要严格按界面语言输出——prompt 显式要求「无论标题什么语言，只用 {locale} 回答」。缓存 key 包含语言，中英文摘要互不覆盖。",
+      },
+      {
+        kind: "polish",
+        en: "Footer gets a GitHub link to the project repo. Description copy on the homepage drops the hardcoded \"50+\" and says \"many more\" / \"多平台\" — keeps things accurate as the source list flexes.",
+        zh: "footer 加 GitHub 项目链接。首页描述去掉硬编码的「50+」，改成「多平台」/「many more」，源列表增减时不用每次改文案。",
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-05-25",
     title: {
