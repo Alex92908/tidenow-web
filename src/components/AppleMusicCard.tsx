@@ -75,22 +75,25 @@ export function AppleMusicCard({
     >
       <div className={`h-0.5 w-full ${meta.accentColor}`} />
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/5">
-        <div className="flex items-center gap-2">
-          <span className="text-lg leading-none">{meta.icon}</span>
-          <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight">
-            {sourceName}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Header — two rows so the actions never get squeezed by long names. */}
+      <div className="flex flex-col gap-1.5 px-4 py-3 border-b border-gray-100 dark:border-white/5">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg leading-none shrink-0">{meta.icon}</span>
+            <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate">
+              {sourceName}
+            </span>
+          </div>
           {updatedAt > 0 && (
             <span
-              className="text-[11px] text-gray-400 dark:text-zinc-600"
+              className="text-[11px] text-gray-400 dark:text-zinc-600 shrink-0 whitespace-nowrap"
               suppressHydrationWarning
             >
               {t("updated", { time: formatDistanceToNow(updatedAt, locale) })}
             </span>
           )}
+        </div>
+        <div className="flex items-center justify-end gap-1.5">
           {/* Drag handle — desktop only, injected by SortableCard */}
           {dragHandleProps && (
             <div
