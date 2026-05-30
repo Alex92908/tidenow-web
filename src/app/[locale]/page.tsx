@@ -36,21 +36,50 @@ export default async function HomePage({
     }
   }
 
+  // Two JSON-LD blobs in a @graph: a WebSite (for SearchAction) plus a
+  // CollectionPage that exposes the source list as an ItemList. AI assistants
+  // and modern search engines parse structured data when answering "what is
+  // this site / what data does it have"; the CollectionPage tells them the
+  // page is a curated set of items, not a single article.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: t("title"),
-    description: t("description"),
-    url: siteUrl,
-    inLanguage: locale === "zh" ? "zh-Hans" : "en",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${siteUrl}?q={search_term_string}`,
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}#website`,
+        name: t("title"),
+        description: t("description"),
+        url: siteUrl,
+        inLanguage: locale === "zh" ? "zh-Hans" : "en",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${siteUrl}?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
       },
-      "query-input": "required name=search_term_string",
-    },
+      {
+        "@type": "CollectionPage",
+        "@id": `${siteUrl}#collection`,
+        name: t("title"),
+        description: t("description"),
+        url: siteUrl,
+        inLanguage: locale === "zh" ? "zh-Hans" : "en",
+        isPartOf: { "@id": `${siteUrl}#website` },
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: SOURCE_IDS.length,
+          itemListElement: SOURCE_IDS.map((id, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: locale === "zh" ? `${SITE_URL}/zh/source/${id}` : `${SITE_URL}/source/${id}`,
+            name: id,
+          })),
+        },
+      },
+    ],
   }
 
   return (

@@ -19,6 +19,46 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.7.1",
+    date: "2026-05-28",
+    title: {
+      en: "AI discoverability & public API",
+      zh: "面向 AI 的可发现性 + 公共 API",
+    },
+    changes: [
+      {
+        kind: "infra",
+        en: "Added /llms.txt at the root (the emerging llmstxt.org convention) — a curated, machine-friendly summary of what TideNow is, every URL that matters, the public API contract, and the full source list grouped by category.",
+        zh: "根目录新增 /llms.txt（llmstxt.org 新约定）——给 LLM 看的站点说明：站点定位、关键 URL、公共 API 协议、按分类整理的完整源列表。",
+      },
+      {
+        kind: "infra",
+        en: "robots.txt now explicitly allows the major AI / search crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, Bytespider, Applebot-Extended, Bingbot, etc.) — default-allow already covered them, but listing them removes ambiguity.",
+        zh: "robots.txt 显式允许主要 AI / 搜索爬虫（GPTBot、ClaudeBot、PerplexityBot、Google-Extended、CCBot、Bytespider、Applebot-Extended、Bingbot 等）——默认就允许，但列出来意图更明确。",
+      },
+      {
+        kind: "infra",
+        en: "Homepage JSON-LD upgraded from a single WebSite to a @graph containing both WebSite and a CollectionPage whose mainEntity is an ItemList of every source URL. Per-source pages now emit their own CollectionPage + ItemList of the current top 25 items, so AI assistants get structured data instead of having to scrape the rendered HTML.",
+        zh: "首页 JSON-LD 从单个 WebSite 升级成 @graph（WebSite + CollectionPage，mainEntity 是含所有源 URL 的 ItemList）。每个 source 详情页也加了 CollectionPage + 当前 Top 25 的 ItemList——AI 助手能直接拿到结构化数据，不用爬 HTML。",
+      },
+      {
+        kind: "feat",
+        en: "Public JSON API at /api/sources/{id} is now CORS-enabled (Access-Control-Allow-Origin: *) and handles OPTIONS preflights. Build your own reader / Raycast plugin / AI agent without a backend proxy.",
+        zh: "/api/sources/{id} 公共 JSON 接口开放 CORS（Access-Control-Allow-Origin: *）+ 处理 OPTIONS 预检。可以直接用来做自己的阅读器 / Raycast 插件 / AI agent，不需要后端代理。",
+      },
+      {
+        kind: "polish",
+        en: "Card header laid out as two rows so long source names (\"The Guardian\", \"Google Trends\", \"BBC Sport\") no longer squeeze the action buttons.",
+        zh: "卡片 header 改成两行，长源名（\"The Guardian\"、\"Google Trends\"、\"BBC Sport\"）不再把按钮挤变形。",
+      },
+      {
+        kind: "infra",
+        en: "README rewritten with the real project description, public API docs, stack list, and \"how to add a source\".",
+        zh: "GitHub README 重写——真实的项目说明、公共 API 文档、技术栈、新增源教程。",
+      },
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-05-28",
     title: {

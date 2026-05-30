@@ -73,9 +73,41 @@ export default async function SourceDetailPage({
     cached?.updatedAt && cached.updatedAt > 0
       ? new Date(cached.updatedAt).toISOString()
       : null
+  const canonical = locale === "zh" ? `${SITE_URL}/zh/source/${id}` : `${SITE_URL}/source/${id}`
+
+  // JSON-LD: CollectionPage wrapping an ItemList. AI assistants reading this
+  // page see "this is a curated set of N items from {sourceName}", each
+  // pointing at the real article URL. Way more useful than letting them
+  // guess from the rendered HTML.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${sourceName} · TideNow`,
+    description:
+      locale === "zh"
+        ? `${sourceName} 最新实时热榜，与 TideNow 上多个信息源同步聚合。`
+        : `Live ${sourceName} trending list, aggregated alongside other sources on TideNow.`,
+    url: canonical,
+    inLanguage: locale === "zh" ? "zh-Hans" : "en",
+    dateModified: lastUpdatedText ?? undefined,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: Math.min(items.length, meta.expandCount),
+      itemListElement: items.slice(0, meta.expandCount).map((it, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: it.url,
+        name: it.title,
+      })),
+    },
+  }
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Back link */}
       <nav className="text-xs text-gray-400 dark:text-zinc-600 mb-4">
         <Link href={locale === "zh" ? "/zh" : "/"} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">
