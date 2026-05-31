@@ -4,6 +4,7 @@ import * as weibo from "./weibo"
 import * as youtube from "./youtube"
 import * as hackernews from "./hackernews"
 import * as reddit from "./reddit"
+import * as twitter from "./twitter"
 import * as zhihu from "./zhihu"
 import * as producthunt from "./producthunt"
 import * as kr36 from "./36kr"
@@ -112,6 +113,7 @@ export const sources = {
   reuters,
   apnews,
   reddit,
+  twitter,
   producthunt,
   youtube,
   applemusic,

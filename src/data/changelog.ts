@@ -19,6 +19,26 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.7.2",
+    date: "2026-05-31",
+    title: {
+      en: "X (Twitter) trends",
+      zh: "新增 X（推特）趋势",
+    },
+    changes: [
+      {
+        kind: "feat",
+        en: "New source: X (Twitter) Trends — US trending topics with link-out to X search. Sourced via trends24.in (X killed their free trends endpoint and the v2 API costs $5000/mo).",
+        zh: "新增源：X（推特）趋势——美国热门话题，点击跳转 X 搜索。数据走 trends24.in（X 自家免费 trends 接口已停，v2 API 要 $5000/月）。",
+      },
+      {
+        kind: "infra",
+        en: "Investigated TikTok integration: deep enough to confirm Vercel-deployed Node fetch cannot reach TikTok or its scraper mirrors — TLS-fingerprint rejection at TCP level, regardless of geo. Logged as a known gap; viable paths are Apify ($0–5/mo) or a self-hosted curl-impersonate proxy on Fly.io.",
+        zh: "调研 TikTok 接入：确认 Vercel 上的 Node fetch 无法连到 TikTok 或其爬虫镜像——TLS 指纹在 TCP 层就被拒绝，跟部署地理无关。已记为已知缺口；可行路线是 Apify（$0–5/月）或自建 Fly.io 上的 curl-impersonate 代理。",
+      },
+    ],
+  },
+  {
     version: "0.7.1",
     date: "2026-05-28",
     title: {

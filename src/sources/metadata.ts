@@ -239,6 +239,11 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-orange-400 to-red-400",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
+  twitter: {
+    id: "twitter", icon: "𝕏", column: "global",
+    accentColor: "bg-gradient-to-r from-gray-900 to-gray-600",
+    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 30,
+  },
   producthunt: {
     id: "producthunt", icon: "🐱", column: "global",
     accentColor: "bg-gradient-to-r from-rose-500 to-pink-400",
@@ -359,7 +364,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Trends & discovery
-  "googletrends", "reddit", "hackernews", "devto", "producthunt",
+  "googletrends", "twitter", "reddit", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
   "tmdb-movies", "tmdb-tv", "anilist",
   "youtube", "applemusic", "steam",
@@ -393,7 +398,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms
-  "googletrends", "reddit", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
+  "googletrends", "twitter", "reddit", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
   // Entertainment
   "tmdb-movies", "tmdb-tv", "anilist",
   // AI
