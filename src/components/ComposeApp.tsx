@@ -301,6 +301,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         <div className="flex items-center justify-between gap-2 shrink-0">
           <ExportButtons markdown={markdown} locale={locale} />
           <div className="flex items-center gap-1.5">
+            <CopyMarkdownButton markdown={markdown} locale={locale} />
             {isCurrentSaved && (
               <button
                 type="button"
@@ -346,5 +347,35 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         />
       </div>
     </div>
+  )
+}
+
+// Sits next to the Save buttons. The bottom-left ExportButtons row already
+// covers HTML / .md / markdown, but users were missing it; pairing a copy
+// affordance with the save group makes "copy → paste elsewhere" feel as
+// first-class as "save → keep here".
+function CopyMarkdownButton({ markdown, locale }: { markdown: string; locale: "en" | "zh" }) {
+  const [copied, setCopied] = useState(false)
+  const empty = !markdown.trim()
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        if (empty) return
+        await navigator.clipboard.writeText(markdown)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      }}
+      disabled={empty}
+      className={`px-3 py-1 text-xs rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        copied
+          ? "border-emerald-300 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+          : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-white/20"
+      }`}
+    >
+      {copied
+        ? locale === "zh" ? "✓ 已复制" : "✓ Copied"
+        : locale === "zh" ? "📋 复制" : "📋 Copy"}
+    </button>
   )
 }
