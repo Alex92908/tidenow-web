@@ -64,6 +64,7 @@ export function TopicPicker({
         title: m.title,
         url: m.url,
         extra: m.extra,
+        image: m.image,
       }
       out.push({ sourceId: m.sourceId, item, pinned: true })
       seen.add(m.ref)
@@ -229,13 +230,15 @@ export function TopicPicker({
             return (
               <li
                 key={ref}
-                className={isLastPinned ? "border-b-2 border-sky-200/60 dark:border-sky-500/20" : ""}
+                className={`group flex items-stretch ${
+                  isLastPinned ? "border-b-2 border-sky-200/60 dark:border-sky-500/20" : ""
+                }`}
               >
                 <button
                   type="button"
                   onClick={() => toggleItem(sourceId, item)}
                   disabled={disabled}
-                  className={`w-full text-left px-3 py-2 text-xs leading-snug transition-colors flex items-start gap-2 ${
+                  className={`flex-1 min-w-0 text-left px-3 py-2 text-xs leading-snug transition-colors flex items-start gap-2 ${
                     isSel
                       ? "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300"
                       : disabled
@@ -253,12 +256,34 @@ export function TopicPicker({
                     {item.title}
                   </span>
                 </button>
+                {/* Copy-title-only button — the row itself is a toggle so
+                    text selection is blocked; this gives the user a one-
+                    click way to grab just the headline. */}
+                <CopyTitleButton title={item.title} locale={locale} />
               </li>
             )
           })
         )}
       </ol>
     </div>
+  )
+}
+
+function CopyTitleButton({ title, locale }: { title: string; locale: "en" | "zh" }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        await navigator.clipboard.writeText(title)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1200)
+      }}
+      title={locale === "zh" ? "复制标题" : "Copy title"}
+      className="shrink-0 px-2 text-[11px] text-gray-300 dark:text-zinc-700 hover:text-sky-500 transition-colors opacity-0 group-hover:opacity-100"
+    >
+      {copied ? "✓" : "📋"}
+    </button>
   )
 }
 

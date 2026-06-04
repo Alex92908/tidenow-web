@@ -129,12 +129,44 @@ interface ComposeRequest {
   locale: "en" | "zh"
   style: "feature" | "deep" | "quick" | "list" | "personal" | "custom"
   customPrompt?: string
-  materials: { sourceName: string; title: string; url: string; extra?: string }[]
+  materials: {
+    sourceName: string
+    title: string
+    url: string
+    extra?: string
+    /** Optional thumbnail / cover. When present, the AI is told to embed
+     *  it inline via markdown so the rendered article carries real
+     *  visuals from the source. */
+    image?: string
+  }[]
 }
 
 const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
   feature:
-    "用 1800-3000 字写一篇专题深度报道。结构：导语钩子(150字内) → 现象切片(用素材里的具体事实) → 多角度分析(给出至少 2 个不同视角) → 反方观点(承认局限，不一边倒) → 趋势预判(具体、可验证) → 结尾用一句有信息量的话收住。\n硬性要求：\n- 引用素材里出现的数字 / 公司 / 时间地点必须原样转述，绝不能编造\n- 如果素材里没说的具体事实，不要瞎填「据某机构数据」「业内人士透露」这种套话\n- 至少出现 3 个 ## 二级标题分段，让长文有结构\n- 全文必须使用简体中文",
+    `写一篇专题深度报道。目标长度 1800-3000 字，但宁可写少也不要编造内容凑字数。
+
+**写作流程（不是章节标题）**：
+1. 用一个具体细节、一个反差或一个问题开篇（避免「在...领域」「随着...」这种万能开头）
+2. 把素材里的事实写出来 —— 谁、什么时间、做了什么，引用素材里有的数字
+3. 至少给出 2 个互相不同的视角去分析
+4. 加一段反方观点 —— 承认论点的局限或不确定性
+5. 谈趋势，但只说素材支持的趋势
+6. 结尾给一句有信息量的具体观察
+
+**绝对禁止**：
+- 拒绝写「导语钩子」「现象切片」「多角度分析」这种结构词作为 ## 二级标题，标题必须是内容相关的具体短语
+- 拒绝编造素材里没有的具体日期、数字、公司动作、人名引述
+- 拒绝「据某机构数据」「业内人士透露」「相关报告显示」这类填充式信源
+- 拒绝「让我们拭目以待」「未来可期」「值得期待」「总而言之」「综上所述」这类套话
+- 拒绝「随着...的发展」「在...的背景下」这类万能开头
+- 如果素材信息不足以支撑 1800 字真材实料，就写 800-1200 字，质量优先
+
+**Markdown 要求**：
+- 一级标题 # 一个，二级标题 ## 至少 3 个（内容相关，不是结构词）
+- 如果素材带了 \`image:\` URL，在对应段落附近用 \`![标题](url)\` 嵌入图片
+- 不要列表化所有内容，长文需要段落叙述
+
+- 全文使用简体中文`,
   deep: "用 800-1200 字写一篇有观点的深度评论。结构上：开头钩子吸引读者 → 现象描述 → 原因分析 → 趋势预判。语气稳重克制，避免营销腔。如果素材之间能形成对比或互证，请挑明。",
   quick: "用 400-600 字写一篇 2 分钟速读总结。用 3-5 个小标题分段，每段不超过 100 字。让读者快速掌握今天发生了什么。",
   list: "用列表体写一篇文章：「Top N + 一句话点评」的格式。每条点评不超过 50 字。可适当编号或加 emoji 区分。",
@@ -143,7 +175,30 @@ const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
 }
 const STYLE_INSTRUCTIONS_EN: Record<string, string> = {
   feature:
-    "Write an 1800-3000 word feature article. Structure: lead hook (≤150 words) → reported slice (use specific facts from the source items) → multi-angle analysis (at least 2 distinct viewpoints) → counterpoint (acknowledge limits; don't be one-sided) → forecast (specific, falsifiable) → close with one substantive sentence.\nStrict rules:\n- Only cite numbers, companies, times, places that appear verbatim in the source material; never fabricate\n- If the materials don't contain a specific fact, do NOT plug filler like 'according to industry sources' or 'reportedly'\n- Use at least 3 ## subheadings so the long-form has structure\n- English only",
+    `Write a feature article. Target 1800-3000 words, but write shorter rather than fabricate.
+
+**Flow (these are NOT section headings)**:
+1. Open with a concrete detail, contrast, or question — never "In the era of..." / "As X grows..."
+2. Report the facts that ARE in the materials — who, when, what, the numbers that appear
+3. Give at least 2 distinct analytical viewpoints
+4. Add a counterpoint that acknowledges limits or uncertainty
+5. Forecast only what the materials support
+6. Close with one specific, substantive observation
+
+**Hard prohibitions**:
+- Never use scaffolding words ("Lead hook", "Reported slice", "Counterpoint") as ## subheadings — subheadings must be content-specific phrases
+- Never fabricate dates, numbers, company actions, named quotes that aren't in the materials
+- Never plug filler attribution like "according to industry sources" / "reportedly" / "analysts say"
+- Never end with "Time will tell" / "Stay tuned" / "In conclusion" / "Only time will show"
+- Never open with "In the era of..." / "As [X] continues to grow..."
+- If materials don't justify 1800 words honestly, write 800-1200. Quality over word count.
+
+**Markdown**:
+- One # H1, at least 3 ## subheadings (content-specific, not flow labels)
+- If a material has \`image: <url>\`, embed it inline near the relevant paragraph using \`![title](url)\`
+- Use prose, not bullets-for-everything
+
+- English only`,
   deep: "Write an 800-1200 word opinion piece. Structure: a hook lead → describe the phenomenon → analyze causes → forecast trends. Measured tone, no marketing fluff. If the source items contrast or reinforce each other, call it out.",
   quick: "Write a 400-600 word 2-minute read. Use 3-5 sub-headings, each section under 100 words. Reader should grasp what happened today fast.",
   list: "Write in list format: 'Top N + one-line take' per item. Each take under 50 words. Use numbers or emoji to differentiate.",
@@ -179,10 +234,13 @@ export async function POST(req: NextRequest) {
     : `You are a writer producing newsletter / blog content. ${styleInstr}\n\nStrict rules:\n- Reply in English only, regardless of the source language\n- Output Markdown: # H1 at top, ## H2 for sections\n- Don't restate source headlines verbatim; synthesize and extend in your own words\n- Don't say "according to trending lists"; write like an editor, not an AI reporting\n- No filler closing ("In conclusion", "Time will tell") — end with one substantive sentence`
 
   const materialBlock = materials
-    .map(
-      (m, i) =>
-        `${i + 1}. [${m.sourceName}] ${m.title}${m.extra ? `\n   ${m.extra}` : ""}\n   ${m.url}`
-    )
+    .map((m, i) => {
+      const lines = [`${i + 1}. [${m.sourceName}] ${m.title}`]
+      if (m.extra) lines.push(`   ${m.extra}`)
+      lines.push(`   url: ${m.url}`)
+      if (m.image) lines.push(`   image: ${m.image}`)
+      return lines.join("\n")
+    })
     .join("\n\n")
 
   const userPrompt = isZh

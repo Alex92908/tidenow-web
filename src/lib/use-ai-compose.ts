@@ -66,6 +66,7 @@ export function useAICompose() {
             title: m.title,
             url: m.url,
             extra: m.extra,
+            image: m.image,
           })),
         }),
       })

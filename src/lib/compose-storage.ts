@@ -17,6 +17,9 @@ export interface DraftMaterial {
   title: string
   url: string
   extra?: string
+  /** Source's thumbnail / cover image, if available. Passed to the AI
+   *  so it can embed visuals in long-form output. */
+  image?: string
 }
 
 export type DraftStyle = "feature" | "deep" | "quick" | "list" | "personal" | "custom"
@@ -86,6 +89,7 @@ export function materialFromItem(
     title: item.title,
     url: item.url,
     extra: item.extra,
+    image: item.image,
   }
 }
 

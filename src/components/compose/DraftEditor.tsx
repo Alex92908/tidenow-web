@@ -20,6 +20,14 @@ export function DraftEditor({ value, onChange, loading, locale }: Props) {
   const wordCount = value.trim().split(/\s+/).filter(Boolean).length
   const charCount = value.length
 
+  const [copied, setCopied] = useState(false)
+  async function copyAll() {
+    if (!value.trim()) return
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Mode toggle */}
@@ -42,10 +50,30 @@ export function DraftEditor({ value, onChange, loading, locale }: Props) {
             </button>
           ))}
         </div>
-        <div className="text-[11px] text-gray-400 dark:text-zinc-600 tabular-nums">
-          {locale === "zh"
-            ? `${charCount} 字 · ${wordCount} 词`
-            : `${wordCount} words · ${charCount} chars`}
+        <div className="flex items-center gap-3">
+          {/* Prominent in-editor copy. The bottom row also has Copy
+              Markdown / Copy HTML, but a one-click action in the toolbar
+              is what users actually look for after a generation lands. */}
+          <button
+            type="button"
+            onClick={copyAll}
+            disabled={!value.trim()}
+            title={locale === "zh" ? "复制全文 Markdown" : "Copy full markdown"}
+            className={`text-[11px] px-2 py-0.5 rounded-md border border-gray-200 dark:border-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              copied
+                ? "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30"
+                : "text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            {copied
+              ? locale === "zh" ? "✓ 已复制" : "✓ Copied"
+              : locale === "zh" ? "📋 复制全文" : "📋 Copy all"}
+          </button>
+          <div className="text-[11px] text-gray-400 dark:text-zinc-600 tabular-nums">
+            {locale === "zh"
+              ? `${charCount} 字 · ${wordCount} 词`
+              : `${wordCount} words · ${charCount} chars`}
+          </div>
         </div>
       </div>
 
