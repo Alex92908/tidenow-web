@@ -184,6 +184,36 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     setDrafts(next)
   }
 
+  // Snapshot the current editor into a brand-new draft entry. Used when
+  // the user has regenerated content on top of a previously-saved draft
+  // and wants to keep BOTH versions instead of overwriting.
+  function handleSaveAsNew() {
+    if (!markdown.trim() && materials.length === 0) return
+    const newId = newDraftId()
+    const draft: Draft = {
+      id: newId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      preview: "",
+      style,
+      customPrompt,
+      materials,
+      markdown,
+      locale: outputLocale,
+    }
+    const next = saveDraft(draft)
+    setDrafts(next)
+    setCurrentId(newId)
+  }
+
+  // Whether the current id corresponds to a draft that's already been
+  // saved. Drives the Save button's wording so the user can tell at a
+  // glance whether they're updating or creating.
+  const isCurrentSaved = useMemo(
+    () => drafts.some((d) => d.id === currentId),
+    [drafts, currentId]
+  )
+
   function handleGenerate() {
     if (materials.length === 0) return
     compose.generate({ style, customPrompt, materials, locale: outputLocale })
@@ -270,14 +300,36 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         </div>
         <div className="flex items-center justify-between gap-2 shrink-0">
           <ExportButtons markdown={markdown} locale={locale} />
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            className="px-3 py-1 text-xs rounded-md bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            💾 {locale === "zh" ? "保存到草稿箱" : "Save draft"}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {isCurrentSaved && (
+              <button
+                type="button"
+                onClick={handleSaveAsNew}
+                disabled={!canSave}
+                className="px-3 py-1 text-xs rounded-md border border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title={locale === "zh" ? "保留旧版本，把当前内容存成新一条" : "Keep the old version; save current as a new entry"}
+              >
+                📄 {locale === "zh" ? "另存为新" : "Save as new"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!canSave}
+              className="px-3 py-1 text-xs rounded-md bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title={
+                isCurrentSaved
+                  ? locale === "zh"
+                    ? "覆盖当前草稿"
+                    : "Overwrite the current saved draft"
+                  : undefined
+              }
+            >
+              💾 {isCurrentSaved
+                ? locale === "zh" ? "更新当前" : "Update"
+                : locale === "zh" ? "保存草稿" : "Save draft"}
+            </button>
+          </div>
         </div>
       </div>
 
