@@ -302,6 +302,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
           <ExportButtons markdown={markdown} locale={locale} />
           <div className="flex items-center gap-1.5">
             <CopyMarkdownButton markdown={markdown} locale={locale} />
+            <ShareArticleButton markdown={markdown} locale={locale} />
             {isCurrentSaved && (
               <button
                 type="button"
@@ -347,6 +348,67 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         />
       </div>
     </div>
+  )
+}
+
+// Opens the system share sheet (Web Share API) with a title derived from
+// the first # heading and the article's body as text. On desktops without
+// share support, falls back to copying a share-friendly snippet —
+// "title\n\nfirst-paragraph\n\n[…] · via TideNow" — so the click is never
+// a no-op.
+function ShareArticleButton({ markdown, locale }: { markdown: string; locale: "en" | "zh" }) {
+  const [done, setDone] = useState<"shared" | "copied" | null>(null)
+  const empty = !markdown.trim()
+
+  function deriveTitle(): string {
+    const h1 = markdown.match(/^#\s+(.+)$/m)
+    if (h1) return h1[1].trim()
+    const firstLine = markdown.split("\n").map((l) => l.trim()).find(Boolean) ?? ""
+    return firstLine.replace(/^#+\s*/, "").slice(0, 80)
+  }
+
+  async function handle() {
+    if (empty) return
+    const title = deriveTitle()
+    // Most share targets (X, WhatsApp, WeChat via share sheet) truncate
+    // anyway, but capping here keeps the system sheet snappy. The full
+    // article is one Copy click away if the user wants everything.
+    const excerpt = markdown.replace(/^#+.*$/gm, "").trim().slice(0, 600)
+    const text = `${excerpt}${markdown.length > 600 ? "…" : ""}`
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title, text })
+        setDone("shared")
+      } catch {
+        // User dismissed the sheet — not an error worth surfacing.
+        return
+      }
+    } else {
+      const fallback = `${title}\n\n${text}\n\n— via TideNow`
+      await navigator.clipboard.writeText(fallback)
+      setDone("copied")
+    }
+    setTimeout(() => setDone(null), 1500)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handle}
+      disabled={empty}
+      title={locale === "zh" ? "分享文章" : "Share article"}
+      className={`px-3 py-1 text-xs rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        done
+          ? "border-emerald-300 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+          : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-white/20"
+      }`}
+    >
+      {done === "shared"
+        ? locale === "zh" ? "✓ 已分享" : "✓ Shared"
+        : done === "copied"
+          ? locale === "zh" ? "✓ 已复制" : "✓ Copied"
+          : locale === "zh" ? "🔗 分享" : "🔗 Share"}
+    </button>
   )
 }
 
