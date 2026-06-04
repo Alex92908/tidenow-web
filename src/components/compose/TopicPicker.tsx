@@ -37,25 +37,55 @@ export function TopicPicker({
   const showAll = sourceFilter.size === 0
   const showingCount = showAll ? sources.length : sourceFilter.size
 
+  const selectedRefs = useMemo(() => new Set(selected.map((s) => s.ref)), [selected])
+  const atMax = selected.length >= MAX_SELECTED
+
+  // Build the visible list. Two passes so the picked items always sit at
+  // the top, even when they'd otherwise be hidden by the current filter
+  // / keyword / per-source cap. Without this, the auto-picked materials
+  // get lost in a list of 300+ items and the user can't even see what
+  // was chosen for them.
   const flat = useMemo(() => {
-    const all: { sourceId: string; item: NewsItem }[] = []
+    const out: { sourceId: string; item: NewsItem; pinned: boolean }[] = []
+    const seen = new Set<string>()
+
+    // Pass 1: selected items, in pick order — always visible.
+    for (const m of selected) {
+      // Reconstruct a NewsItem shape from the stored material; the
+      // source name lives elsewhere but the picker only needs id/title/url.
+      const item: NewsItem = {
+        id: m.ref.split(":").slice(1).join(":") || m.ref,
+        title: m.title,
+        url: m.url,
+        extra: m.extra,
+      }
+      out.push({ sourceId: m.sourceId, item, pinned: true })
+      seen.add(m.ref)
+    }
+
+    // Pass 2: the filtered trending pool, skipping anything already
+    // pinned at the top.
     for (const [sourceId, { items }] of sources) {
       if (!showAll && !sourceFilter.has(sourceId)) continue
       // When the user has narrowed to ≤3 sources, give them the full
       // depth. When they're skimming all 60+, show only the top of each
       // feed so the list stays scannable.
       const cap = showAll ? 5 : sourceFilter.size <= 3 ? 30 : 10
-      for (const it of items.slice(0, cap)) all.push({ sourceId, item: it })
+      for (const it of items.slice(0, cap)) {
+        const ref = `${sourceId}:${it.id}`
+        if (seen.has(ref)) continue
+        out.push({ sourceId, item: it, pinned: false })
+      }
     }
+
     if (keyword.trim()) {
       const kw = keyword.trim().toLowerCase()
-      return all.filter(({ item }) => item.title.toLowerCase().includes(kw))
+      // Keyword filter never hides pinned items — the user needs to keep
+      // seeing what they picked even while searching for something else.
+      return out.filter(({ item, pinned }) => pinned || item.title.toLowerCase().includes(kw))
     }
-    return all
-  }, [sources, sourceFilter, showAll, keyword])
-
-  const selectedRefs = useMemo(() => new Set(selected.map((s) => s.ref)), [selected])
-  const atMax = selected.length >= MAX_SELECTED
+    return out
+  }, [sources, sourceFilter, showAll, keyword, selected])
 
   function toggleSource(id: string) {
     const next = new Set(sourceFilter)
@@ -181,12 +211,20 @@ export function TopicPicker({
             {locale === "zh" ? "没有匹配的条目" : "Nothing matches"}
           </li>
         ) : (
-          flat.map(({ sourceId, item }) => {
+          flat.map(({ sourceId, item, pinned }, idx) => {
             const ref = `${sourceId}:${item.id}`
             const isSel = selectedRefs.has(ref)
             const disabled = atMax && !isSel
+            // Drop a faint separator after the pinned selections so the
+            // user can visually parse "these are my picks · these are
+            // other trends".
+            const isLastPinned =
+              pinned && (idx === flat.length - 1 || !flat[idx + 1].pinned)
             return (
-              <li key={ref}>
+              <li
+                key={ref}
+                className={isLastPinned ? "border-b-2 border-sky-200/60 dark:border-sky-500/20" : ""}
+              >
                 <button
                   type="button"
                   onClick={() => toggleItem(sourceId, item)}
