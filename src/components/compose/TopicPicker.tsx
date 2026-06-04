@@ -37,7 +37,19 @@ export function TopicPicker({
   const sources = useMemo(() => {
     return Object.entries(initialData)
       .filter(([, v]) => v?.items?.length > 0)
-      .sort((a, b) => (sourceNames[a[0]] ?? a[0]).localeCompare(sourceNames[b[0]] ?? b[0]))
+      .sort((a, b) => {
+        // localeCompare's default-locale behaviour differs between Node
+        // (en-US on most Linux hosts) and the browser (user's system
+        // locale). When the page server-renders in one order and the
+        // client re-orders during hydration, React throws a hydration
+        // mismatch (we saw exactly this with Anthropic vs 爱奇艺). Use a
+        // plain code-point comparison — deterministic everywhere, and
+        // it naturally puts Latin source names before CJK ones, which
+        // happens to be the order most users expect.
+        const na = sourceNames[a[0]] ?? a[0]
+        const nb = sourceNames[b[0]] ?? b[0]
+        return na < nb ? -1 : na > nb ? 1 : 0
+      })
   }, [initialData, sourceNames])
 
   const showAll = sourceFilter.size === 0
