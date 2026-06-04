@@ -122,6 +122,14 @@ export default async function HomePage({
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
             <a
+              href={locale === "zh" ? "/zh/compose" : "/compose"}
+              title={locale === "zh" ? "用 AI 写文章" : "Write with AI"}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+            >
+              <span className="text-sm leading-none">✍️</span>
+              <span className="hidden sm:inline">{locale === "zh" ? "写文章" : "Write"}</span>
+            </a>
+            <a
               href={feedbackHref}
               title={tFooter("feedback")}
               className="flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"

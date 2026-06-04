@@ -96,5 +96,9 @@
     "behance": "Behance 创意",
     "bbcsport": "BBC 体育",
     "bilifood": "B站美食"
+  },
+  "compose": {
+    "title": "写文章",
+    "subtitle": "选热点 → AI 生成草稿 → 编辑 → 导出"
   }
 }

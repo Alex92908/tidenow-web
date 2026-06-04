@@ -96,5 +96,9 @@
     "behance": "Behance",
     "bbcsport": "BBC Sport",
     "bilifood": "Bilibili Food"
+  },
+  "compose": {
+    "title": "Compose",
+    "subtitle": "Pick trending items → AI draft → edit → export"
   }
 }
