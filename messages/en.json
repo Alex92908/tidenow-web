@@ -7,7 +7,8 @@
     "feedback": "Feedback",
     "feedbackSubject": "TideNow feedback",
     "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n",
-    "changelog": "Changelog"
+    "changelog": "Changelog",
+    "posts": "Posts"
   },
   "nav": {
     "refresh": "Refresh",
@@ -100,5 +101,10 @@
   "compose": {
     "title": "Compose",
     "subtitle": "Pick trending items → AI draft → edit → export"
+  },
+  "posts": {
+    "title": "Posts",
+    "subtitle": "Editorial takes on cross-source trends. Weekly-ish.",
+    "empty": "No posts yet. Coming soon."
   }
 }

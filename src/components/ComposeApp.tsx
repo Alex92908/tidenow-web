@@ -19,6 +19,7 @@ import { StylePicker } from "@/components/compose/StylePicker"
 import { DraftEditor } from "@/components/compose/DraftEditor"
 import { DraftList } from "@/components/compose/DraftList"
 import { ExportButtons } from "@/components/compose/ExportButtons"
+import { PublishButton } from "@/components/compose/PublishButton"
 
 interface Props {
   locale: "en" | "zh"
@@ -52,6 +53,10 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // the chips that materials came from.
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set())
   const [autoPicked, setAutoPicked] = useState(false)
+  // Snapshot taken at last save / load — drives the "Unsaved" indicator
+  // and the leave-page guards. Initialised once the mount auto-pick
+  // settles so the baseline reflects the canvas the user sees first.
+  const [baseline, setBaseline] = useState<string | null>(null)
   const compose = useAICompose()
 
   // Seed a fresh draft with the top cross-source trending clusters — same
@@ -75,31 +80,122 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     return out
   }, [initialData, sourceNames])
 
-  // Hydrate from localStorage on mount. If the user has drafts, open the
-  // most recent one; otherwise start fresh and pre-fill cross-source
-  // trending picks.
+  // Stable JSON snapshot of "what the user has authored". Used to detect
+  // dirty state. We deliberately exclude `currentId` and `autoPicked` —
+  // those describe session bookkeeping, not user content. materials are
+  // serialised by ref so the comparison ignores reconstructed-NewsItem
+  // object identity changes.
+  function makeSnapshot(
+    m: DraftMaterial[],
+    md: string,
+    st: DraftStyle,
+    cp: string,
+    ol: "en" | "zh"
+  ): string {
+    return JSON.stringify({
+      materials: m.map((x) => x.ref),
+      markdown: md,
+      style: st,
+      customPrompt: cp,
+      outputLocale: ol,
+    })
+  }
+  const currentSnapshot = makeSnapshot(materials, markdown, style, customPrompt, outputLocale)
+  const isDirty = baseline !== null && currentSnapshot !== baseline
+
+  // Every entry into /compose starts on a fresh canvas with the current
+  // moment's cross-source picks. The previous behavior — auto-loading the
+  // most recent saved draft — felt like reopening a stale tab: users came
+  // back wanting to write about today's trends, not edit yesterday's piece.
+  // Old drafts remain visible in the right-hand panel and one click away.
   useEffect(() => {
-    const all = listDrafts()
-    setDrafts(all)
-    if (all.length > 0) {
-      const d = all[0]
-      loadDraft(d)
-    } else {
-      const blank = emptyDraft(locale)
-      setCurrentId(blank.id)
-      if (suggestedMaterials.length > 0) {
-        setMaterials(suggestedMaterials)
-        // Mirror the source filter to the sources we just auto-picked
-        // from. This way the "📚 Sources" chip pane reflects current
-        // context: All is unhighlighted, the source chips for the picks
-        // are blue, and the trending list naturally narrows to nearby
-        // candidates if the user wants to swap.
-        setSourceFilter(new Set(suggestedMaterials.map((m) => m.sourceId)))
-        setAutoPicked(true)
-      }
+    setDrafts(listDrafts())
+    const blank = emptyDraft(locale)
+    setCurrentId(blank.id)
+    const initialMaterials =
+      suggestedMaterials.length > 0 ? suggestedMaterials : []
+    if (initialMaterials.length > 0) {
+      setMaterials(initialMaterials)
+      // Mirror the source filter to the sources we just auto-picked
+      // from. The "📚 Sources" chip pane now reflects current context:
+      // All is unhighlighted, the source chips for the picks are blue,
+      // and the trending list naturally narrows to nearby candidates
+      // if the user wants to swap.
+      setSourceFilter(new Set(initialMaterials.map((m) => m.sourceId)))
+      setAutoPicked(true)
     }
+    // Establish baseline AFTER the auto-pick settles. The auto-picked
+    // materials are "what the user opened to" — they aren't unsaved
+    // changes themselves; only edits *on top* of this baseline are.
+    setBaseline(makeSnapshot(initialMaterials, "", "deep", "", locale))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // beforeunload guard — fires on tab close, refresh, and external nav.
+  // Browsers ignore the custom string (they show their generic "Leave
+  // site?" prompt), but setting returnValue is what arms the prompt.
+  useEffect(() => {
+    if (!isDirty) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = "" // Required for Chrome to actually prompt.
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [isDirty])
+
+  // In-app nav guard — intercepts clicks on same-origin <a> elements
+  // when there are unsaved changes. Next.js Link uses pushState, which
+  // doesn't trigger beforeunload, so without this the ← TideNow link in
+  // the page header would silently dump the draft. We attach in the
+  // capture phase so we beat the App Router's own click handler.
+  useEffect(() => {
+    if (!isDirty) return
+    function onClick(e: MouseEvent) {
+      // Only handle plain left-clicks; let modifier-clicks (open-in-tab)
+      // and middle-clicks pass through untouched.
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as HTMLElement | null)?.closest("a")
+      if (!a) return
+      const href = a.getAttribute("href")
+      if (!href || href.startsWith("#") || a.getAttribute("download") !== null) return
+      if (a.target === "_blank") return
+      // Resolve absolute URL to check it's same-origin and a real
+      // navigation away from /compose.
+      let dest: URL
+      try {
+        dest = new URL(href, window.location.href)
+      } catch {
+        return
+      }
+      if (dest.origin !== window.location.origin) return
+      if (dest.pathname === window.location.pathname) return
+
+      const msg =
+        locale === "zh"
+          ? "有未保存的修改。要保存草稿后再离开吗？\n\n确定 = 保存并离开\n取消 = 留下继续编辑"
+          : "Unsaved changes. Save the draft before leaving?\n\nOK = save and leave\nCancel = stay and keep editing"
+      const choice = window.confirm(msg)
+      if (choice) {
+        // Save synchronously, then continue the navigation. handleSave
+        // writes to localStorage immediately (no awaitable IO), so by the
+        // time we return the data is persisted.
+        e.preventDefault()
+        e.stopPropagation()
+        handleSave()
+        window.location.href = dest.href
+      } else {
+        // User chose to stay. Cancel the navigation.
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener("click", onClick, true)
+    return () => document.removeEventListener("click", onClick, true)
+    // handleSave is stable enough across renders that re-binding on its
+    // identity flip is fine; isDirty is the meaningful trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty, locale])
 
   // When the AI returns a new article, replace the editor contents and
   // reset the hook so subsequent edits aren't shadowed by it.
@@ -119,10 +215,13 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     setMarkdown(d.markdown)
     // Restore the draft's saved output language; older drafts that don't
     // have one fall back to the page locale.
-    setOutputLocale(d.locale ?? locale)
+    const ol = d.locale ?? locale
+    setOutputLocale(ol)
     // Reflect the draft's materials in the source-chip selection.
     setSourceFilter(new Set(d.materials.map((m) => m.sourceId)))
     setAutoPicked(false)
+    // Loaded == clean.
+    setBaseline(makeSnapshot(d.materials, d.markdown, d.style, d.customPrompt ?? "", ol))
   }
 
   function handlePickDraft(id: string) {
@@ -182,6 +281,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     }
     const next = saveDraft(draft)
     setDrafts(next)
+    setBaseline(currentSnapshot)
   }
 
   // Snapshot the current editor into a brand-new draft entry. Used when
@@ -204,6 +304,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     const next = saveDraft(draft)
     setDrafts(next)
     setCurrentId(newId)
+    setBaseline(currentSnapshot)
   }
 
   // Whether the current id corresponds to a draft that's already been
@@ -301,8 +402,21 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         <div className="flex items-center justify-between gap-2 shrink-0">
           <ExportButtons markdown={markdown} locale={locale} />
           <div className="flex items-center gap-1.5">
+            {/* Dirty indicator — quiet amber dot when there are pending
+                edits, so the user sees the state at a glance before
+                clicking anything that might navigate away. */}
+            {isDirty && (
+              <span
+                className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-md text-amber-600 dark:text-amber-400"
+                title={locale === "zh" ? "有未保存的修改" : "Unsaved changes"}
+              >
+                <span aria-hidden className="text-base leading-none">●</span>
+                {locale === "zh" ? "未保存" : "Unsaved"}
+              </span>
+            )}
             <CopyMarkdownButton markdown={markdown} locale={locale} />
             <ShareArticleButton markdown={markdown} locale={locale} />
+            <PublishButton markdown={markdown} outputLocale={outputLocale} uiLocale={locale} />
             {isCurrentSaved && (
               <button
                 type="button"

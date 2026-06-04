@@ -155,6 +155,13 @@ export default async function HomePage({
         <span>TideNow · {new Date().getFullYear()}</span>
         <span className="text-gray-300 dark:text-zinc-800">·</span>
         <a
+          href={locale === "zh" ? "/zh/posts" : "/posts"}
+          className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
+        >
+          {tFooter("posts")}
+        </a>
+        <span className="text-gray-300 dark:text-zinc-800">·</span>
+        <a
           href={locale === "zh" ? "/zh/changelog" : "/changelog"}
           className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
         >
