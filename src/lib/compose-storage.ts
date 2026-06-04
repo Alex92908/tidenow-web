@@ -32,6 +32,8 @@ export interface Draft {
   customPrompt?: string
   materials: DraftMaterial[]
   markdown: string
+  /** AI output language for this draft. Independent of the page locale —
+   *  a Chinese-UI user can author English articles and vice versa. */
   locale: "en" | "zh"
 }
 

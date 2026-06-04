@@ -45,6 +45,9 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const [style, setStyle] = useState<DraftStyle>("deep")
   const [customPrompt, setCustomPrompt] = useState("")
   const [markdown, setMarkdown] = useState("")
+  // Output language for the AI — independent of the page locale. Defaults
+  // to whatever the page locale is, but the user can flip it.
+  const [outputLocale, setOutputLocale] = useState<"en" | "zh">(locale)
   const [autoPicked, setAutoPicked] = useState(false)
   const compose = useAICompose()
 
@@ -105,6 +108,9 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     setStyle(d.style)
     setCustomPrompt(d.customPrompt ?? "")
     setMarkdown(d.markdown)
+    // Restore the draft's saved output language; older drafts that don't
+    // have one fall back to the page locale.
+    setOutputLocale(d.locale ?? locale)
     setAutoPicked(false)
   }
 
@@ -159,7 +165,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
       customPrompt,
       materials,
       markdown,
-      locale,
+      locale: outputLocale,
     }
     const next = saveDraft(draft)
     setDrafts(next)
@@ -167,7 +173,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
 
   function handleGenerate() {
     if (materials.length === 0) return
-    compose.generate({ style, customPrompt, materials, locale })
+    compose.generate({ style, customPrompt, materials, locale: outputLocale })
   }
 
   const canSave = useMemo(() => markdown.trim().length > 0 || materials.length > 0, [markdown, materials])
@@ -176,6 +182,29 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_220px] gap-4 h-[calc(100vh-7rem)]">
       {/* LEFT: topic picker + style + generate */}
       <div className="flex flex-col gap-3 min-h-0">
+        {/* Output language toggle — decoupled from page locale so a
+            Chinese-UI user can author English drafts and vice versa. */}
+        <div className="flex items-center justify-between gap-2 text-[11px]">
+          <span className="text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">
+            {locale === "zh" ? "输出语言" : "Output"}
+          </span>
+          <div className="flex rounded-md border border-gray-200 dark:border-white/10 p-0.5">
+            {(["en", "zh"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setOutputLocale(l)}
+                className={`px-2 py-0.5 rounded transition-colors ${
+                  outputLocale === l
+                    ? "bg-sky-500 text-white"
+                    : "text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                }`}
+              >
+                {l === "en" ? "EN" : "中文"}
+              </button>
+            ))}
+          </div>
+        </div>
         <StylePicker value={style} customPrompt={customPrompt} onChange={(s, c) => { setStyle(s); if (c !== undefined) setCustomPrompt(c) }} locale={locale} />
         {autoPicked && materials.length > 0 && (
           <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-[11px] text-sky-700 dark:text-sky-300 leading-snug">
