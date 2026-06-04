@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import type { NewsItem } from "@/lib/types"
+import { aggregateTrending } from "@/lib/aggregate"
 import {
   type Draft,
   type DraftMaterial,
   type DraftStyle,
   deleteDraft,
   listDrafts,
+  materialFromItem,
   newDraftId,
   saveDraft,
 } from "@/lib/compose-storage"
@@ -43,10 +45,33 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const [style, setStyle] = useState<DraftStyle>("deep")
   const [customPrompt, setCustomPrompt] = useState("")
   const [markdown, setMarkdown] = useState("")
+  const [autoPicked, setAutoPicked] = useState(false)
   const compose = useAICompose()
 
+  // Seed a fresh draft with the top cross-source trending clusters — same
+  // logic the home page's "Trending Across Sources" panel uses. These are
+  // the highest-signal stories (appearing in 2+ feeds), so they're the
+  // sanest default vs. forcing the user to manually scan 60+ sources.
+  const suggestedMaterials = useMemo(() => {
+    const topics = aggregateTrending(initialData, 2, 5)
+    const out: DraftMaterial[] = []
+    const seen = new Set<string>()
+    for (const t of topics) {
+      const m = t.mentions[0]
+      if (!m) continue
+      const ref = `${m.sourceId}:${m.item.id}`
+      if (seen.has(ref)) continue
+      seen.add(ref)
+      const name = sourceNames[m.sourceId] ?? m.sourceId
+      out.push(materialFromItem(m.sourceId, name, m.item))
+      if (out.length >= 5) break
+    }
+    return out
+  }, [initialData, sourceNames])
+
   // Hydrate from localStorage on mount. If the user has drafts, open the
-  // most recent one; otherwise start a fresh blank.
+  // most recent one; otherwise start fresh and pre-fill cross-source
+  // trending picks.
   useEffect(() => {
     const all = listDrafts()
     setDrafts(all)
@@ -56,6 +81,10 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     } else {
       const blank = emptyDraft(locale)
       setCurrentId(blank.id)
+      if (suggestedMaterials.length > 0) {
+        setMaterials(suggestedMaterials)
+        setAutoPicked(true)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -76,6 +105,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     setStyle(d.style)
     setCustomPrompt(d.customPrompt ?? "")
     setMarkdown(d.markdown)
+    setAutoPicked(false)
   }
 
   function handlePickDraft(id: string) {
@@ -86,10 +116,25 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   function handleNewDraft() {
     const blank = emptyDraft(locale)
     setCurrentId(blank.id)
-    setMaterials([])
     setStyle("deep")
     setCustomPrompt("")
     setMarkdown("")
+    // Same auto-pick treatment as the cold-start case — keeps "+ New"
+    // useful instead of dropping the user on an empty canvas.
+    if (suggestedMaterials.length > 0) {
+      setMaterials(suggestedMaterials)
+      setAutoPicked(true)
+    } else {
+      setMaterials([])
+      setAutoPicked(false)
+    }
+  }
+
+  // Any manual change to the materials means the user has taken over —
+  // dismiss the "auto-picked" hint so it doesn't lie about the state.
+  function handleMaterialsChange(next: DraftMaterial[]) {
+    setMaterials(next)
+    setAutoPicked(false)
   }
 
   function handleDeleteDraft(id: string) {
@@ -132,12 +177,30 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
       {/* LEFT: topic picker + style + generate */}
       <div className="flex flex-col gap-3 min-h-0">
         <StylePicker value={style} customPrompt={customPrompt} onChange={(s, c) => { setStyle(s); if (c !== undefined) setCustomPrompt(c) }} locale={locale} />
+        {autoPicked && materials.length > 0 && (
+          <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-[11px] text-sky-700 dark:text-sky-300 leading-snug">
+            <span aria-hidden>📍</span>
+            <span className="flex-1">
+              {locale === "zh"
+                ? `已自动选中 ${materials.length} 条跨源热点，可调整`
+                : `Pre-filled with ${materials.length} cross-source trends — adjust as needed`}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleMaterialsChange([])}
+              className="text-sky-500 hover:text-sky-700 dark:hover:text-sky-200"
+              title={locale === "zh" ? "清空重选" : "Clear"}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <div className="flex-1 min-h-0">
           <TopicPicker
             initialData={initialData}
             sourceNames={sourceNames}
             selected={materials}
-            onChange={setMaterials}
+            onChange={handleMaterialsChange}
             locale={locale}
           />
         </div>
