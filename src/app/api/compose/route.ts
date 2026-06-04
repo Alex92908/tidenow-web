@@ -9,6 +9,9 @@ import type { AIProvider } from "@/lib/ai-settings"
 // We intentionally do NOT echo the user's key into any log or response.
 
 const MAX_TOKENS_BY_STYLE: Record<string, number> = {
+  // ~1.5 zh chars per token, ~1.3 en words per token. Budgets target the
+  // upper bound of the labeled word range to give the model headroom.
+  feature: 5000,   // 1800–3000字 zh / 1500–2200 words en — long-form
   deep: 2200,      // 800–1200字 zh / 600–900 words en
   quick: 1100,     // 400–600字 / ~350 words
   list: 1600,
@@ -124,12 +127,14 @@ interface ComposeRequest {
   provider: AIProvider
   apiKey: string
   locale: "en" | "zh"
-  style: "deep" | "quick" | "list" | "personal" | "custom"
+  style: "feature" | "deep" | "quick" | "list" | "personal" | "custom"
   customPrompt?: string
   materials: { sourceName: string; title: string; url: string; extra?: string }[]
 }
 
 const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
+  feature:
+    "用 1800-3000 字写一篇专题深度报道。结构：导语钩子(150字内) → 现象切片(用素材里的具体事实) → 多角度分析(给出至少 2 个不同视角) → 反方观点(承认局限，不一边倒) → 趋势预判(具体、可验证) → 结尾用一句有信息量的话收住。\n硬性要求：\n- 引用素材里出现的数字 / 公司 / 时间地点必须原样转述，绝不能编造\n- 如果素材里没说的具体事实，不要瞎填「据某机构数据」「业内人士透露」这种套话\n- 至少出现 3 个 ## 二级标题分段，让长文有结构\n- 全文必须使用简体中文",
   deep: "用 800-1200 字写一篇有观点的深度评论。结构上：开头钩子吸引读者 → 现象描述 → 原因分析 → 趋势预判。语气稳重克制，避免营销腔。如果素材之间能形成对比或互证，请挑明。",
   quick: "用 400-600 字写一篇 2 分钟速读总结。用 3-5 个小标题分段，每段不超过 100 字。让读者快速掌握今天发生了什么。",
   list: "用列表体写一篇文章：「Top N + 一句话点评」的格式。每条点评不超过 50 字。可适当编号或加 emoji 区分。",
@@ -137,6 +142,8 @@ const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
   custom: "",
 }
 const STYLE_INSTRUCTIONS_EN: Record<string, string> = {
+  feature:
+    "Write an 1800-3000 word feature article. Structure: lead hook (≤150 words) → reported slice (use specific facts from the source items) → multi-angle analysis (at least 2 distinct viewpoints) → counterpoint (acknowledge limits; don't be one-sided) → forecast (specific, falsifiable) → close with one substantive sentence.\nStrict rules:\n- Only cite numbers, companies, times, places that appear verbatim in the source material; never fabricate\n- If the materials don't contain a specific fact, do NOT plug filler like 'according to industry sources' or 'reportedly'\n- Use at least 3 ## subheadings so the long-form has structure\n- English only",
   deep: "Write an 800-1200 word opinion piece. Structure: a hook lead → describe the phenomenon → analyze causes → forecast trends. Measured tone, no marketing fluff. If the source items contrast or reinforce each other, call it out.",
   quick: "Write a 400-600 word 2-minute read. Use 3-5 sub-headings, each section under 100 words. Reader should grasp what happened today fast.",
   list: "Write in list format: 'Top N + one-line take' per item. Each take under 50 words. Use numbers or emoji to differentiate.",

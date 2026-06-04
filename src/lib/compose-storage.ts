@@ -19,7 +19,7 @@ export interface DraftMaterial {
   extra?: string
 }
 
-export type DraftStyle = "deep" | "quick" | "list" | "personal" | "custom"
+export type DraftStyle = "feature" | "deep" | "quick" | "list" | "personal" | "custom"
 
 export interface Draft {
   id: string

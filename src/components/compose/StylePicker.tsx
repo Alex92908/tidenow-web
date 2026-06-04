@@ -10,6 +10,7 @@ export interface StyleOption {
 }
 
 export const STYLE_OPTIONS_EN: StyleOption[] = [
+  { id: "feature",  icon: "🎯", label: "Feature",         hint: "Long-form, 1800–3000 words" },
   { id: "deep",     icon: "📝", label: "Deep dive",       hint: "800–1200 words with analysis" },
   { id: "quick",    icon: "⚡", label: "Quick read",      hint: "2-minute scan, 400–600 words" },
   { id: "list",     icon: "📋", label: "Listicle",        hint: "Top-N with one-line takes" },
@@ -18,6 +19,7 @@ export const STYLE_OPTIONS_EN: StyleOption[] = [
 ]
 
 export const STYLE_OPTIONS_ZH: StyleOption[] = [
+  { id: "feature",  icon: "🎯", label: "深度长文",   hint: "1800–3000 字，专题深度报道" },
   { id: "deep",     icon: "📝", label: "深度评论",   hint: "800–1200 字，带观点与分析" },
   { id: "quick",    icon: "⚡", label: "速读总结",   hint: "2 分钟看懂，400–600 字" },
   { id: "list",     icon: "📋", label: "列表体",     hint: "Top N + 一句话点评" },
@@ -36,7 +38,7 @@ export function StylePicker({ value, customPrompt, onChange, locale }: Props) {
   const opts = locale === "zh" ? STYLE_OPTIONS_ZH : STYLE_OPTIONS_EN
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
         {opts.map((o) => {
           const active = value === o.id
           return (
