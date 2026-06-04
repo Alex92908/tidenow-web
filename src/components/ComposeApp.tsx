@@ -48,6 +48,9 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // Output language for the AI — independent of the page locale. Defaults
   // to whatever the page locale is, but the user can flip it.
   const [outputLocale, setOutputLocale] = useState<"en" | "zh">(locale)
+  // Source filter chips, lifted up so the auto-pick path can pre-select
+  // the chips that materials came from.
+  const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set())
   const [autoPicked, setAutoPicked] = useState(false)
   const compose = useAICompose()
 
@@ -86,6 +89,12 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
       setCurrentId(blank.id)
       if (suggestedMaterials.length > 0) {
         setMaterials(suggestedMaterials)
+        // Mirror the source filter to the sources we just auto-picked
+        // from. This way the "📚 Sources" chip pane reflects current
+        // context: All is unhighlighted, the source chips for the picks
+        // are blue, and the trending list naturally narrows to nearby
+        // candidates if the user wants to swap.
+        setSourceFilter(new Set(suggestedMaterials.map((m) => m.sourceId)))
         setAutoPicked(true)
       }
     }
@@ -111,6 +120,8 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     // Restore the draft's saved output language; older drafts that don't
     // have one fall back to the page locale.
     setOutputLocale(d.locale ?? locale)
+    // Reflect the draft's materials in the source-chip selection.
+    setSourceFilter(new Set(d.materials.map((m) => m.sourceId)))
     setAutoPicked(false)
   }
 
@@ -129,9 +140,11 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     // useful instead of dropping the user on an empty canvas.
     if (suggestedMaterials.length > 0) {
       setMaterials(suggestedMaterials)
+      setSourceFilter(new Set(suggestedMaterials.map((m) => m.sourceId)))
       setAutoPicked(true)
     } else {
       setMaterials([])
+      setSourceFilter(new Set())
       setAutoPicked(false)
     }
   }
@@ -230,6 +243,8 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             sourceNames={sourceNames}
             selected={materials}
             onChange={handleMaterialsChange}
+            sourceFilter={sourceFilter}
+            onSourceFilterChange={setSourceFilter}
             locale={locale}
           />
         </div>

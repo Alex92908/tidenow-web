@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+// useState is still used below for the keyword search box.
 import type { NewsItem } from "@/lib/types"
 import { materialFromItem, type DraftMaterial } from "@/lib/compose-storage"
 
@@ -9,6 +10,10 @@ interface Props {
   sourceNames: Record<string, string>
   selected: DraftMaterial[]
   onChange: (next: DraftMaterial[]) => void
+  /** Source filter is controlled by the parent so the auto-pick flow can
+   *  pre-select the chips that the picked materials came from. */
+  sourceFilter: Set<string>
+  onSourceFilterChange: (next: Set<string>) => void
   locale: "en" | "zh"
 }
 
@@ -23,9 +28,10 @@ export function TopicPicker({
   sourceNames,
   selected,
   onChange,
+  sourceFilter,
+  onSourceFilterChange,
   locale,
 }: Props) {
-  const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set())
   const [keyword, setKeyword] = useState("")
 
   const sources = useMemo(() => {
@@ -91,7 +97,7 @@ export function TopicPicker({
     const next = new Set(sourceFilter)
     if (next.has(id)) next.delete(id)
     else next.add(id)
-    setSourceFilter(next)
+    onSourceFilterChange(next)
   }
 
   function toggleItem(sourceId: string, item: NewsItem) {
@@ -142,7 +148,7 @@ export function TopicPicker({
         {!showAll && (
           <button
             type="button"
-            onClick={() => setSourceFilter(new Set())}
+            onClick={() => onSourceFilterChange(new Set())}
             className="text-gray-400 dark:text-zinc-600 hover:text-sky-500 transition-colors"
           >
             {locale === "zh" ? "重置为全部" : "Reset"}
@@ -172,7 +178,7 @@ export function TopicPicker({
           <div className="flex flex-wrap gap-1">
             <FilterChip
               active={showAll}
-              onClick={() => setSourceFilter(new Set())}
+              onClick={() => onSourceFilterChange(new Set())}
               label={locale === "zh" ? "全部" : "All"}
             />
             {sources.map(([sourceId]) => (
