@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Sky-500 rounded square matches the site's accent + theme-color meta -->
+  <rect width="64" height="64" rx="14" fill="#0ea5e9"/>
+  <!-- Bold T glyph as two simple rectangles. Renders crisply at 16x16
+       without depending on any system font, and the proportions echo
+       the wordmark's Georgia weight at small sizes where serifs would
+       become noise. -->
+  <rect x="9"  y="15" width="46" height="9"  rx="1" fill="#ffffff"/>
+  <rect x="27" y="15" width="10" height="35" rx="1" fill="#ffffff"/>
+</svg>
