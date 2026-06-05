@@ -19,6 +19,46 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "0.8.0",
+    date: "2026-06-05",
+    title: {
+      en: "Compose tool + editorial posts",
+      zh: "Compose 创作工具 + 编辑栏目",
+    },
+    changes: [
+      {
+        kind: "feat",
+        en: "New /compose tool: pick 1–5 trending items (auto-filled with cross-source clusters on entry), choose a style (Feature long-form / Deep dive / Quick read / Listicle / Personal / Custom prompt), generate a draft via your own AI key, edit with split-pane Markdown + live preview. Drafts saved to localStorage; multi-select sources; per-row copy-title button; output language toggle independent of UI locale.",
+        zh: "新增 /compose 创作页：选 1-5 条热点（进入时自动填充跨源聚类）→ 选风格（深度长文 / 深度评论 / 速读总结 / 列表体 / 个人观点 / 自定义）→ 用你自己的 AI key 生成草稿 → 在 Markdown + 实时预览里编辑。草稿存 localStorage；信息源多选；每行有「复制标题」按钮；输出语言独立于 UI 语言。",
+      },
+      {
+        kind: "feat",
+        en: "New /posts editorial section: file-system backed posts in src/data/posts/*.md with frontmatter. Sitemap-listed, Schema.org Article JSON-LD per post, OG meta, bilingual. Every post that ships is a deliberate git commit — there is no auth, no DB, no UGC queue.",
+        zh: "新增 /posts 编辑栏目：基于文件系统的 markdown + frontmatter，位于 src/data/posts/。进 sitemap、每篇带 Schema.org Article JSON-LD、OG meta、双语。每篇上线都需要主动 git commit——无登录、无数据库、无 UGC 队列。",
+      },
+      {
+        kind: "feat",
+        en: "Compose → /posts publish flow: '📤 Export for publish' button generates a complete frontmatter + body .md ready to drop into src/data/posts/ and commit. Slug / title / description / cover auto-filled with smart-truncation so descriptions never get cut mid-word.",
+        zh: "Compose 到 /posts 的发布管道：「📤 导出发布文件」按钮生成完整 frontmatter + 正文的 .md，直接放进 src/data/posts/ 即可。slug / title / description / cover 自动预填，description 采用智能截断不会切在半个单词中间。",
+      },
+      {
+        kind: "feat",
+        en: "Unsaved-changes leave guards on /compose: beforeunload prompt + a capture-phase click interceptor for in-app navigation that Next.js's pushState would otherwise slip through. Amber '● Unsaved' badge next to the Save buttons makes the state visible at a glance.",
+        zh: "/compose 加离开守卫：beforeunload 拦截 + 站内导航 click 捕获（Next.js pushState 不触发 beforeunload，单独处理）。Save 按钮旁的橙色「● 未保存」徽章一眼看出当前状态。",
+      },
+      {
+        kind: "fix",
+        en: "Hydration-stable source-chip sort in /compose — localeCompare without explicit locale produced different orders between Node (Linux en-US) and the browser (zh-CN macOS), causing 'Anthropic' vs '爱奇艺' to flip on hydration. Replaced with code-point comparison.",
+        zh: "/compose 信息源 chip 排序换成 hydration 稳定的码点比较。之前 localeCompare 没指定 locale，服务端（Linux en-US）和客户端（zh-CN macOS）结果不一致，「Anthropic」和「爱奇艺」的位置在 hydration 时会换，React 报错。",
+      },
+      {
+        kind: "polish",
+        en: "TideNow now has its own favicon (sky-blue rounded square + serif 'T') replacing the Vercel default triangle. Apple-icon.png shipped for iOS Add-to-Home-Screen.",
+        zh: "TideNow 有了自己的 favicon（sky-blue 圆角方块 + serif T），取代 Vercel 默认三角形。同时附了 apple-icon.png 供 iOS 添加到主屏幕。",
+      },
+    ],
+  },
+  {
     version: "0.7.2",
     date: "2026-05-31",
     title: {

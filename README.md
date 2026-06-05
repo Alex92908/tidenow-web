@@ -6,10 +6,22 @@ Live: **<https://www.tide-now.com>**
 
 - Cross-source "Trending" panel surfaces stories that appear in multiple feeds at once (union-find clustering, English stemmer)
 - Per-source detail pages (`/source/{id}`) for every source, indexable
+- Editorial **posts** at [`/posts`](https://www.tide-now.com/posts) — weekly-ish takes on cross-source trends, written via the in-site Compose tool and shipped as `.md` files in `src/data/posts/`
+- AI-assisted compose tool at [`/compose`](https://www.tide-now.com/compose) — pick 1–5 trending items, choose a style (Feature / Deep dive / Quick read / Listicle / Personal / Custom), generate a draft via your own AI key, edit with split-pane Markdown preview, save locally or export a publish-ready `.md`
 - AI summary on hover (bring your own OpenAI / Anthropic / Gemini / DeepSeek key, or use on-device Gemini Nano)
 - Drag-to-reorder, pin, hide, keyword mute — all persisted in localStorage, no account needed
 - Bilingual (`/` English, `/zh` Chinese)
 - No login. No tracking beyond Vercel Analytics.
+
+## Publishing a post
+
+Editorial control = git push access. There is no auth, no DB, no UGC queue — every article that ships at `/posts/{slug}` is a deliberate commit by someone with repo write access.
+
+1. Open [/compose](https://www.tide-now.com/compose), pick trending items, generate / edit a draft.
+2. Click **📤 Export for publish** — fills slug / title / description / tags from the body and downloads a complete `.md` file with frontmatter.
+3. Drop the file into `src/data/posts/`, `git commit`, `git push`. Vercel auto-deploys; the post lands at `/posts/{slug}` (or `/zh/posts/{slug}`).
+
+Posts are file-system backed (parsed by `src/lib/posts.ts`), included in `sitemap.xml`, and emit Schema.org `Article` JSON-LD per page.
 
 ## Public JSON API
 
