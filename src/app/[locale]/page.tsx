@@ -169,6 +169,23 @@ export default async function HomePage({
         </a>
         <span className="text-gray-300 dark:text-zinc-800">·</span>
         <a
+          href="https://discord.gg/chjPuC963T"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
+          title="Discord community"
+        >
+          <svg
+            className="w-3 h-3 fill-current"
+            viewBox="0 0 16 16"
+            aria-hidden
+          >
+            <path d="M13.55 3.07A12.93 12.93 0 0010.34 2c-.15.27-.32.63-.43.92a12.04 12.04 0 00-3.82 0c-.12-.29-.29-.65-.44-.92-1.13.2-2.21.55-3.21 1.07C.42 5.85-.13 8.55.14 11.22a13.02 13.02 0 003.93 1.98c.32-.43.6-.89.85-1.36-.47-.18-.91-.4-1.34-.65.11-.08.23-.17.34-.26 2.6 1.21 5.4 1.21 7.97 0 .11.09.22.18.34.26-.43.26-.88.47-1.34.65.24.47.53.93.85 1.36a13 13 0 003.93-1.98c.32-3.1-.55-5.77-2.31-8.15zM5.34 9.6c-.77 0-1.4-.71-1.4-1.58 0-.87.61-1.58 1.4-1.58.78 0 1.41.71 1.4 1.58 0 .87-.61 1.58-1.4 1.58zm5.18 0c-.77 0-1.4-.71-1.4-1.58 0-.87.61-1.58 1.4-1.58.78 0 1.41.71 1.4 1.58 0 .87-.6 1.58-1.4 1.58z" />
+          </svg>
+          <span>Discord</span>
+        </a>
+        <span className="text-gray-300 dark:text-zinc-800">·</span>
+        <a
           href="https://github.com/Alex92908/tidenow-web"
           target="_blank"
           rel="noopener noreferrer"
