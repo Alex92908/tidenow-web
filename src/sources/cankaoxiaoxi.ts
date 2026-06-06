@@ -12,7 +12,13 @@ const CHANNELS = ["zhongguo", "guandian", "gj"]
 export async function fetch(): Promise<NewsItem[]> {
   const results = await Promise.all(
     CHANNELS.map((ch) =>
-      myFetch(`https://china.cankaoxiaoxi.com/json/channel/${ch}/list.json`, {
+      // Switched from `china.cankaoxiaoxi.com` to `www.cankaoxiaoxi.com`:
+      // the china subdomain's TLS cert expired 2026-05-30 and they haven't
+      // renewed it, so Node's strict cert validation rejects the
+      // connection (curl -k works, but our hosting can't run with cert
+      // checks off). The www subdomain serves the same JSON paths from a
+      // valid cert.
+      myFetch(`https://www.cankaoxiaoxi.com/json/channel/${ch}/list.json`, {
         headers: { Referer: "https://www.cankaoxiaoxi.com/" },
       }).then((r) => r.json())
     )
