@@ -52,7 +52,10 @@ export function DraftEditor({ value, onChange, loading, locale }: Props) {
       {/* Pane(s) */}
       <div
         className={`flex-1 min-h-0 grid gap-2 ${
-          mode === "split" ? "grid-cols-2" : "grid-cols-1"
+          // 'Split' mode shows editor + preview side-by-side on desktop
+          // but stacks them vertically on mobile — at <640px wide each
+          // pane was ~150px and unusable.
+          mode === "split" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
         }`}
       >
         {mode !== "preview" && (

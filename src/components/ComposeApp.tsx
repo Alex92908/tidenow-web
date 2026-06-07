@@ -323,9 +323,18 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const canSave = useMemo(() => markdown.trim().length > 0 || materials.length > 0, [markdown, materials])
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_220px] gap-4 h-[calc(100vh-7rem)]">
-      {/* LEFT: topic picker + style + generate */}
-      <div className="flex flex-col gap-3 min-h-0">
+    // Desktop: 3-column grid with a single-viewport fixed height so each
+    // column scrolls independently. Mobile: stack vertically and let the
+    // page itself scroll — fixing the height to 100vh-7rem stuffed the
+    // three sections into ~33% of the viewport each and the chip pane,
+    // topic list, editor, and bottom action row all visually overlapped.
+    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_220px] gap-4 lg:h-[calc(100vh-7rem)]">
+      {/* LEFT: topic picker + style + generate. On mobile this becomes
+          one of three stacked sections, so give the topic-picker box a
+          real height (h-[60vh]) — without it the wrapping chip pane and
+          the topic list each collapsed to almost nothing and the
+          Generate button visually overlapped the chips. */}
+      <div className="flex flex-col gap-3 lg:min-h-0">
         {/* Output language toggle — decoupled from page locale so a
             Chinese-UI user can author English drafts and vice versa. */}
         <div className="flex items-center justify-between gap-2 text-[11px]">
@@ -368,7 +377,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             </button>
           </div>
         )}
-        <div className="flex-1 min-h-0">
+        <div className="h-[60vh] lg:h-auto lg:flex-1 lg:min-h-0">
           <TopicPicker
             initialData={initialData}
             sourceNames={sourceNames}
@@ -395,11 +404,14 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
       </div>
 
       {/* CENTER: editor + preview */}
-      <div className="flex flex-col gap-2 min-h-0">
-        <div className="flex-1 min-h-0">
+      <div className="flex flex-col gap-2 lg:min-h-0">
+        <div className="h-[60vh] lg:h-auto lg:flex-1 lg:min-h-0">
           <DraftEditor value={markdown} onChange={setMarkdown} loading={compose.loading} locale={locale} />
         </div>
-        <div className="flex items-center justify-between gap-2 shrink-0">
+        {/* Bottom action row — on mobile we let it wrap so the seven
+            buttons (copy/share/publish/save) stack into multiple lines
+            rather than squishing every label vertically. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
           <ExportButtons markdown={markdown} locale={locale} />
           <div className="flex items-center gap-1.5">
             {/* Dirty indicator — quiet amber dot when there are pending
@@ -449,8 +461,9 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         </div>
       </div>
 
-      {/* RIGHT: drafts list */}
-      <div className="flex flex-col min-h-0">
+      {/* RIGHT: drafts list. Mobile gets a capped height so a long
+          drafts list doesn't push the rest of the page off-screen. */}
+      <div className="flex flex-col h-[40vh] lg:h-auto lg:min-h-0">
         <DraftList
           drafts={drafts}
           currentId={currentId}
