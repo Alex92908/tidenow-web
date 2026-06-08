@@ -129,7 +129,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Trust / legal pages — required for AdSense, also useful credibility
   // signals for any reviewer or new visitor.
-  const trustSlugs = ["privacy", "terms", "about", "contact"] as const
+  const trustSlugs = ["privacy", "about", "contact"] as const
   const trustPages: MetadataRoute.Sitemap = trustSlugs.flatMap((slug) => [
     {
       url: `${SITE_URL}/${slug}`,

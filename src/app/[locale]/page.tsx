@@ -176,13 +176,6 @@ export default async function HomePage({
         </a>
         <span className="text-gray-300 dark:text-zinc-800">·</span>
         <a
-          href={locale === "zh" ? "/zh/terms" : "/terms"}
-          className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
-        >
-          {tFooter("terms")}
-        </a>
-        <span className="text-gray-300 dark:text-zinc-800">·</span>
-        <a
           href={locale === "zh" ? "/zh/contact" : "/contact"}
           className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
         >
