@@ -127,11 +127,42 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }))
 
+  // Trust / legal pages — required for AdSense, also useful credibility
+  // signals for any reviewer or new visitor.
+  const trustSlugs = ["privacy", "terms", "about", "contact"] as const
+  const trustPages: MetadataRoute.Sitemap = trustSlugs.flatMap((slug) => [
+    {
+      url: `${SITE_URL}/${slug}`,
+      lastModified: now,
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+      alternates: {
+        languages: {
+          en: `${SITE_URL}/${slug}`,
+          "zh-Hans": `${SITE_URL}/zh/${slug}`,
+        },
+      },
+    },
+    {
+      url: `${SITE_URL}/zh/${slug}`,
+      lastModified: now,
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+      alternates: {
+        languages: {
+          en: `${SITE_URL}/${slug}`,
+          "zh-Hans": `${SITE_URL}/zh/${slug}`,
+        },
+      },
+    },
+  ])
+
   return [
     ...homepages,
     ...sourcePages,
     ...changelogPages,
     ...postsIndexes,
     ...postPages,
+    ...trustPages,
   ]
 }

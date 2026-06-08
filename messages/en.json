@@ -8,7 +8,11 @@
     "feedbackSubject": "TideNow feedback",
     "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n",
     "changelog": "Changelog",
-    "posts": "Posts"
+    "posts": "Posts",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact"
   },
   "nav": {
     "refresh": "Refresh",
