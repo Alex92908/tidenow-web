@@ -80,11 +80,12 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-blue-500 to-cyan-400",
     interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  nowcoder: {
-    id: "nowcoder", icon: "💻", column: "china",
-    accentColor: "bg-gradient-to-r from-green-500 to-emerald-400",
-    interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
+  // nowcoder — disabled, gw-c.nowcoder.com geo-blocks non-CN IPs
+  // nowcoder: {
+  //   id: "nowcoder", icon: "💻", column: "china",
+  //   accentColor: "bg-gradient-to-r from-green-500 to-emerald-400",
+  //   interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  // },
   douban: {
     id: "douban", icon: "🎬", column: "china",
     accentColor: "bg-gradient-to-r from-green-600 to-lime-500",
@@ -234,11 +235,12 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-slate-600 to-gray-500",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  reddit: {
-    id: "reddit", icon: "👽", column: "global",
-    accentColor: "bg-gradient-to-r from-orange-400 to-red-400",
-    interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
+  // reddit — disabled until OAuth env vars are set (see src/sources/index.ts)
+  // reddit: {
+  //   id: "reddit", icon: "👽", column: "global",
+  //   accentColor: "bg-gradient-to-r from-orange-400 to-red-400",
+  //   interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  // },
   twitter: {
     id: "twitter", icon: "𝕏", column: "global",
     accentColor: "bg-gradient-to-r from-gray-900 to-gray-600",
@@ -364,7 +366,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Trends & discovery
-  "googletrends", "twitter", "reddit", "hackernews", "devto", "producthunt",
+  "googletrends", "twitter", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
   "tmdb-movies", "tmdb-tv", "anilist",
   "youtube", "applemusic", "steam",
@@ -377,7 +379,7 @@ export const SOURCE_IDS_EN: string[] = [
   "wallstreetcn",
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
-  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi", "bilifood",
+  "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
@@ -387,7 +389,7 @@ export const SOURCE_IDS_EN: string[] = [
 export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
-  "ifeng", "thepaper", "tencent", "nowcoder", "douban", "iqiyi", "bilifood",
+  "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
   // Tech / design
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "github", "hackernews", "awwwards", "behance",
@@ -398,7 +400,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms
-  "googletrends", "twitter", "reddit", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
+  "googletrends", "twitter", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
   // Entertainment
   "tmdb-movies", "tmdb-tv", "anilist",
   // AI

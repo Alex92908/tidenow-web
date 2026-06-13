@@ -3,7 +3,11 @@ import * as bilibili from "./bilibili"
 import * as weibo from "./weibo"
 import * as youtube from "./youtube"
 import * as hackernews from "./hackernews"
-import * as reddit from "./reddit"
+// Reddit disabled — anonymous /r/popular.json now 403s, OAuth client_credentials
+// works but requires REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET env vars + a
+// dev-server restart to load them. Re-enable by uncommenting both lines below
+// (here and in the registry) and providing the env vars.
+// import * as reddit from "./reddit"
 import * as twitter from "./twitter"
 import * as zhihu from "./zhihu"
 import * as producthunt from "./producthunt"
@@ -25,7 +29,11 @@ import * as iqiyi from "./iqiyi"
 import * as xueqiu from "./xueqiu"
 import * as douyin from "./douyin"
 import * as ifeng from "./ifeng"
-import * as nowcoder from "./nowcoder"
+// Nowcoder disabled — gw-c.nowcoder.com geo-restricts to mainland-China IPs;
+// Vercel's US/EU function pool can't reach it. Re-enable by routing through
+// a CN-resident proxy (HTTPS_PROXY env var; src/lib/fetch.ts already wires
+// undici's ProxyAgent when it's set).
+// import * as nowcoder from "./nowcoder"
 import * as tencent from "./tencent"
 import * as solidot from "./solidot"
 import * as pcbeta from "./pcbeta"
@@ -76,7 +84,7 @@ export const sources = {
   ifeng,
   thepaper,
   tencent,
-  nowcoder,
+  // nowcoder, — geo-blocked from Vercel; re-enable with CN proxy
   douban,
   iqiyi,
   // Tech
@@ -112,7 +120,7 @@ export const sources = {
   theguardian,
   reuters,
   apnews,
-  reddit,
+  // reddit, — anonymous API now 403s; re-enable with OAuth env vars
   twitter,
   producthunt,
   youtube,
