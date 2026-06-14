@@ -114,8 +114,18 @@ export function TideBoard({
     try {
       const raw = localStorage.getItem("tidenow-hidden-sources")
       if (raw) {
+        const parsed = JSON.parse(raw) as string[]
+        // Drop ids that no longer exist in the current SOURCE_IDS (e.g.
+        // a source we disabled in code). Without this, the tab counter
+        // ('Hidden (1)') stays out of sync with the visible list and
+        // the user can't get rid of the phantom entry.
+        const valid = new Set(SOURCE_IDS)
+        const cleaned = parsed.filter((id) => valid.has(id))
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setHiddenIds(new Set(JSON.parse(raw) as string[]))
+        setHiddenIds(new Set(cleaned))
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem("tidenow-hidden-sources", JSON.stringify(cleaned))
+        }
       }
     } catch {
       // ignore (Safari private mode etc.)
@@ -165,8 +175,17 @@ export function TideBoard({
     try {
       const raw = localStorage.getItem("tidenow-favorite-sources")
       if (raw) {
+        const parsed = JSON.parse(raw) as string[]
+        // Same prune-stale-ids dance as hiddenIds above — a 'Favorites'
+        // tab that quietly counts disabled sources is the same bug as
+        // 'Hidden (1)' showing an empty list.
+        const valid = new Set(SOURCE_IDS)
+        const cleaned = parsed.filter((id) => valid.has(id))
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setFavoriteIds(new Set(JSON.parse(raw) as string[]))
+        setFavoriteIds(new Set(cleaned))
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem("tidenow-favorite-sources", JSON.stringify(cleaned))
+        }
       }
     } catch {
       // ignore
