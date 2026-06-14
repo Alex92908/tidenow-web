@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { getAllPosts, getPostBySlug } from "@/lib/posts"
+import { TranslateToggle } from "@/components/posts/TranslateToggle"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
 
@@ -158,7 +157,12 @@ export default async function PostPage({
 
       {/* Body */}
       <article className="prose prose-base dark:prose-invert max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-sky-500 prose-img:rounded-lg">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body}</ReactMarkdown>
+        <TranslateToggle
+          slug={post.slug}
+          postLocale={post.locale}
+          uiLocale={lang}
+          body={post.body}
+        />
       </article>
 
       {/* CTA: back to home */}
