@@ -143,6 +143,38 @@ export default async function PostsIndexPage({
           ))}
         </ol>
       )}
+
+      {/* Submission CTA — intentionally just an email line, not a form.
+          A real submission queue is wonderful AdSense suicide right now;
+          a "pitch me by email" line signals openness without turning the
+          site into a UGC content farm in the reviewer's eyes. */}
+      <section className="mt-16 pt-8 border-t border-gray-100 dark:border-white/[0.04] text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
+        {lang === "zh" ? (
+          <p>
+            想投稿?发邮件给{" "}
+            <a
+              href="mailto:alex.chu0206@gmail.com?subject=TideNow%20%E6%8A%95%E7%A8%BF"
+              className="text-sky-500 hover:underline"
+            >
+              alex.chu0206@gmail.com
+            </a>
+            ——每封都看。话题接近跨源热点、数据洞察、独立开发者经验、AI 工具实操都欢迎。
+          </p>
+        ) : (
+          <p>
+            Want to contribute? Email{" "}
+            <a
+              href="mailto:alex.chu0206@gmail.com?subject=TideNow%20pitch"
+              className="text-sky-500 hover:underline"
+            >
+              alex.chu0206@gmail.com
+            </a>
+            {" "}— I review every pitch. Topics close to cross-source
+            trends, data observations, indie hacking, and hands-on AI
+            tooling are all welcome.
+          </p>
+        )}
+      </section>
     </main>
   )
 }

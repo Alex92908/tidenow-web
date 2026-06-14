@@ -70,6 +70,7 @@ import * as awwwards from "./awwwards"
 import * as behance from "./behance"
 import * as bbcsport from "./bbcsport"
 import * as bilifood from "./bilifood"
+import * as tidenowPosts from "./tidenow-posts"
 // twitch source file kept in src/sources/ for future use, not registered here.
 
 export const sources = {
@@ -148,6 +149,10 @@ export const sources = {
   bbcsport,
   // Chinese food (Bilibili 美食区)
   bilifood,
+  // TideNow's own editorial posts — appears as just another source
+  // card. Lives at the end of the registry / source-id lists so it
+  // renders last by default; the user can pin or reorder freely.
+  "tidenow-posts": tidenowPosts,
 } as const
 
 export type SourceId = keyof typeof sources

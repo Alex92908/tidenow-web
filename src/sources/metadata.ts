@@ -357,6 +357,12 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-orange-500 to-red-400",
     interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
+  // ── TideNow editorial (lives in 'global' column, intentionally last) ──
+  "tidenow-posts": {
+    id: "tidenow-posts", icon: "✍️", column: "global",
+    accentColor: "bg-gradient-to-r from-sky-500 to-cyan-400",
+    interval: 60 * 60 * 1000, defaultCount: 6, expandCount: 20,
+  },
 }
 
 export const SOURCE_IDS = Object.keys(sourceMeta)
@@ -383,6 +389,8 @@ export const SOURCE_IDS_EN: string[] = [
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
+  // TideNow editorial — last by design (gets pinned by readers who care)
+  "tidenow-posts",
 ]
 
 // China-first order (default for zh locale)
@@ -406,4 +414,6 @@ export const SOURCE_IDS_ZH: string[] = [
   // AI
   "deepseek", "doubao", "qwen", "kimi",
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
+  // TideNow editorial — last by design (gets pinned by readers who care)
+  "tidenow-posts",
 ]
