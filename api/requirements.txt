@@ -4,3 +4,7 @@
 # (try/except wraps the import) and PyQt6 was only for the desktop GUI.
 requests>=2.28
 pyyaml>=6.0
+# Needed only when a TideNow user's BYOK provider is Anthropic — ForeSight's
+# native-SDK branch imports it. OpenAI-compatible providers (deepseek /
+# openai / zhipu) don't need it.
+anthropic>=0.40

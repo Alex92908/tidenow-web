@@ -16,7 +16,9 @@ import requests
 class LLM:
     def __init__(self, cfg: dict, mock: bool = False):
         self.base_url = cfg.get("base_url", "https://api.deepseek.com/v1").rstrip("/")
-        self.api_key = os.environ.get("FORESIGHT_API_KEY") or cfg.get("api_key", "")
+        # Caller-supplied key (TideNow BYOK request body) wins;
+        # FORESIGHT_API_KEY env is only a fallback for standalone CLI use.
+        self.api_key = cfg.get("api_key") or os.environ.get("FORESIGHT_API_KEY", "")
         self.model = cfg.get("model", "deepseek-chat")
         self.mock = mock or cfg.get("mock", False)
         self.temperature = cfg.get("temperature", 0.7)

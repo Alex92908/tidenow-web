@@ -40,14 +40,32 @@ calibration.LOG_PATH = os.path.join(tempfile.gettempdir(), "predictions.jsonl")
 from foresight.pipeline import predict_once  # noqa: E402
 
 
-def _llm_cfg_from_env() -> dict:
-    """Build the llm config dict from env vars instead of a YAML file. On
-    Vercel there's no persistent config.yaml; secrets live in project
-    env vars (set via the Vercel dashboard or `vercel env`)."""
+# Map TideNow's BYOK provider id → the ForeSight LLM config. ForeSight
+# reuses the SAME key the user already entered in TideNow, so there's no
+# separate FORESIGHT_API_KEY. The OpenAI-compatible providers (deepseek,
+# openai, zhipu) share one code path with different base_url/model;
+# anthropic uses ForeSight's native-SDK branch. Gemini (Google native)
+# and gemini-nano (on-device) can't drive ForeSight — the Node client
+# filters those out before we ever get here.
+_PROVIDER_CFG = {
+    "deepseek": {"base_url": "https://api.deepseek.com", "model": "deepseek-chat", "provider": "openai"},
+    "openai":   {"base_url": "https://api.openai.com/v1", "model": "gpt-4o-mini",  "provider": "openai"},
+    "zhipu":    {"base_url": "https://open.bigmodel.cn/api/paas/v4", "model": "glm-4-flash", "provider": "openai"},
+    "anthropic": {"base_url": "https://api.anthropic.com", "model": "claude-haiku-4-5-20251001", "provider": "anthropic"},
+}
+
+
+def _llm_cfg_from_body(provider: str, api_key: str) -> dict:
+    """Build the ForeSight llm config from the caller's BYOK credentials.
+    The key arrives in the request body (server-to-server from TideNow's
+    compose route) and is used for this single prediction only — never
+    stored. Mock mode is still available via env for local smoke tests."""
+    base = _PROVIDER_CFG.get(provider, _PROVIDER_CFG["deepseek"])
     return {
-        "base_url": os.environ.get("FORESIGHT_BASE_URL", "https://api.deepseek.com"),
-        "api_key": os.environ.get("FORESIGHT_API_KEY", ""),
-        "model": os.environ.get("FORESIGHT_MODEL", "deepseek-v4-flash"),
+        "base_url": base["base_url"],
+        "api_key": api_key,
+        "model": base["model"],
+        "provider": base["provider"],
         "temperature": float(os.environ.get("FORESIGHT_TEMPERATURE", "0.7")),
         "mock": os.environ.get("FORESIGHT_MOCK", "0") == "1",
     }
@@ -100,6 +118,14 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, {"error": "missing seed"})
             return
 
+        # ForeSight reuses the caller's BYOK key. Without one (and not in
+        # mock mode) there's nothing to drive the LLM with.
+        provider = (body.get("provider") or "deepseek").strip()
+        api_key = (body.get("apiKey") or "").strip()
+        if not api_key and os.environ.get("FORESIGHT_MOCK", "0") != "1":
+            self._send(400, {"error": "missing apiKey"})
+            return
+
         # All ForeSight predict_once kwargs are optional; we forward only
         # the ones the caller actually set so the function's own defaults
         # remain authoritative.
@@ -111,7 +137,7 @@ class handler(BaseHTTPRequestHandler):
         try:
             result = predict_once(
                 seed,
-                llm_cfg=_llm_cfg_from_env(),
+                llm_cfg=_llm_cfg_from_body(provider, api_key),
                 save_report=False,
                 **kwargs,
             )

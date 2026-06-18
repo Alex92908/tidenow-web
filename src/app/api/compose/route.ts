@@ -234,7 +234,8 @@ export async function POST(req: NextRequest) {
   if (foresight) {
     const lead = materials[0]
     const seed = lead.extra ? `${lead.title}（${lead.extra}）` : lead.title
-    const fs = await getForesight(seed)
+    // ForeSight reuses the user's own BYOK key — no separate provider key.
+    const fs = await getForesight(seed, { provider, apiKey })
     if (fs && fs.markdown) {
       foresightBlock = foresightContextBlock(fs, locale === "zh" ? "zh" : "en")
     }

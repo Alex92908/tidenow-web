@@ -18,32 +18,45 @@ export interface ForesightResult {
 }
 
 /**
- * Ask ForeSight for a prediction on a seed. Returns null on any failure
- * (missing config, timeout, engine error) so the caller can degrade
- * gracefully — a prediction is an enhancement to the article, never a
- * hard dependency.
+ * Ask ForeSight for a prediction on a seed. ForeSight reuses the SAME AI
+ * key the user already entered in TideNow (BYOK) — no separate
+ * provider key. Returns null on any failure (unsupported provider,
+ * timeout, engine error) so the caller can degrade gracefully — a
+ * prediction is an enhancement to the article, never a hard dependency.
  */
 export async function getForesight(
   seed: string,
+  byok: { provider: string; apiKey: string },
   opts: { domain?: string; signal?: AbortSignal } = {}
 ): Promise<ForesightResult | null> {
-  const token = process.env.FORESIGHT_INTERNAL_TOKEN
-  // If the integration isn't configured, treat foresight as simply
-  // unavailable rather than erroring the whole compose request.
-  if (!token) return null
+  // ForeSight's LLM client speaks OpenAI-compatible + Anthropic. Google
+  // Gemini (native API) and on-device Gemini Nano can't drive it, so
+  // those users simply get no prediction rather than an error.
+  if (byok.provider === "gemini" || byok.provider === "gemini-nano") return null
+  if (!byok.apiKey) return null
 
   // Call the Python function on the same deployment. We hit the absolute
   // URL because a relative fetch from a route handler has no base.
   const url = `${SITE_URL}/api/predict`
+  // Optional shared secret. When set (recommended in production) it stops
+  // strangers from POSTing seeds to burn your function minutes. When
+  // unset the endpoint still works — it does nothing useful without a
+  // valid AI key in the body anyway.
+  const token = process.env.FORESIGHT_INTERNAL_TOKEN
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${token}`,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ seed, domain: opts.domain ?? "auto" }),
+      body: JSON.stringify({
+        seed,
+        domain: opts.domain ?? "auto",
+        provider: byok.provider,
+        apiKey: byok.apiKey,
+      }),
       signal: opts.signal,
     })
     if (!res.ok) return null
