@@ -425,6 +425,20 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             </button>
           </div>
         )}
+        {/* Material-discipline hint. Picking many unrelated items forces
+            the AI to stitch them under a vague umbrella theme, which is
+            exactly what produces "on one hand / on the other hand" filler.
+            Surface a gentle nudge past 2 items. */}
+        {materials.length > 2 && (
+          <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-300 leading-snug">
+            <span aria-hidden>💡</span>
+            <span className="flex-1">
+              {locale === "zh"
+                ? `选了 ${materials.length} 条。素材越多越杂，文章越容易写成空泛议论。想要深度建议聚焦 1-2 条相关的。`
+                : `${materials.length} picked. More unrelated items push the article toward vague "on one hand…" filler — for depth, focus on 1-2 related ones.`}
+            </span>
+          </div>
+        )}
         <div className="h-[60vh] lg:h-auto lg:flex-1 lg:min-h-0">
           <TopicPicker
             initialData={initialData}
