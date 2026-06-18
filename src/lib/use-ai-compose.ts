@@ -9,6 +9,9 @@ interface ComposeArgs {
   customPrompt?: string
   materials: DraftMaterial[]
   locale: "en" | "zh"
+  /** Opt-in: route the lead material through the ForeSight prediction
+   *  engine and have the writer ground a forward-looking section in it. */
+  foresight?: boolean
 }
 
 interface ComposeState {
@@ -24,7 +27,7 @@ interface ComposeState {
 export function useAICompose() {
   const [state, setState] = useState<ComposeState>({ markdown: "", loading: false, error: null })
 
-  const generate = useCallback(async ({ style, customPrompt, materials, locale }: ComposeArgs) => {
+  const generate = useCallback(async ({ style, customPrompt, materials, locale, foresight }: ComposeArgs) => {
     if (materials.length === 0) {
       setState({ markdown: "", loading: false, error: "No materials selected" })
       return
@@ -61,6 +64,7 @@ export function useAICompose() {
           locale,
           style,
           customPrompt,
+          foresight: foresight ?? false,
           materials: materials.map((m) => ({
             sourceName: m.sourceName,
             title: m.title,

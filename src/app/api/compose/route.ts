@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { AIProvider } from "@/lib/ai-settings"
+import { getForesight, foresightContextBlock } from "@/lib/foresight-client"
 
 // Long-form companion to /api/summary. Same BYOK pattern (the key is sent
 // per-request from localStorage, never stored server-side), but with a
@@ -129,6 +130,10 @@ interface ComposeRequest {
   locale: "en" | "zh"
   style: "feature" | "deep" | "quick" | "list" | "personal" | "custom"
   customPrompt?: string
+  /** When true, run the lead material through the ForeSight prediction
+   *  engine and feed its calibrated analysis to the writer so the
+   *  article can ground a forward-looking section. */
+  foresight?: boolean
   materials: {
     sourceName: string
     title: string
@@ -213,12 +218,26 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 })
   }
-  const { provider, apiKey, locale, style, customPrompt, materials } = body
+  const { provider, apiKey, locale, style, customPrompt, materials, foresight } = body
   if (!provider || !apiKey) {
     return NextResponse.json({ error: "missing provider/apiKey" }, { status: 503 })
   }
   if (!materials?.length) {
     return NextResponse.json({ error: "no materials" }, { status: 400 })
+  }
+
+  // Optional ForeSight pass. We predict on the lead material only — running
+  // the engine on every item would multiply latency and most articles
+  // pivot on one main story anyway. Failure is silent: a missing prediction
+  // just means the article skips its forward-looking section.
+  let foresightBlock = ""
+  if (foresight) {
+    const lead = materials[0]
+    const seed = lead.extra ? `${lead.title}（${lead.extra}）` : lead.title
+    const fs = await getForesight(seed)
+    if (fs && fs.markdown) {
+      foresightBlock = foresightContextBlock(fs, locale === "zh" ? "zh" : "en")
+    }
   }
 
   const isZh = locale === "zh"
@@ -243,9 +262,20 @@ export async function POST(req: NextRequest) {
     })
     .join("\n\n")
 
+  // When ForeSight ran, append its analysis after the materials and tell
+  // the writer how to use it: as grounding for ONE forward-looking
+  // section, not as a fact to parrot. The engine's probability is
+  // calibrated, so the article can cite it, but it must stay clearly
+  // framed as a prediction, not reported fact.
+  const foresightInstr = foresightBlock
+    ? isZh
+      ? `\n\n${foresightBlock}\n\n请在文章中加入一段前瞻性分析，引用上面 ForeSight 的校准概率与判断，但必须明确标注这是"预测"而非既成事实。不要照搬分析摘要的措辞，用你自己的话融入正文。`
+      : `\n\n${foresightBlock}\n\nAdd one forward-looking section drawing on the ForeSight calibrated probability and reasoning above. Frame it explicitly as a prediction, not established fact. Don't copy the excerpt's wording — weave it into your prose.`
+    : ""
+
   const userPrompt = isZh
-    ? `以下是 ${materials.length} 条今日热点素材，请基于它们写文章：\n\n${materialBlock}\n\n现在开始写：`
-    : `Here are ${materials.length} trending items today. Use them to write the article:\n\n${materialBlock}\n\nBegin:`
+    ? `以下是 ${materials.length} 条今日热点素材，请基于它们写文章：\n\n${materialBlock}${foresightInstr}\n\n现在开始写：`
+    : `Here are ${materials.length} trending items today. Use them to write the article:\n\n${materialBlock}${foresightInstr}\n\nBegin:`
 
   const maxTokens = MAX_TOKENS_BY_STYLE[style] ?? 2000
 

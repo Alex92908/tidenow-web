@@ -49,6 +49,10 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // Output language for the AI — independent of the page locale. Defaults
   // to whatever the page locale is, but the user can flip it.
   const [outputLocale, setOutputLocale] = useState<"en" | "zh">(locale)
+  // ForeSight opt-in: when on, the lead material is run through the
+  // prediction engine and its calibrated analysis grounds a
+  // forward-looking section in the article.
+  const [useForesight, setUseForesight] = useState(false)
   // Source filter chips, lifted up so the auto-pick path can pre-select
   // the chips that materials came from.
   const [sourceFilter, setSourceFilter] = useState<Set<string>>(new Set())
@@ -317,7 +321,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
 
   function handleGenerate() {
     if (materials.length === 0) return
-    compose.generate({ style, customPrompt, materials, locale: outputLocale })
+    compose.generate({ style, customPrompt, materials, locale: outputLocale, foresight: useForesight })
   }
 
   const canSave = useMemo(() => markdown.trim().length > 0 || materials.length > 0, [markdown, materials])
@@ -358,6 +362,39 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             ))}
           </div>
         </div>
+        {/* ForeSight prediction toggle — when on, the lead trending item
+            is run through the prediction engine and the article grounds a
+            forward-looking section in its calibrated analysis. */}
+        <button
+          type="button"
+          onClick={() => setUseForesight((v) => !v)}
+          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] transition-colors ${
+            useForesight
+              ? "border-violet-300 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300"
+              : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-zinc-500 hover:border-gray-300 dark:hover:border-white/20"
+          }`}
+          title={
+            locale === "zh"
+              ? "用 ForeSight 预测引擎分析头条素材，在文章里加入前瞻判断"
+              : "Run the lead item through the ForeSight prediction engine to ground a forward-looking section"
+          }
+        >
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden>🔮</span>
+            {locale === "zh" ? "ForeSight 预测增强" : "ForeSight prediction"}
+          </span>
+          <span
+            className={`relative inline-block w-7 h-4 rounded-full transition-colors ${
+              useForesight ? "bg-violet-500" : "bg-gray-300 dark:bg-zinc-700"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
+                useForesight ? "translate-x-3" : ""
+              }`}
+            />
+          </span>
+        </button>
         <StylePicker value={style} customPrompt={customPrompt} onChange={(s, c) => { setStyle(s); if (c !== undefined) setCustomPrompt(c) }} locale={locale} />
         {autoPicked && materials.length > 0 && (
           <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-[11px] text-sky-700 dark:text-sky-300 leading-snug">
@@ -395,9 +432,18 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
           className="w-full px-3 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {compose.loading
-            ? locale === "zh" ? "✦ 生成中…" : "✦ Generating…"
+            ? useForesight
+              ? locale === "zh" ? "🔮 预测 + 生成中…" : "🔮 Predicting + writing…"
+              : locale === "zh" ? "✦ 生成中…" : "✦ Generating…"
             : locale === "zh" ? "✦ 一键生成" : "✦ Generate"}
         </button>
+        {useForesight && !compose.loading && (
+          <p className="text-[11px] text-violet-500 dark:text-violet-400 leading-snug">
+            {locale === "zh"
+              ? "🔮 已开启预测增强,生成会多花 20-40 秒"
+              : "🔮 Prediction on — generation takes 20-40s longer"}
+          </p>
+        )}
         {compose.error && (
           <p className="text-[11px] text-rose-500 leading-snug">{compose.error}</p>
         )}
