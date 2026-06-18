@@ -6,7 +6,10 @@
     "dev": "next dev --port 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "foresight:dev": "FORESIGHT_MOCK=1 python3 scripts/foresight-dev.py",
+    "foresight:dev:real": "python3 scripts/foresight-dev.py",
+    "dev:foresight": "FORESIGHT_PREDICT_URL=http://127.0.0.1:8787 next dev --port 3002"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.94.0",
