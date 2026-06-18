@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { AIProvider } from "@/lib/ai-settings"
 import { getForesight, foresightContextBlock } from "@/lib/foresight-client"
+import { extractArticles } from "@/lib/extract-article"
 
 // Long-form companion to /api/summary. Same BYOK pattern (the key is sent
 // per-request from localStorage, never stored server-side), but with a
@@ -226,6 +227,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no materials" }, { status: 400 })
   }
 
+  // Kick off article-body extraction immediately so it overlaps the
+  // (much slower) ForeSight call below instead of running after it.
+  // Extraction is best-effort: SPA / JS-rendered sources (Weibo, Douyin)
+  // come back empty and we fall back to title-only. Cap at 3 fetches to
+  // keep latency bounded.
+  const articlesPromise = extractArticles(materials.map((m) => m.url), 3)
+
   // Optional ForeSight pass. We predict on the lead material only — running
   // the engine on every item would multiply latency and most articles
   // pivot on one main story anyway. Failure is silent: a missing prediction
@@ -240,6 +248,9 @@ export async function POST(req: NextRequest) {
       foresightBlock = foresightContextBlock(fs, locale === "zh" ? "zh" : "en")
     }
   }
+
+  // By now extraction has had the ForeSight window to finish.
+  const articles = await articlesPromise
 
   const isZh = locale === "zh"
   const styleInstr =
@@ -259,6 +270,12 @@ export async function POST(req: NextRequest) {
       if (m.extra) lines.push(`   ${m.extra}`)
       lines.push(`   url: ${m.url}`)
       if (m.image) lines.push(`   image: ${m.image}`)
+      const art = articles[i]
+      if (art?.summary) lines.push(`   ${isZh ? "摘要" : "summary"}: ${art.summary}`)
+      if (art?.text) {
+        lines.push(`   ${isZh ? "正文节选" : "body excerpt"}:`)
+        lines.push(art.text.split("\n").map((l) => `     ${l}`).join("\n"))
+      }
       return lines.join("\n")
     })
     .join("\n\n")
@@ -270,8 +287,16 @@ export async function POST(req: NextRequest) {
   // framed as a prediction, not reported fact.
   const foresightInstr = foresightBlock
     ? isZh
-      ? `\n\n${foresightBlock}\n\n请在文章中加入一段前瞻性分析，引用上面 ForeSight 的校准概率与判断，但必须明确标注这是"预测"而非既成事实。不要照搬分析摘要的措辞，用你自己的话融入正文。`
-      : `\n\n${foresightBlock}\n\nAdd one forward-looking section drawing on the ForeSight calibrated probability and reasoning above. Frame it explicitly as a prediction, not established fact. Don't copy the excerpt's wording — weave it into your prose.`
+      ? `\n\n${foresightBlock}\n\n请在文章中加入一段前瞻性分析，用到上面的概率判断。严格遵守：
+- 上面的分析可能是中文，但你的输出语言以全文为准——若全文是中文就保持中文。
+- 绝对不要出现"ForeSight""预测引擎""舆情仿真"这类工具/方法名词，把判断自然融进行文。
+- 上面分析里若出现任何人名、网友发言、具体引述，那都是仿真生成的虚拟角色，不是真人——绝对不能当作真实人物写进文章，不能引用他们的名字或原话。只能用作"整体倾向/概率"层面的判断。
+- 明确这是一种"预判/可能性"，不是既成事实，用"或""可能""倾向于"这类措辞。`
+      : `\n\n${foresightBlock}\n\nAdd one forward-looking section using the probability above. Follow strictly:
+- The analysis above may be in Chinese, but your output language follows the article — if the article is English, write this section in English too. Never leave foreign-language fragments in.
+- Never name the tool or method ("ForeSight", "prediction engine", "opinion simulation"). Weave the judgment naturally into the prose.
+- Any person names, user quotes, or specific statements in the analysis above are SIMULATED virtual agents, not real people — never present them as real individuals, never cite their names or words. Use them only as aggregate sentiment / probability signal.
+- Frame it as a forecast / likelihood, not established fact — use hedged language ("may", "is likely to", "leans toward").`
     : ""
 
   const userPrompt = isZh
