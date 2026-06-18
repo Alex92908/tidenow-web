@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "foresight:dev": "FORESIGHT_MOCK=1 python3 scripts/foresight-dev.py",
-    "foresight:dev:real": "python3 scripts/foresight-dev.py",
+    "foresight:setup": "python3 -m venv .venv && .venv/bin/python -m pip install --upgrade pip && .venv/bin/python -m pip install -r api/requirements.txt",
+    "foresight:dev": "FORESIGHT_MOCK=1 .venv/bin/python scripts/foresight-dev.py",
+    "foresight:dev:real": ".venv/bin/python scripts/foresight-dev.py",
     "dev:foresight": "FORESIGHT_PREDICT_URL=http://127.0.0.1:8787 next dev --port 3002"
   },
   "dependencies": {
