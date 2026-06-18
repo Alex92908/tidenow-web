@@ -129,6 +129,16 @@ export default async function HomePage({
               <span className="text-sm leading-none">✍️</span>
               <span className="hidden sm:inline">{locale === "zh" ? "写文章" : "Write"}</span>
             </a>
+            {process.env.NEXT_PUBLIC_FORESIGHT_ENABLED !== "0" && (
+              <a
+                href={locale === "zh" ? "/zh/predict" : "/predict"}
+                title={locale === "zh" ? "ForeSight 预测" : "ForeSight Predict"}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+              >
+                <span className="text-sm leading-none">🔮</span>
+                <span className="hidden sm:inline">{locale === "zh" ? "预测" : "Predict"}</span>
+              </a>
+            )}
             <a
               href={feedbackHref}
               title={tFooter("feedback")}
