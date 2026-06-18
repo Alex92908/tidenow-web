@@ -53,12 +53,12 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // prediction engine and its calibrated analysis grounds a
   // forward-looking section in the article.
   //
-  // Gated behind a build-time flag. The engine needs a 60s function
-  // budget (Vercel Pro); on the current Hobby plan it would always time
-  // out at 10s, so the toggle stays hidden in production. Set
-  // NEXT_PUBLIC_FORESIGHT_ENABLED=1 (e.g. in .env.local) to surface it
-  // for local testing against `pnpm foresight:dev`.
-  const foresightEnabled = process.env.NEXT_PUBLIC_FORESIGHT_ENABLED === "1"
+  // Shown by default now that the deployment runs a 60s function budget
+  // (Hobby supports maxDuration 60). It's still behind a kill switch:
+  // set NEXT_PUBLIC_FORESIGHT_ENABLED=0 to hide the toggle if the engine
+  // turns out to time out in practice (ForeSight ~20-40s + the article
+  // ~20-50s run sequentially and a slow run can exceed 60s).
+  const foresightEnabled = process.env.NEXT_PUBLIC_FORESIGHT_ENABLED !== "0"
   const [useForesight, setUseForesight] = useState(false)
   // Source filter chips, lifted up so the auto-pick path can pre-select
   // the chips that materials came from.
