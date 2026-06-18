@@ -37,7 +37,10 @@ export async function getForesight(
 
   // Call the Python function on the same deployment. We hit the absolute
   // URL because a relative fetch from a route handler has no base.
-  const url = `${SITE_URL}/api/predict`
+  // FORESIGHT_PREDICT_URL overrides the target for local dev — point it
+  // at a standalone predict.py server (see scripts/foresight-dev.py)
+  // since `pnpm dev` can't run Vercel Python functions itself.
+  const url = process.env.FORESIGHT_PREDICT_URL || `${SITE_URL}/api/predict`
   // Optional shared secret. When set (recommended in production) it stops
   // strangers from POSTing seeds to burn your function minutes. When
   // unset the endpoint still works — it does nothing useful without a
