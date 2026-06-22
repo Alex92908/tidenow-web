@@ -42,7 +42,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const fs = await getForesight(seed.trim(), { provider, apiKey }, { domain })
+  let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain })
+
+  // The 'market' (quant) backend needs a price feed (akshare or an
+  // uploaded CSV), neither of which exists in this deployment — so a
+  // market route always errors with "需要数据源". When auto-routing lands
+  // there, silently redo the prediction as 'scenario' (the general
+  // narrative-forecast backend), which handles company/price events fine
+  // without market data. This costs one extra call only in that case.
+  if (fs && fs.domain === "market") {
+    const retried = await getForesight(seed.trim(), { provider, apiKey }, { domain: "scenario" })
+    if (retried) fs = retried
+  }
+
   if (!fs) {
     return NextResponse.json(
       { error: "prediction failed — check your API key and try again" },

@@ -19,11 +19,14 @@ interface Props {
 
 // Domain options mirror ForeSight's router. "auto" lets the engine
 // classify; the rest let a user force a methodology.
+// 'market' is intentionally omitted — its quant backend needs a live
+// price feed (akshare / CSV) that this deployment doesn't have, so it
+// always errors. Auto-routing to market is caught server-side and redone
+// as scenario; users just can't pick it directly.
 const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "auto", en: "Auto", zh: "自动" },
   { id: "opinion", en: "Opinion / buzz", zh: "舆情/口碑" },
   { id: "scenario", en: "Geopolitics / tech", zh: "军事/外交/科技" },
-  { id: "market", en: "Markets", zh: "股票/期货" },
   { id: "sports", en: "Sports", zh: "体育/电竞" },
   { id: "macro", en: "Macro", zh: "宏观经济" },
   { id: "trend", en: "Consumer trend", zh: "消费趋势" },
