@@ -64,12 +64,26 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
 
     enriched_seed = seed
     creative = fiction or mode in ("screenplay", "novel")  # 创作模式不联网（搜索对虚构无意义且会注入噪声）
+    # search_status is surfaced in the report so callers (incl. the web /predict
+    # page) can SEE whether live search actually fired in this environment —
+    # otherwise "stale-looking" output is indistinguishable from a search that
+    # silently failed (e.g. blocked from a US datacenter).
+    search_status = {"attempted": False, "ok": False, "count": 0, "dates": []}
     if not llm.mock and not creative:
         notify("搜索实时信息…")
-        web_context = search.search_for_seed(seed)
+        search_status["attempted"] = True
+        query = seed[:120].replace("\n", " ")
+        try:
+            results = search.web_search(query)
+        except Exception:
+            results = []
+        web_context = search.format_context(results)
         if web_context:
             enriched_seed = f"{seed}\n\n{web_context}"
-            notify(f"已注入 {len(web_context)} 字搜索上下文")
+            search_status["ok"] = True
+            search_status["count"] = len(results)
+            search_status["dates"] = [r.get("date", "")[:16] for r in results if r.get("date")]
+            notify(f"已注入 {len(web_context)} 字搜索上下文（{len(results)} 条）")
         else:
             notify("未获取到搜索结果，仅用种子信息")
 
@@ -106,6 +120,11 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
                    "boxoffice": boxoffice, "nature": nature}.get(d, scenario)
         result = backend.run(llm, enriched_seed, verbose=False)
         question = result.get("key_question", seed[:80])
+
+    # Stash the search status on the result so the report (and the API
+    # return value) can show whether live search fired.
+    if isinstance(result, dict):
+        result["search_status"] = search_status
 
     pid = None
     if not result.get("error") and not result.get("no_prediction"):

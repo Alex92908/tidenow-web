@@ -2,16 +2,50 @@
 from __future__ import annotations
 
 import time
+from email.utils import parsedate_to_datetime
 
 from .backends.common import to_prob
 
 
+def _newest_date(dates: list) -> str:
+    """Find the chronologically newest among RFC822 date strings (e.g.
+    'Thu, 25 Dec 2025 08:00:00 GMT'). Returns a short 'YYYY-MM-DD' string,
+    or '' if none parse. String max() would compare alphabetically and
+    pick the wrong one, hence real date parsing."""
+    best = None
+    for d in dates:
+        if not d:
+            continue
+        try:
+            dt = parsedate_to_datetime(d)
+        except (TypeError, ValueError):
+            continue
+        if dt and (best is None or dt > best):
+            best = dt
+    return best.strftime("%Y-%m-%d") if best else ""
+
+
 def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
+    # Search transparency line: shows whether live web search actually ran
+    # and injected fresh context, so a stale-looking answer can be told
+    # apart from a silently-failed search.
+    ss = result.get("search_status") if isinstance(result, dict) else None
+    if ss and ss.get("attempted"):
+        if ss.get("ok"):
+            newest = _newest_date(ss.get("dates") or [])
+            date_note = f"，最新 {newest}" if newest else ""
+            search_line = f"- 🌐 实时搜索：已联网，注入 {ss.get('count', 0)} 条结果{date_note}"
+        else:
+            search_line = "- 🌐 实时搜索：本次未获取到结果，仅基于模型知识（数据可能滞后）"
+    else:
+        search_line = ""
+
     lines = [
         f"# ForeSight 预测报告",
         f"",
         f"- 时间：{time.strftime('%Y-%m-%d %H:%M')}",
         f"- 路由：`{route['domain']}`（{route.get('reason', '')}）",
+        search_line,
         f"- 预测ID：`{pid}`（用 `resolve {pid} 1|0` 事后判定）" if pid else "",
         f"",
         f"## 种子信息",
