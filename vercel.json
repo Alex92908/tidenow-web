@@ -10,7 +10,6 @@
   ],
   "functions": {
     "api/predict.py": {
-      "runtime": "@vercel/python@4",
       "memory": 1024,
       "maxDuration": 60,
       "includeFiles": "lib/foresight/**"
