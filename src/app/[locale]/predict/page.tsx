@@ -17,8 +17,8 @@ export async function generateMetadata({
   const title = locale === "zh" ? "🔮 ForeSight 预测 | TideNow" : "🔮 ForeSight Predict | TideNow"
   const description =
     locale === "zh"
-      ? "描述一个未来事件,ForeSight 自动路由到对应方法论(情景树/舆情仿真/量化/基率等),给出校准概率与分析。"
-      : "Describe a future event. ForeSight routes it to the right methodology (scenario trees, opinion simulation, quant signals, base rates) and returns a calibrated probability with analysis."
+      ? "描述一个未来事件,ForeSight 自动路由到对应方法论(情景树/舆情仿真/基率锚定/区间预测等),给出校准概率与分析。"
+      : "Describe a future event. ForeSight routes it to the right methodology (scenario trees, opinion simulation, base-rate anchoring, interval forecasts) and returns a calibrated probability with analysis."
   const canonical = locale === "zh" ? `${SITE_URL}/zh/predict` : `${SITE_URL}/predict`
   return {
     title,
@@ -62,8 +62,8 @@ export default async function PredictPage({
       </h1>
       <p className="text-sm text-gray-500 dark:text-zinc-400 mb-8 leading-relaxed">
         {lang === "zh"
-          ? "输入一个未来事件,系统自动选择方法论(情景树 / 舆情仿真 / 量化信号 / 基率锚定 / 区间预测…)给出校准概率。用你自己的 AI key,概率仅供参考。"
-          : "Enter a future event. The engine picks a methodology (scenario trees / opinion simulation / quant signals / base-rate anchoring / interval forecasts…) and returns a calibrated probability. Uses your own AI key; the number is for reference."}
+          ? "输入一个未来事件,系统自动选择方法论(情景树 / 舆情仿真 / 基率锚定 / 区间预测…)给出校准概率。用你自己的 AI key,概率仅供参考。"
+          : "Enter a future event. The engine picks a methodology (scenario trees / opinion simulation / base-rate anchoring / interval forecasts…) and returns a calibrated probability. Uses your own AI key; the number is for reference."}
       </p>
 
       <PredictApp locale={lang} />
