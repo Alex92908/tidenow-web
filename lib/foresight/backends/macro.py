@@ -16,9 +16,11 @@ MACRO_PROMPT = """你是一个宏观经济分析师。注意：你的训练数�
 要求：
 1. 识别目标指标与预测期限；信息不足则在 "error" 说明
 2. 给出你所知的最近锚点数值，并明确标注"该数据截至何时、可能已过期"
-3. 输出区间预测（悲观/基准/乐观三档，各自概率，总和=1.0）
+3. 输出区间预测（悲观/基准/乐观三档，各自概率，总和=1.0），每档给一句"为何是这个区间"的理由
 4. 列出 2-3 个会改变判断的先行数据（如下月 PMI、央行会议）
 5. 提炼可判定的核心问题（含数值阈值和期限）
+6. 给出置信度（高/中/低）+ 2-3 条关键假设 + 一句"什么会改变判断"
+7. 若上方种子带有【实时搜索结果】，引用其中数据时请用（来源：标题）标注
 
 只返回 JSON：
 {{
@@ -26,13 +28,16 @@ MACRO_PROMPT = """你是一个宏观经济分析师。注意：你的训练数�
   "indicator": "...",
   "anchor": {{"value": "...", "as_of": "...", "staleness_warning": "..."}},
   "ranges": [
-    {{"name": "悲观", "range": "...", "probability": 0.2}},
-    {{"name": "基准", "range": "...", "probability": 0.6}},
-    {{"name": "乐观", "range": "...", "probability": 0.2}}
+    {{"name": "悲观", "range": "...", "probability": 0.2, "rationale": "..."}},
+    {{"name": "基准", "range": "...", "probability": 0.6, "rationale": "..."}},
+    {{"name": "乐观", "range": "...", "probability": 0.2, "rationale": "..."}}
   ],
   "leading_data": ["...", "..."],
   "key_question": "X月公布的Y指标是否高于Z？",
-  "key_question_probability": 0.6
+  "key_question_probability": 0.6,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
+  "what_would_change_my_mind": "..."
 }}
 """
 
@@ -60,5 +65,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "leading_data": data.get("leading_data", []),
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
+        "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "LLM 锚点数据可能过期，发布前务必核实最新读数与市场一致预期（如 Wind/财新调查中值）。",
     }

@@ -18,6 +18,8 @@ ELECTION_PROMPT = """你是一个选举预测分析师，遵循民调聚合方�
 3. 给出该国家/该类选举的历史民调误差幅度（如美国大选州级民调误差约±3-4个百分点），并说明误差通常偏向哪方（若有系统性模式）
 4. 输出各候选人/选项的获胜概率（总和=1.0）：从民调锚点出发，按误差带和剩余时间展开
 5. 提炼可判定的核心问题
+6. 给出置信度（高/中/低）+ 2-3 条关键假设；每个候选人给一句概率理由
+7. 若上方种子带有【实时搜索结果】，引用民调数据时请用（来源：标题）标注
 
 只返回 JSON：
 {{
@@ -25,9 +27,11 @@ ELECTION_PROMPT = """你是一个选举预测分析师，遵循民调聚合方�
   "race": "...",
   "poll_anchor": {{"value": "...", "as_of": "...", "staleness_warning": "..."}},
   "historical_polling_error": "...",
-  "outcomes": [{{"name": "...", "probability": 0.5}}],
+  "outcomes": [{{"name": "...", "probability": 0.5, "rationale": "..."}}],
   "key_question": "X年X月选举中A是否获胜？",
   "key_question_probability": 0.5,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
   "what_would_change_my_mind": "..."
 }}
 """
@@ -54,6 +58,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "outcomes": outcomes,
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
         "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "民调锚点可能已过期，务必用最新民调聚合（如 538/RCP 类站点）覆盖；临近选举日民调误差仍可达数个百分点。",
     }

@@ -23,17 +23,22 @@ SPORTS_PROMPT = """你是一个克制的体育赛事分析师，遵循基率优�
 要求：
 1. 识别比赛双方与赛事类型；若信息不足以判断是哪场比赛，在 "error" 字段说明
 2. 列出你依据的基率因素（主场优势、历史交锋、近期状态等），并标注哪些是你确定知道的、哪些是猜测
-3. 给出各结果的概率（总和=1.0）；若提供了赔率隐含概率，以它为锚点，偏离不超过±8个百分点并说明理由
+3. 给出各结果的概率（总和=1.0）及一句理由；若提供了赔率隐含概率，以它为锚点，偏离不超过±8个百分点并说明理由
 4. 给出可判定的核心问题
+5. 给出置信度（高/中/低）+ 2-3 条关键假设 + 一句"什么会改变判断"
+6. 若上方种子带有【实时搜索结果】，引用阵容/伤病/状态时请用（来源：标题）标注
 
 只返回 JSON：
 {{
   "error": null,
   "match": "A vs B（赛事名）",
   "base_rate_factors": [{{"factor": "...", "certainty": "确定|猜测"}}],
-  "outcomes": [{{"name": "主胜", "probability": 0.45}}, {{"name": "平局", "probability": 0.27}}, {{"name": "客胜", "probability": 0.28}}],
+  "outcomes": [{{"name": "主胜", "probability": 0.45, "rationale": "..."}}, {{"name": "平局", "probability": 0.27, "rationale": "..."}}, {{"name": "客胜", "probability": 0.28, "rationale": "..."}}],
   "key_question": "X月X日比赛中A是否获胜？",
-  "key_question_probability": 0.45
+  "key_question_probability": 0.45,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
+  "what_would_change_my_mind": "..."
 }}
 """
 
@@ -60,6 +65,8 @@ TOURNAMENT_PROMPT = """你是一个克制的体育赛事分析师，遵循基率
   ],
   "key_question": "X赛事的冠军是否为Y？",
   "key_question_probability": 0.25,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
   "what_would_change_my_mind": "..."
 }}
 """
@@ -108,6 +115,9 @@ def _run_match(llm, seed: str, odds: str | None, verbose: bool) -> dict:
         "implied_from_odds": anchor,
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
+        "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "LLM 无实时阵容/伤病数据；长期跑赢博彩赔率几乎不可能，本结果用于'不显著差于赔率'的参考，不构成投注建议。",
     }
 
@@ -143,6 +153,8 @@ def _run_tournament(llm, seed: str, verbose: bool) -> dict:
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability",
                                 top["probability"] if top else 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
         "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "LLM 无实时赛事数据（伤病/状态/签表）；锦标赛预测不确定性极高，概率仅反映赛前基率评估。",
     }

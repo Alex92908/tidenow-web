@@ -20,6 +20,8 @@ NATURE_PROMPT = """你是一个自然事件分析师，严格遵循科学边界�
 - "earthquake_shortterm"：预测具体时间地点的地震 → 在 honest_note 明确说明短期地震预测在科学上不可行，只给该区域长期年化基率
 
 第二步：在科学允许范围内给出基率预测与概率。
+第三步：若为 seasonal 类，额外给出置信度（高/中/低）、2-3 条关键假设、一句"什么会改变判断"；
+若上方种子带有【实时搜索结果】，引用 ENSO/气象台数据时请用（来源：标题）标注。
 
 只返回 JSON：
 {{
@@ -28,7 +30,10 @@ NATURE_PROMPT = """你是一个自然事件分析师，严格遵循科学边界�
   "climatology_base_rate": "...",
   "modulating_factors": ["..."],
   "key_question": "（仅 seasonal 类给出可判定问题；其他类可为 null）",
-  "key_question_probability": null
+  "key_question_probability": null,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
+  "what_would_change_my_mind": "..."
 }}
 """
 
@@ -51,5 +56,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "key_question": kq or "（该子类型不产生可判定预测）",
         "probability": data.get("key_question_probability", 0.5),
         "no_prediction": no_prediction,
+        "confidence": "" if no_prediction else data.get("confidence", ""),
+        "key_assumptions": [] if no_prediction else data.get("key_assumptions", []),
+        "what_would_change_my_mind": "" if no_prediction else data.get("what_would_change_my_mind", ""),
         "caveat": "短期天气请以气象台数值预报为准；任何声称能预测具体地震的说法都不科学。",
     }

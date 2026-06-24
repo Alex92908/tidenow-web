@@ -17,6 +17,9 @@ SCENARIO_PROMPT = """你是一个遵循超级预测方法论的分析师。针�
 2. 生成 2-4 个互斥情景，概率总和为 1.0，概率要从基率出发再根据本案细节调整
 3. 每个情景列出 2-3 个可观测的先行指标（未来几周可以验证的信号）
 4. 提炼一个可明确判定真假的核心预测问题（含时间期限），并给出你的概率
+5. 给出本次预测的置信度（高/中/低）：证据充分、基率清晰→高；信息稀缺、纯推测→低
+6. 列出 2-4 条本预测所依赖的关键假设（一旦这些假设不成立，结论就会变）
+7. 若上方种子信息里带有【实时搜索结果】，引用其中事实时请在该判断后用（来源：标题）标注
 
 事件：
 {seed}
@@ -29,6 +32,8 @@ SCENARIO_PROMPT = """你是一个遵循超级预测方法论的分析师。针�
   ],
   "key_question": "未来X天内，是否……？",
   "key_question_probability": 0.35,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
   "what_would_change_my_mind": "..."
 }}
 """
@@ -56,6 +61,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "scenarios": scenarios,
         "key_question": data.get("key_question", ""),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
         "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "LLM 的地缘/科技预测易受训练语料叙事影响；建议与 Metaculus / Polymarket 同题赔率对照后再采信。",
     }

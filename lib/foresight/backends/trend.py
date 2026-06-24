@@ -18,6 +18,8 @@ TREND_PROMPT = """你是一个消费与生活方式趋势分析师，使用技�
 3. 给出 3 / 6 / 12 个月的展望（各一句话 + 热度走向：升温/持平/降温）
 4. 警惕"昙花一现"模式：判断它更像持久趋势还是短期热点，并给出依据
 5. 提炼可判定的核心问题（含期限）
+6. 给出置信度（高/中/低）+ 2-3 条关键假设 + 一句"什么会改变判断"
+7. 若上方种子带有【实时搜索结果】，引用销量/搜索指数时请用（来源：标题）标注
 
 只返回 JSON：
 {{
@@ -31,7 +33,10 @@ TREND_PROMPT = """你是一个消费与生活方式趋势分析师，使用技�
   ],
   "fad_or_trend": {{"verdict": "持久趋势|短期热点|待观察", "reason": "..."}},
   "key_question": "未来X个月该趋势是否……？",
-  "key_question_probability": 0.5
+  "key_question_probability": 0.5,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
+  "what_would_change_my_mind": "..."
 }}
 """
 
@@ -52,5 +57,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "fad_or_trend": data.get("fad_or_trend", {}),
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
+        "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "趋势判断基于公开叙事，可能滞后于实际数据；建议与搜索指数/销量数据交叉验证。",
     }

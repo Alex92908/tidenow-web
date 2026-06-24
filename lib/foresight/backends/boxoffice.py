@@ -18,6 +18,8 @@ BOXOFFICE_PROMPT = """你是一个票房分析师，使用对标影片法。注�
 3. 由对标构造三档票房区间（低/中/高）及概率（总和=1.0），说明本片相对对标的上调/下调理由
 4. 列出 2-3 个上映前可观测的先行指标（想看数、预售、口碑解禁）
 5. 提炼可判定的核心问题（含票房阈值）
+6. 给出置信度（高/中/低）+ 2-3 条关键假设 + 一句"什么会改变判断"；每档区间给一句理由
+7. 若上方种子带有【实时搜索结果】，引用想看数/预售时请用（来源：标题）标注
 
 只返回 JSON：
 {{
@@ -25,10 +27,13 @@ BOXOFFICE_PROMPT = """你是一个票房分析师，使用对标影片法。注�
   "title": "...",
   "market": "...",
   "comparables": [{{"title": "...", "gross": "...", "note": "..."}}],
-  "ranges": [{{"name": "低", "range": "...", "probability": 0.25}}, {{"name": "中", "range": "...", "probability": 0.5}}, {{"name": "高", "range": "...", "probability": 0.25}}],
+  "ranges": [{{"name": "低", "range": "...", "probability": 0.25, "rationale": "..."}}, {{"name": "中", "range": "...", "probability": 0.5, "rationale": "..."}}, {{"name": "高", "range": "...", "probability": 0.25, "rationale": "..."}}],
   "leading_indicators": ["...", "..."],
   "key_question": "该片最终票房是否超过X亿？",
-  "key_question_probability": 0.5
+  "key_question_probability": 0.5,
+  "confidence": "高|中|低",
+  "key_assumptions": ["...", "..."],
+  "what_would_change_my_mind": "..."
 }}
 """
 
@@ -55,5 +60,8 @@ def run(llm, seed: str, verbose: bool = True) -> dict:
         "leading_indicators": data.get("leading_indicators", []),
         "key_question": data.get("key_question", seed[:60]),
         "probability": data.get("key_question_probability", 0.5),
+        "confidence": data.get("confidence", ""),
+        "key_assumptions": data.get("key_assumptions", []),
+        "what_would_change_my_mind": data.get("what_would_change_my_mind", ""),
         "caveat": "对标片票房数据可能过期；上映后请用想看数/预售/首日排片实测数据覆盖此预测。",
     }

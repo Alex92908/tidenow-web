@@ -59,9 +59,29 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
 
     elif b == "swarm":
         lines += ["## 舆情仿真结果", ""]
+        # Show who the simulated crowd was — the credibility of an
+        # opinion simulation rests entirely on persona diversity, so a
+        # report that hides the cast asks for blind trust.
+        personas = result.get("personas", [])
+        if personas:
+            lines += ["### 模拟人群构成", ""]
+            for p in personas[:12]:
+                name = p.get("name", "")
+                age = p.get("age", "")
+                bg = p.get("background", "")
+                bias = p.get("stance_bias", "")
+                bias_note = f"，倾向：{bias}" if bias else ""
+                lines.append(f"- **{name}**（{age}岁，{bg}{bias_note}）")
+            lines.append("")
+        lines += ["### 立场演化", ""]
         for h in result["evolution"]:
             dist = "  ".join(f"{k} {v}" for k, v in h["distribution"].items())
             lines.append(f"- 第 {h['round']} 轮：{dist}")
+        # Final distribution as a clean split, not just the dominant one.
+        fd = result.get("final_distribution", {})
+        if fd:
+            split = "　".join(f"{k} {to_prob(v):.0%}" for k, v in sorted(fd.items(), key=lambda x: -x[1]))
+            lines += ["", f"**最终分布：** {split}"]
         lines += ["", f"**最终主导立场：{result['dominant_stance']}（{to_prob(result.get('probability')):.0%}）**", "",
                   "### 抽样观点"]
         lines += [f"- {c}" for c in result.get("sample_comments", [])]
@@ -85,8 +105,7 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                 lines.append("先行指标：" + "；".join(inds))
             lines.append("")
         lines += [f"**核心问题：** {result['key_question']}",
-                  f"**概率：{to_prob(result.get('probability')):.0%}**", "",
-                  f"**什么会让我改变判断：** {result.get('what_would_change_my_mind', '—')}"]
+                  f"**概率：{to_prob(result.get('probability')):.0%}**"]
 
     elif b == "sports" and result.get("mode") == "tournament":
         lines += ["## 🏆 锦标赛预测", "",
@@ -97,8 +116,7 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
         lines += ["", "### 夺冠概率"]
         for c in result.get("contenders", []):
             lines.append(f"- **{c.get('name','')}**：{to_prob(c.get('probability')):.0%} — {c.get('rationale','')}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）",
-                  f"**什么会改变判断：** {result.get('what_would_change_my_mind','—')}"]
+        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
 
     elif b == "sports":
         lines += ["## 赛事分析", "", f"**比赛：** {result.get('match','')}", "", "### 基率因素"]
@@ -106,7 +124,8 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
             lines.append(f"- {f0.get('factor','')}（{f0.get('certainty','')}）")
         lines += ["", "### 结果概率"]
         for o in result.get("outcomes", []):
-            lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}")
+            rat = f" — {o['rationale']}" if o.get("rationale") else ""
+            lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}{rat}")
         if result.get("implied_from_odds"):
             lines.append(f"\n赔率隐含概率（锚点）：{result['implied_from_odds']}")
         lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
@@ -116,7 +135,8 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
         lines += ["## 宏观区间预测", "", f"**指标：** {result.get('indicator','')}",
                   f"**锚点：** {a.get('value','?')}（截至 {a.get('as_of','?')}；{a.get('staleness_warning','')}）", ""]
         for r in result.get("ranges", []):
-            lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}")
+            rat = f" — {r['rationale']}" if r.get("rationale") else ""
+            lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}{rat}")
         ld = result.get("leading_data", [])
         if ld:
             lines += ["", "先行数据：" + "；".join(str(x) for x in ld)]
@@ -138,9 +158,9 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                   f"**民调锚点：** {a.get('value','?')}（截至 {a.get('as_of','?')}；{a.get('staleness_warning','')}）",
                   f"**历史民调误差：** {result.get('historical_polling_error','')}", "", "### 获胜概率"]
         for o in result.get("outcomes", []):
-            lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）",
-                  f"**什么会改变判断：** {result.get('what_would_change_my_mind','—')}"]
+            rat = f" — {o['rationale']}" if o.get("rationale") else ""
+            lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}{rat}")
+        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
 
     elif b == "boxoffice":
         lines += ["## 票房预测（对标影片法）", "", f"**影片：** {result.get('title','')}（{result.get('market','')}）",
@@ -149,7 +169,8 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
             lines.append(f"- {c.get('title','')}：{c.get('gross','')}（{c.get('note','')}）")
         lines += ["", "### 票房区间"]
         for r in result.get("ranges", []):
-            lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}")
+            rat = f" — {r['rationale']}" if r.get("rationale") else ""
+            lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}{rat}")
         li = result.get("leading_indicators", [])
         if li:
             lines += ["", "先行指标：" + "；".join(str(x) for x in li)]
@@ -286,6 +307,29 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                   f"**胜率 {to_prob(result.get('probability')):.0%} — 裁决：{result.get('verdict','')}**", "",
                   f"**结构性天花板：** {result.get('structural_ceiling','')}",
                   f"**其他路径为何失败：** {result.get('why_others_fail','')}"]
+
+    # Universal forecast-quality footer — rendered for ANY backend that
+    # emits these fields, so every report gains a confidence band, a
+    # "what would change my mind", and the key assumptions the estimate
+    # rests on. Backends fill them via their prompts; absent fields are
+    # skipped (graceful for creative / no-prediction modes).
+    meta = []
+    conf = result.get("confidence")
+    if conf:
+        label = {"low": "低", "medium": "中", "high": "高"}.get(str(conf).strip().lower(), str(conf))
+        meta.append(f"- **置信度：** {label}")
+    wwcm = result.get("what_would_change_my_mind")
+    if wwcm:
+        meta.append(f"- **什么会改变判断：** {wwcm}")
+    ka = result.get("key_assumptions")
+    if ka:
+        if isinstance(ka, list):
+            meta.append("- **关键假设：**")
+            meta += [f"  - {a}" for a in ka if a]
+        else:
+            meta.append(f"- **关键假设：** {ka}")
+    if meta:
+        lines += ["", "### 🎯 预测质量"] + meta
 
     if result.get("caveat"):
         lines += ["", "---", f"⚠️ {result['caveat']}"]
