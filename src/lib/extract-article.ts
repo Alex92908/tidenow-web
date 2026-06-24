@@ -11,8 +11,11 @@ import { myFetch } from "@/lib/fetch"
 // empty for JS-rendered SPAs (Weibo/Douyin search pages, some apps) —
 // the caller degrades to title-only for those.
 
-const MAX_CHARS = 1200
-const FETCH_TIMEOUT_MS = 5000
+// ~2500 chars ≈ 1500-1800 zh chars / ~400 en words of real body text per
+// article — enough substance for the writer to ground a long piece in
+// facts instead of padding. Was 1200, which starved Feature-length output.
+const MAX_CHARS = 2500
+const FETCH_TIMEOUT_MS = 6000
 
 export interface ExtractedArticle {
   /** Cleaned main-body text, capped at MAX_CHARS. Empty if extraction
@@ -91,13 +94,15 @@ export async function extractArticle(url: string): Promise<ExtractedArticle> {
 }
 
 /**
- * Extract several articles in parallel with a hard ceiling on how many we
- * bother fetching (the lead items matter most and each fetch costs
- * latency). Order is preserved; failed extractions come back as empty.
+ * Extract article bodies in parallel. By default extracts ALL given urls
+ * (callers pass the count they actually want — the compose flow passes
+ * every material the user picked). `limit` exists as a safety ceiling for
+ * any future caller that hands in an unbounded list. Order is preserved;
+ * failed extractions come back as empty so title-only fallback still works.
  */
 export async function extractArticles(
   urls: string[],
-  limit = 3
+  limit = urls.length
 ): Promise<ExtractedArticle[]> {
   const targets = urls.slice(0, limit)
   const rest = urls.slice(limit).map(() => ({ text: "", summary: "" }))

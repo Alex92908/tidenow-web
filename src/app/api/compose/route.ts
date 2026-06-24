@@ -165,7 +165,8 @@ const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
 - 拒绝「据某机构数据」「业内人士透露」「相关报告显示」这类填充式信源
 - 拒绝「让我们拭目以待」「未来可期」「值得期待」「总而言之」「综上所述」这类套话
 - 拒绝「随着...的发展」「在...的背景下」这类万能开头
-- 如果素材信息不足以支撑 1800 字真材实料，就写 800-1200 字，质量优先
+- 充分利用每条素材的「正文节选」——把里面的具体事实、数字、引述都用上，不要只看标题
+- 只有当所有素材的正文都很单薄时才写短；正文充足时应写满 1800-3000 字
 
 **Markdown 要求**：
 - 一级标题 # 一个，二级标题 ## 至少 3 个（内容相关，不是结构词）
@@ -197,7 +198,8 @@ const STYLE_INSTRUCTIONS_EN: Record<string, string> = {
 - Never plug filler attribution like "according to industry sources" / "reportedly" / "analysts say"
 - Never end with "Time will tell" / "Stay tuned" / "In conclusion" / "Only time will show"
 - Never open with "In the era of..." / "As [X] continues to grow..."
-- If materials don't justify 1800 words honestly, write 800-1200. Quality over word count.
+- Fully mine each material's "body excerpt" — use the specific facts, numbers, and quotes in it, not just the headline.
+- Only write short when every material's body is genuinely thin; with rich bodies, fill the 1800-3000 word range.
 
 **Markdown**:
 - One # H1, at least 3 ## subheadings (content-specific, not flow labels)
@@ -232,7 +234,11 @@ export async function POST(req: NextRequest) {
   // Extraction is best-effort: SPA / JS-rendered sources (Weibo, Douyin)
   // come back empty and we fall back to title-only. Cap at 3 fetches to
   // keep latency bounded.
-  const articlesPromise = extractArticles(materials.map((m) => m.url), 3)
+  // Extract bodies for EVERY material the user picked — they chose them,
+  // so they all feed the writer. Capped at 5 by the picker (MAX_SELECTED)
+  // and extraction runs in parallel, so the latency is bounded by the
+  // single slowest fetch, not the sum.
+  const articlesPromise = extractArticles(materials.map((m) => m.url), materials.length)
 
   // Optional ForeSight pass. We predict on the lead material only — running
   // the engine on every item would multiply latency and most articles
