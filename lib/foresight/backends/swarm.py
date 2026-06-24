@@ -13,25 +13,32 @@ import random
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
-PERSONA_PROMPT = """根据以下事件，生成 {n} 个差异化的虚拟人物画像（persona），他们将参与对该事件的讨论。
-人物应覆盖不同年龄、职业、立场倾向，贴近真实社会构成；
-其中必须包含与事件有直接利益关系的角色（如消费者、从业者、监管视角），不要全是无关路人。
+PERSONA_PROMPT = """根据以下事件，做两件事：
 
-只返回 JSON：{{"personas": [{{"name": "...", "age": 30, "background": "...", "stance_bias": "..."}}]}}
+1. 提炼一个明确的"立场命题"（stance_proposition）：一句可以被"支持/反对/观望"的具体主张。
+   这是关键——人群表态的对象必须清晰，避免"反对"到底反对什么含糊不清。
+   例如事件是"某员工把老板比作项羽"，命题应是"这个类比恰当且正面"，而不是笼统的"对这家公司的态度"。
+2. 生成 {n} 个差异化的虚拟人物画像（persona），覆盖不同年龄、职业、立场倾向，贴近真实社会构成；
+   其中必须包含与事件有直接利益关系的角色（消费者、从业者、监管视角），不要全是无关路人。
+
+只返回 JSON：
+{{"stance_proposition": "一句明确的、可被支持/反对的主张",
+  "personas": [{{"name": "...", "age": 30, "background": "...", "stance_bias": "..."}}]}}
 
 事件：
 {seed}
 """
 
-AGENT_PROMPT = """你正在扮演以下人物，请以该人物的视角对事件表态。
+AGENT_PROMPT = """你正在扮演以下人物，针对一个明确的命题表态。
 
 人物：{persona}
-事件：{seed}
+事件背景：{seed}
+**你要表态的命题：{proposition}**
 你目前听到的其他人观点（第 {round} 轮讨论）：
 {neighbors}
 
-结合你的背景和听到的观点（你可以被说服，也可以坚持己见），给出你的立场。
-立场必须是以下之一：{stances}
+结合你的背景和听到的观点（你可以被说服，也可以坚持己见），针对【上述命题】给出你的立场。
+立场必须是以下之一：{stances}（即：{stances} 这个命题）
 
 只返回 JSON：{{"stance": "...", "confidence": 0.0到1.0, "comment": "一句话观点"}}
 """
@@ -50,15 +57,23 @@ def run(llm, seed: str, n_agents: int = 12, n_rounds: int = 3,
         stances: list | None = None, verbose: bool = True) -> dict:
     stances = stances or ["支持", "反对", "观望"]
 
-    # 1. 生成 persona
+    # 1. 生成立场命题 + persona
+    proposition = ""
     try:
         data = llm.chat_json([{"role": "user", "content": PERSONA_PROMPT.format(n=n_agents, seed=seed[:1500])}])
-        personas = data.get("personas", []) if isinstance(data, dict) else []
+        if isinstance(data, dict):
+            proposition = str(data.get("stance_proposition", "")).strip()
+            personas = data.get("personas", [])
+        else:
+            personas = []
         personas = [p for p in personas if isinstance(p, dict)][:n_agents]
     except Exception as e:
         if verbose:
             print(f"    ! persona 生成失败（{e}），使用本地兜底画像")
         personas = []
+    # 兜底命题：用种子本身，至少不会出现"反对一个未定义对象"
+    if not proposition:
+        proposition = f"对于「{seed[:60]}」持正面看法"
     if not personas:  # 兜底：本地生成通用画像，保证流程不中断
         bgs = ["上班族", "学生", "投资者", "媒体人", "退休人员", "个体户"]
         personas = [{"name": f"路人-{i+1}", "age": 20 + i * 5,
@@ -80,7 +95,7 @@ def run(llm, seed: str, n_agents: int = 12, n_rounds: int = 3,
         ) or "（第一轮讨论，暂无他人观点，请基于你自己的背景独立表态）"
         try:
             resp = llm.chat_json([{"role": "user", "content": AGENT_PROMPT.format(
-                persona=p, seed=seed[:1000], round=r, neighbors=neighbors,
+                persona=p, seed=seed[:1000], proposition=proposition, round=r, neighbors=neighbors,
                 stances=" / ".join(stances))}], temperature=0.9)
             if not isinstance(resp, dict):
                 resp = {}
@@ -115,6 +130,7 @@ def run(llm, seed: str, n_agents: int = 12, n_rounds: int = 3,
 
     return {
         "backend": "swarm",
+        "stance_subject": proposition,
         "personas": personas,
         "evolution": history,
         "final_distribution": final_pct,

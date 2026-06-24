@@ -59,6 +59,13 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
 
     elif b == "swarm":
         lines += ["## 舆情仿真结果", ""]
+        # Anchor what the stances are ABOUT. Without this, "反对 50%" reads
+        # as "50% are negative on the company" when it may mean "50%
+        # disagree with one specific claim". Show the proposition up front.
+        subject = result.get("stance_subject", "")
+        if subject:
+            lines += [f"**表态命题：** {subject}", "",
+                      "（下方「支持/反对/观望」均针对此命题，非对相关公司/人物的整体态度）", ""]
         # Show who the simulated crowd was — the credibility of an
         # opinion simulation rests entirely on persona diversity, so a
         # report that hides the cast asks for blind trust.
@@ -82,7 +89,9 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
         if fd:
             split = "　".join(f"{k} {to_prob(v):.0%}" for k, v in sorted(fd.items(), key=lambda x: -x[1]))
             lines += ["", f"**最终分布：** {split}"]
-        lines += ["", f"**最终主导立场：{result['dominant_stance']}（{to_prob(result.get('probability')):.0%}）**", "",
+        dom = result["dominant_stance"]
+        dom_note = f"（对「{subject}」）" if subject else ""
+        lines += ["", f"**最终主导立场：{dom}{dom_note} — {to_prob(result.get('probability')):.0%}**", "",
                   "### 抽样观点"]
         lines += [f"- {c}" for c in result.get("sample_comments", [])]
 
