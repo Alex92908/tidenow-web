@@ -26,6 +26,7 @@
     "retry": "重试",
     "hot": "热",
     "share": "分享",
+    "copy": "复制文字",
     "copyLink": "复制链接",
     "copied": "已复制！",
     "shareTo": "分享到 {name}"

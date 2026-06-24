@@ -26,6 +26,7 @@
     "retry": "Retry",
     "hot": "Hot",
     "share": "Share",
+    "copy": "Copy text",
     "copyLink": "Copy link",
     "copied": "Copied!",
     "shareTo": "Share to {name}"
