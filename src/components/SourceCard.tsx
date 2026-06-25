@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useAISummary } from "@/lib/use-ai-summary"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
@@ -228,52 +227,8 @@ function NewsItemRow({
           )}
         </div>
       </a>
-      <CopyTextButton text={item.title} />
       <ShareButton item={item} />
     </div>
   )
 }
 
-// Copy the item's title text. The title lives inside an <a> that
-// navigates on click, so selecting+copying it manually is fiddly — this
-// gives a one-tap copy. Hover-revealed to keep the row clean.
-function CopyTextButton({ text }: { text: string }) {
-  const t = useTranslations("source")
-  const [copied, setCopied] = useState(false)
-
-  async function copy(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      const el = document.createElement("textarea")
-      el.value = text
-      document.body.appendChild(el)
-      el.select()
-      document.execCommand("copy")
-      document.body.removeChild(el)
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
-
-  return (
-    <button
-      onClick={copy}
-      title={t("copy")}
-      className="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 dark:text-zinc-700 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 active:scale-90 transition-all opacity-0 group-hover:opacity-100"
-    >
-      {copied ? (
-        <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 text-green-500" stroke="currentColor" strokeWidth="2">
-          <path d="M2 8l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5" stroke="currentColor" strokeWidth="1.5">
-          <rect x="1" y="4" width="10" height="11" rx="1.5" />
-          <path d="M5 4V2.5A1.5 1.5 0 016.5 1h8A1.5 1.5 0 0116 2.5v8A1.5 1.5 0 0114.5 12H13" strokeLinecap="round" />
-        </svg>
-      )}
-    </button>
-  )
-}

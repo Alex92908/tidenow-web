@@ -27,7 +27,25 @@ export function ShareButton({ item, className }: ShareButtonProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [copied, setCopied] = useState(false)
+  const [copiedTitle, setCopiedTitle] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
+
+  async function copyTitle(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(item.title)
+    } catch {
+      const el = document.createElement("textarea")
+      el.value = item.title
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand("copy")
+      document.body.removeChild(el)
+    }
+    setCopiedTitle(true)
+    setTimeout(() => { setCopiedTitle(false); setShowMenu(false) }, 1200)
+  }
 
   function openShare(e: React.MouseEvent) {
     e.preventDefault()
@@ -95,6 +113,21 @@ export function ShareButton({ item, className }: ShareButtonProps) {
             style={{ top: menuPos.top, left: menuPos.left }}
             className="fixed z-[101] w-48 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-lg dark:shadow-black/40 overflow-hidden"
           >
+            <button
+              onClick={copyTitle}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              {copiedTitle ? (
+                <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 text-green-500" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 8l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 4h12M2 8h12M2 12h7" strokeLinecap="round" />
+                </svg>
+              )}
+              {copiedTitle ? t("copied") : t("copy")}
+            </button>
             <button
               onClick={copyLink}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
