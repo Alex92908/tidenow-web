@@ -196,6 +196,12 @@ function NewsItemRow({
         target="_blank"
         rel="noopener noreferrer"
         className="flex gap-2.5 flex-1 min-w-0 items-start"
+        // Let users drag-select the headline to copy it: if there's an
+        // active text selection on click, suppress navigation so the
+        // select-then-release gesture doesn't open the link.
+        onClick={(e) => {
+          if (window.getSelection()?.toString()) e.preventDefault()
+        }}
       >
         <span
           className={`text-[11px] font-mono w-4 shrink-0 mt-0.5 text-right font-bold ${
@@ -208,7 +214,10 @@ function NewsItemRow({
           <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={40} />
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors" style={{ fontSize: "var(--news-font-size, 13px)" }}>
+          {/* No line-clamp — the title shows in full and the row height
+              grows to fit. select-text makes the headline drag-selectable
+              even though it lives inside the link. */}
+          <p className="text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug select-text transition-colors" style={{ fontSize: "var(--news-font-size, 13px)" }}>
             {item.title}
           </p>
           {/* AI summary — shown on hover */}
