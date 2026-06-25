@@ -227,12 +227,12 @@ function NewsItemRow({
             </p>
           )}
           {summary && !summaryLoading && (
-            <p className="text-[11px] text-sky-500 dark:text-sky-400 mt-0.5 leading-snug">
+            <p className="text-[11px] text-sky-500 dark:text-sky-400 mt-0.5 leading-snug select-text">
               ✦ {summary}
             </p>
           )}
           {item.extra && !summary && (
-            <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 truncate">{item.extra}</p>
+            <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 leading-snug select-text">{item.extra}</p>
           )}
         </div>
       </a>
