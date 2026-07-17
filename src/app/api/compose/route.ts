@@ -15,6 +15,8 @@ const MAX_TOKENS_BY_STYLE: Record<string, number> = {
   // upper bound of the labeled word range to give the model headroom.
   feature: 5000,   // 1800–3000字 zh / 1500–2200 words en — long-form
   deep: 2200,      // 800–1200字 zh / 600–900 words en
+  humanity: 2600,  // 1000–1500字 — 人性洞察需要展开心理与动机
+  erudite: 2800,   // 1200–1800字 — 学识深度需空间旁征博引
   quick: 1100,     // 400–600字 / ~350 words
   list: 1600,
   personal: 1800,
@@ -175,6 +177,17 @@ const STYLE_INSTRUCTIONS_ZH: Record<string, string> = {
 
 - 全文使用简体中文`,
   deep: "用 800-1200 字写一篇有观点的深度评论。结构上：开头钩子吸引读者 → 现象描述 → 原因分析 → 趋势预判。语气稳重克制，避免营销腔。如果素材之间能形成对比或互证，请挑明。",
+  humanity: `用 1000-1500 字，从"人性"的角度剖析这些热点。不是复述发生了什么，而是追问：
+- 事件里的人在图什么？（欲望、恐惧、面子、归属、损失厌恶…）
+- 群体为什么这样反应？（从众、身份认同、道德义愤、幸灾乐祸的心理机制）
+- 表象之下暴露了哪种恒久的人性弱点或规律？
+要求：引用具体的心理学概念（如损失厌恶、旁观者效应、认知失调）但要用人话解释，不堆术语；有洞察、有共情，避免居高临下的说教；结尾给一句让人回味的关于人性的判断。全文简体中文。`,
+  erudite: `用 1200-1800 字写一篇有学识密度的文章。把这些热点放进更大的知识坐标系里：
+- 旁征博引：调动历史、哲学、经济学、社会学、科技史等跨学科视角，找到恰当的类比或先例
+- 引用要具体（哪位思想家、哪段历史、哪个理论），但只引你确有把握的，绝不编造出处或杜撰名言
+- 让读者读完有"原来还能这样看"的智识愉悦，而不是被术语砸晕
+- 论证扎实，不炫技；博引是为了照亮当下，不是掉书袋
+结尾落回现实，给一个有厚度的判断。全文简体中文。`,
   quick: "用 400-600 字写一篇 2 分钟速读总结。用 3-5 个小标题分段，每段不超过 100 字。让读者快速掌握今天发生了什么。",
   list: "用列表体写一篇文章：「Top N + 一句话点评」的格式。每条点评不超过 50 字。可适当编号或加 emoji 区分。",
   personal: "以第一人称写一篇 600-900 字的个人观察。带入自己的看法、经验或情绪，避免冷冰冰的事实罗列。语气像在朋友圈或即刻发动态。",
@@ -208,6 +221,17 @@ const STYLE_INSTRUCTIONS_EN: Record<string, string> = {
 
 - English only`,
   deep: "Write an 800-1200 word opinion piece. Structure: a hook lead → describe the phenomenon → analyze causes → forecast trends. Measured tone, no marketing fluff. If the source items contrast or reinforce each other, call it out.",
+  humanity: `Write 1000-1500 words dissecting these trends through the lens of human nature. Don't recount what happened — ask WHY people act this way:
+- What are the people in the story really after? (desire, fear, face, belonging, loss-aversion…)
+- Why does the crowd react like this? (conformity, identity, moral outrage, schadenfreude)
+- What enduring human weakness or pattern does the surface expose?
+Cite specific psychology concepts (loss aversion, bystander effect, cognitive dissonance) but explain them plainly, no jargon-dumping. Insightful and empathetic, never preachy. End on a resonant judgment about human nature. English only.`,
+  erudite: `Write a 1200-1800 word erudite piece that places these trends in a larger intellectual coordinate system:
+- Draw on history, philosophy, economics, sociology, the history of science — find apt analogies and precedents across disciplines.
+- Be specific with references (which thinker, which historical episode, which theory), but cite ONLY what you're genuinely sure of — never fabricate sources or invent quotes.
+- Give the reader the intellectual pleasure of "I never saw it that way", without burying them in terminology.
+- Rigorous, not show-offy — erudition should illuminate the present, not pad the page.
+End back in the present with a judgment that has weight. English only.`,
   quick: "Write a 400-600 word 2-minute read. Use 3-5 sub-headings, each section under 100 words. Reader should grasp what happened today fast.",
   list: "Write in list format: 'Top N + one-line take' per item. Each take under 50 words. Use numbers or emoji to differentiate.",
   personal: "Write 600-900 words in first person. Include personal view, experience, or feeling. Avoid dry fact-stacking. Casual blog/journal tone.",

@@ -22,7 +22,7 @@ export interface DraftMaterial {
   image?: string
 }
 
-export type DraftStyle = "feature" | "deep" | "quick" | "list" | "personal" | "custom"
+export type DraftStyle = "feature" | "deep" | "humanity" | "erudite" | "quick" | "list" | "personal" | "custom"
 
 export interface Draft {
   id: string
