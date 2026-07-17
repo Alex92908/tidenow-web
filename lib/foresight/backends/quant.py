@@ -14,23 +14,51 @@ import statistics
 
 
 def _try_fetch_akshare(symbol: str, verbose=True):
-    """尝试用 akshare 拉 A 股/港股日线，失败返回 None。"""
+    """尝试用 akshare 拉 A 股/港股/指数日线，多源降级（东财→新浪），失败返回 None。
+
+    symbol 形态：6位数字=A股个股；5位数字=港股；sh/sz/csi 前缀=指数（如 sh000001 上证）。
+    国内源在开代理的机器上易被截断（ProxyError/RemoteDisconnected），故按源逐个降级。
+    """
     try:
         import akshare as ak
     except ImportError:
         if verbose:
             print("    ! 未安装 akshare（pip install akshare），无法自动拉取行情")
         return None
-    try:
-        if symbol.isdigit() and len(symbol) == 5:
-            df = ak.stock_hk_daily(symbol=symbol)
-            closes = df["close"].tolist()[-120:]
-        else:
-            df = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")
-            closes = df["收盘"].tolist()[-120:]
-        return [float(c) for c in closes]
-    except Exception:
-        return None
+
+    def _hk():
+        return ak.stock_hk_daily(symbol=symbol)["close"].tolist()
+
+    def _a_east():
+        return ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")["收盘"].tolist()
+
+    def _a_sina():
+        return ak.stock_zh_a_daily(symbol=("sh" if symbol.startswith("6") else "sz") + symbol,
+                                   adjust="qfq")["close"].tolist()
+
+    def _index_sina():
+        return ak.stock_zh_index_daily(symbol=symbol)["close"].tolist()
+
+    def _index_east():
+        return ak.index_zh_a_hist(symbol=symbol[2:] if symbol[:2] in ("sh", "sz") else symbol,
+                                  period="daily")["收盘"].tolist()
+
+    if symbol.isdigit() and len(symbol) == 5:
+        fetchers = [("hk", _hk)]
+    elif symbol[:2].lower() in ("sh", "sz", "cs") and not symbol.isdigit():
+        fetchers = [("index_sina", _index_sina), ("index_east", _index_east)]
+    else:
+        fetchers = [("a_east", _a_east), ("a_sina", _a_sina)]
+
+    for name, fn in fetchers:
+        try:
+            closes = fn()[-120:]
+            if closes:
+                return [float(c) for c in closes]
+        except Exception as e:
+            if verbose:
+                print(f"    ! 源 {name} 失败（{type(e).__name__}），尝试下一个…")
+    return None
 
 
 def _load_csv(path: str):
