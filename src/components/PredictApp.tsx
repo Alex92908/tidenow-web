@@ -33,6 +33,7 @@ const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "election", en: "Elections", zh: "选举" },
   { id: "boxoffice", en: "Box office", zh: "影视票房" },
   { id: "nature", en: "Weather / nature", zh: "天气/自然" },
+  { id: "metaphysics", en: "Metaphysics / fortune", zh: "玄学/命理" },
 ]
 
 // Domain → display label + accent. Keeps the result badge readable.

@@ -205,6 +205,20 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
             lines += ["", f"💡 你的问题里可预测的部分：{result['predictable_part']}"]
         lines += ["", "（不写入校准日志）"]
 
+    elif b == "metaphysics":
+        sysname = {"zodiac": "西方占星", "bazi": "八字命理", "yijing": "周易卦象",
+                   "fengshui": "风水堪舆", "ziwei": "紫微斗数", "tarot": "塔罗"}.get(
+                       result.get("sub_system", ""), result.get("sub_system", ""))
+        lines += [f"## 🔮 玄学解读（{sysname}）", "",
+                  result.get("reading", "")]
+        syms = result.get("key_symbols", [])
+        if syms:
+            lines += ["", "**用到的符号：** " + "、".join(str(s) for s in syms)]
+        lines += ["", f"**倾向：** {result.get('tendency','')}",
+                  f"**建议：** {result.get('advice','')}", "",
+                  f"⚖️ {result.get('honest_note','')}",
+                  "", "（传统文化娱乐，不写入校准日志）"]
+
     elif b == "oracle":
         lines += ["## 🔮 元引擎：五路独立推理", "", f"**核心问题：** {result.get('key_question','')}", ""]
         for e in result.get("estimates", []):
