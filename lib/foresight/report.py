@@ -203,6 +203,15 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                   f"**理性建议：** {result.get('rational_advice','')}"]
         if result.get("predictable_part"):
             lines += ["", f"💡 你的问题里可预测的部分：{result['predictable_part']}"]
+        lucky = result.get("lucky_numbers", [])
+        if lucky:
+            picks = "　".join(
+                f"{p.get('name','')} {' '.join(f'{n:02d}' for n in p.get('numbers', []))}"
+                for p in lucky
+            )
+            lines += ["", "### 🎰 娱乐随机号（图个乐）",
+                      picks,
+                      "*号码由等概率真随机生成，中奖率与任何其他号码完全相同，不改变期望值。*"]
         lines += ["", "（不写入校准日志）"]
 
     elif b == "metaphysics":
