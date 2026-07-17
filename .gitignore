@@ -51,3 +51,7 @@ __pycache__/
 *.pyc
 
 .venv/
+
+# Original ForeSight project copied in for reference only — never commit
+# (contains its own .git, .venv, config.yaml with keys)
+lib/source/
