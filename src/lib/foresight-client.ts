@@ -84,6 +84,69 @@ export async function getForesight(
   }
 }
 
+/** One stock in a market scan — a limit-up-relay candidate with the
+ *  engine's "goes limit-up again tomorrow" probability. */
+export interface ScanStock {
+  code: string
+  name: string
+  height: number
+  price: number | null
+  industry?: string
+  break_n?: number | null
+  prob: number | null
+  reason: string
+  /** Present only for stale (ledger) rows already resolved. */
+  outcome?: number | null
+  ret?: number | null
+}
+
+export interface MarketScan {
+  scan: string
+  /** Trading day of the batch, YYYYMMDD, or null if the ledger is empty. */
+  date: string | null
+  stocks: ScanStock[]
+  /** True when live fetch failed and we fell back to the git ledger. */
+  stale?: boolean
+}
+
+/**
+ * Scan today's limit-up pool and return MANY scored candidates (not a
+ * single-event prediction). Data is eastmoney push2ex + Sina K-lines
+ * (pure HTTP, no akshare). Reuses the caller's BYOK key for the per-stock
+ * LLM adjustment. Returns null only on total failure — the Python side
+ * already degrades to the git ledger, so a non-null result may be `stale`.
+ */
+export async function scanMarket(
+  byok: { provider: string; apiKey: string },
+  opts: { top?: number; signal?: AbortSignal } = {}
+): Promise<MarketScan | null> {
+  if (byok.provider === "gemini" || byok.provider === "gemini-nano") return null
+  if (!byok.apiKey) return null
+
+  const url = process.env.FORESIGHT_PREDICT_URL || `${SITE_URL}/api/predict`
+  const token = process.env.FORESIGHT_INTERNAL_TOKEN
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        scan: "zt",
+        top: opts.top ?? 8,
+        provider: byok.provider,
+        apiKey: byok.apiKey,
+      }),
+      signal: opts.signal,
+    })
+    if (!res.ok) return null
+    return (await res.json()) as MarketScan
+  } catch {
+    return null
+  }
+}
+
 /** Render a ForeSight result as a compact context block for the writer
  *  prompt. We keep this terse — the full markdown report can be 1000+
  *  words and we only want the writer to ground a forward-looking

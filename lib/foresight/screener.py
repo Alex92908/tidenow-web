@@ -19,7 +19,14 @@ import json
 import os
 import time
 
+import requests
+
 from .backends.common import safe_chat_json, to_prob
+
+# 东财涨停池（akshare 底层就是打这个接口，纯 HTTP，无需 akshare 那坨 pandas）。
+ZT_POOL_URL = "https://push2ex.eastmoney.com/getTopicZTPool"
+# 新浪日线（不复权），纯 requests。resolve 用它拿次日收盘判晋级。
+KLINE_URL = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
 
 # In TideNow this package lives at <project>/lib/foresight/, so the project
 # root is two levels up. The ledger is git-tracked under src/data/experiments/
@@ -56,30 +63,36 @@ def _limit_threshold(code: str) -> float:
     return 0.10
 
 
+def _fetch_zt_pool_em(date: str) -> list:
+    """东财涨停池，纯 HTTP。返回 push2ex 原始行（字段 c/n/lbc/p/fund/zbc/hybk/…）。"""
+    r = requests.get(ZT_POOL_URL, params={
+        "ut": "7eea3edcaed734bea9cbfc24409ed989", "dpt": "wz.ztzt",
+        "Pageindex": 0, "pagesize": 100, "sort": "fbt:asc", "date": date,
+    }, headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
+    r.raise_for_status()
+    return (r.json().get("data") or {}).get("pool") or []
+
+
 def fetch_zt_pool(date: str, fetcher=None) -> list:
-    """抓当日涨停池，返回二板及以上候选。fetcher 可注入（测试用）。"""
-    if fetcher:
-        rows = fetcher(date)
-    else:
-        import akshare as ak
-        df = ak.stock_zt_pool_em(date=date)
-        rows = df.to_dict("records")
+    """抓当日涨停池（东财 push2ex，纯 requests，无需 akshare），返回二板及以上候选。
+    fetcher 可注入（测试用），需返回 push2ex 原始行（字段 c/n/lbc/p/fund/…）。"""
+    rows = (fetcher or _fetch_zt_pool_em)(date)
     out = []
     for r in rows:
-        name = str(r.get("名称", ""))
+        name = str(r.get("n", ""))
         if "退" in name or "ST" in name.upper():
             continue
-        height = int(r.get("连板数", 1) or 1)
+        height = int(r.get("lbc", 1) or 1)  # 连板数
         if height < 2:
             continue
         out.append({
-            "code": str(r.get("代码", "")), "name": name, "height": height,
-            "price": float(r.get("最新价", 0) or 0),
-            "industry": str(r.get("所属行业", "")),
-            "seal": float(r.get("封板资金", 0) or 0),
-            "mcap": float(r.get("流通市值", 0) or 0),
-            "break_n": int(r.get("炸板次数", 0) or 0),
-            "first_time": str(r.get("首次封板时间", "")),
+            "code": str(r.get("c", "")), "name": name, "height": height,
+            "price": round(float(r.get("p", 0) or 0) / 1000, 2),  # push2ex 价为厘
+            "industry": str(r.get("hybk", "")),
+            "seal": float(r.get("fund", 0) or 0),   # 封板资金
+            "mcap": float(r.get("ltsz", 0) or 0),   # 流通市值
+            "break_n": int(r.get("zbc", 0) or 0),   # 炸板次数
+            "first_time": str(r.get("fbt", "")).zfill(6),  # 首次封板 HHMMSS
         })
     return out
 
@@ -112,39 +125,93 @@ def _save(entries: list):
             f.write(json.dumps(e, ensure_ascii=False) + "\n")
 
 
-def scan(llm, date: str | None = None, top: int = 10, fetcher=None, verbose=True) -> list:
-    """扫描并落账。同日同股去重。"""
+def rank(llm, date: str | None = None, top: int = 10, fetcher=None) -> dict:
+    """扫涨停池 + 打分，返回排好序的多只候选（不落台账）。
+    供网页 /predict 直接展示"今日热门多只"，也是 scan 落账前的共用步骤。"""
     date = date or time.strftime("%Y%m%d")
     pool = fetch_zt_pool(date, fetcher=fetcher)
     pool.sort(key=lambda s: (-s["height"], -(s["seal"] / s["mcap"] if s["mcap"] else 0)))
-    pool = pool[:top]
+    stocks = []
+    for s in pool[:top]:
+        sc = score(llm, s)
+        stocks.append({
+            "code": s["code"], "name": s["name"], "height": s["height"],
+            "price": s["price"], "industry": s["industry"], "break_n": s["break_n"],
+            "threshold": _limit_threshold(s["code"]),
+            "prob": sc["prob"], "reason": sc["reason"],
+        })
+    return {"date": date, "stocks": stocks}
+
+
+def latest_batch() -> dict:
+    """台账里最近一个交易日那批（已打分，可能已判定）。
+    供网页在实时抓取失败（如 Vercel 海外 IP 被墙）时降级展示，永远有内容。"""
+    entries = _load()
+    if not entries:
+        return {"date": None, "stocks": [], "stale": True}
+    last = max(e["date"] for e in entries)
+    rows = [e for e in entries if e["date"] == last]
+    rows.sort(key=lambda e: (-e.get("height", 0), -(e.get("prob", 0) or 0)))
+    stocks = [{
+        "code": e["code"], "name": e["name"], "height": e.get("height", 0),
+        "price": e.get("buy_price"), "industry": "", "break_n": None,
+        "prob": e.get("prob"), "reason": e.get("reason", ""),
+        "outcome": e.get("outcome"), "ret": e.get("ret"),
+    } for e in rows]
+    return {"date": last, "stocks": stocks, "stale": True}
+
+
+def scan(llm, date: str | None = None, top: int = 10, fetcher=None, verbose=True) -> list:
+    """扫描并落账。同日同股去重。复用 rank 的抓取+打分，避免两处逻辑漂移。"""
+    r = rank(llm, date=date, top=top, fetcher=fetcher)
+    date = r["date"]
     entries = _load()
     seen = {(e["date"], e["code"]) for e in entries}
     added = []
-    for s in pool:
+    for s in r["stocks"]:
         if (date, s["code"]) in seen:
             continue
-        sc = score(llm, s)
         e = {"id": f'{date}-{s["code"]}', "date": date, "code": s["code"], "name": s["name"],
-             "height": s["height"], "buy_price": s["price"], "threshold": _limit_threshold(s["code"]),
-             "prob": sc["prob"], "reason": sc["reason"],
+             "height": s["height"], "buy_price": s["price"], "threshold": s["threshold"],
+             "prob": s["prob"], "reason": s["reason"],
              "outcome": None, "next_close": None, "ret": None, "resolved_ts": None}
         entries.append(e)
         added.append(e)
         if verbose:
-            print(f'  ✓ {s["name"]}({s["code"]}) {s["height"]}板 → 晋级概率 {sc["prob"]:.0%}｜{sc["reason"]}')
+            print(f'  ✓ {s["name"]}({s["code"]}) {s["height"]}板 → 晋级概率 {s["prob"]:.0%}｜{s["reason"]}')
     _save(entries)
     if verbose:
         print(f"本次入账 {len(added)} 只（台账共 {len(entries)} 条）→ {LEDGER}")
     return added
 
 
+def _sina_sym(code: str) -> str:
+    """A 股代码 → 新浪前缀符号：6/9→sh，0/3→sz，其余（北交所）→bj。"""
+    if code[:1] in ("6", "9"):
+        return "sh" + code
+    if code[:1] in ("0", "3"):
+        return "sz" + code
+    return "bj" + code
+
+
 def _default_hist(code: str, start_date: str) -> list:
-    """拉 start_date 之后的日线（不复权，与涨停价同口径）。返回 [{date, close, pct}]。"""
-    import akshare as ak
-    df = ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, adjust="")
-    return [{"date": str(r["日期"]).replace("-", ""), "close": float(r["收盘"]),
-             "pct": float(r["涨跌幅"])} for _, r in df.iterrows()]
+    """新浪日线（不复权，与涨停价同口径），纯 requests，无需 akshare。
+    返回 [{date, close, pct}]；pct 由相邻收盘价推算（新浪该接口不直接给涨跌幅）。"""
+    r = requests.get(KLINE_URL, params={"symbol": _sina_sym(code), "scale": 240,
+                     "ma": "no", "datalen": 260},
+                     headers={"User-Agent": "Mozilla/5.0",
+                              "Referer": "https://finance.sina.com.cn"}, timeout=12)
+    r.raise_for_status()
+    data = json.loads(r.text)
+    out, prev = [], None
+    for d in data:
+        day = str(d["day"]).replace("-", "")
+        close = float(d["close"])
+        pct = (close / prev - 1) * 100 if prev else 0.0
+        prev = close
+        if day >= start_date:
+            out.append({"date": day, "close": close, "pct": round(pct, 2)})
+    return out
 
 
 def resolve_pending(hist_fetcher=None, verbose=True) -> int:

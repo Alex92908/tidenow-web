@@ -113,8 +113,11 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, {"error": "invalid json"})
             return
 
+        # Market-scan mode carries no seed (it lists many stocks, doesn't
+        # evaluate one event), so only enforce seed for the normal path.
+        is_scan = (body.get("scan") or "") == "zt"
         seed = (body.get("seed") or "").strip()
-        if not seed:
+        if not seed and not is_scan:
             self._send(400, {"error": "missing seed"})
             return
 
@@ -125,6 +128,32 @@ class handler(BaseHTTPRequestHandler):
         if not api_key and os.environ.get("FORESIGHT_MOCK", "0") != "1":
             self._send(400, {"error": "missing apiKey"})
             return
+
+        # Market-scan mode: no single-event prediction, but a ranked list
+        # of today's limit-up-relay candidates (many stocks). Data comes
+        # from eastmoney's push2ex pool + Sina K-lines (pure HTTP, no
+        # akshare). If the live fetch fails — e.g. the finance endpoints
+        # block Vercel's overseas IPs — we degrade to the most recent
+        # git-tracked ledger batch so the page always renders something.
+        if (body.get("scan") or "") == "zt":
+            from foresight import screener
+            from foresight.llm import LLM
+
+            try:
+                top = int(body.get("top") or 8)
+            except (TypeError, ValueError):
+                top = 8
+            top = max(1, min(top, 12))
+
+            cfg = _llm_cfg_from_body(provider, api_key)
+            mock = cfg.pop("mock", False)
+            try:
+                payload = screener.rank(LLM(cfg, mock=mock), top=top)
+                if not payload.get("stocks"):
+                    payload = screener.latest_batch()
+            except Exception:  # noqa: BLE001 — live fetch failed, fall back
+                payload = screener.latest_batch()
+            return self._send(200, {"scan": "zt", **payload})
 
         # All ForeSight predict_once kwargs are optional; we forward only
         # the ones the caller actually set so the function's own defaults

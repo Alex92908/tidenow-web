@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { AIProvider } from "@/lib/ai-settings"
-import { getForesight } from "@/lib/foresight-client"
+import { getForesight, scanMarket } from "@/lib/foresight-client"
 
 // Browser-facing endpoint for the standalone /predict page. Same BYOK
 // pattern as compose: the key arrives per-request from localStorage and
@@ -18,6 +18,10 @@ interface PredictRequest {
   /** Stock code for the market/quant domain (e.g. 600519). With it, the
    *  quant backend fetches real quotes (Sina daily K-line, no akshare). */
   symbol?: string
+  /** "zt" → market-scan mode: ignore seed, return many limit-up-relay
+   *  candidates. Data via eastmoney/Sina HTTP, no akshare. */
+  scan?: string
+  top?: number
 }
 
 export async function POST(req: NextRequest) {
@@ -27,12 +31,9 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 })
   }
-  const { provider, apiKey, seed, domain, symbol } = body
+  const { provider, apiKey, seed, domain, symbol, scan, top } = body
   if (!provider || !apiKey) {
     return NextResponse.json({ error: "missing provider/apiKey" }, { status: 503 })
-  }
-  if (!seed?.trim()) {
-    return NextResponse.json({ error: "missing seed" }, { status: 400 })
   }
   // ForeSight's LLM speaks OpenAI-compatible + Anthropic only.
   if (provider === "gemini" || provider === "gemini-nano") {
@@ -43,6 +44,22 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 }
     )
+  }
+
+  // Market-scan mode returns many candidates and carries no seed.
+  if (scan === "zt") {
+    const result = await scanMarket({ provider, apiKey }, { top })
+    if (!result) {
+      return NextResponse.json(
+        { error: "scan failed — check your API key and try again" },
+        { status: 502 }
+      )
+    }
+    return NextResponse.json(result)
+  }
+
+  if (!seed?.trim()) {
+    return NextResponse.json({ error: "missing seed" }, { status: 400 })
   }
 
   let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain, symbol })
