@@ -8,6 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "foresight:setup": "python3 -m venv .venv && .venv/bin/python -m pip install --upgrade pip && .venv/bin/python -m pip install -r api/requirements.txt",
+    "lab:zt:scan": ".venv/bin/python scripts/lab.py zt scan",
+    "lab:zt:resolve": ".venv/bin/python scripts/lab.py zt resolve",
+    "lab:zt:stats": ".venv/bin/python scripts/lab.py zt stats",
+    "lab:funnel:scan": ".venv/bin/python scripts/lab.py funnel scan",
+    "lab:funnel:resolve": ".venv/bin/python scripts/lab.py funnel resolve",
+    "lab:funnel:stats": ".venv/bin/python scripts/lab.py funnel stats",
     "foresight:dev": "FORESIGHT_MOCK=1 .venv/bin/python scripts/foresight-dev.py",
     "foresight:dev:real": ".venv/bin/python scripts/foresight-dev.py",
     "dev:foresight": "FORESIGHT_PREDICT_URL=http://127.0.0.1:8787 next dev --port 3002"
