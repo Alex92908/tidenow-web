@@ -115,7 +115,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Market-scan mode carries no seed (it lists many stocks, doesn't
         # evaluate one event), so only enforce seed for the normal path.
-        is_scan = (body.get("scan") or "") == "zt"
+        is_scan = (body.get("scan") or "") in ("zt", "funnel")
         seed = (body.get("seed") or "").strip()
         if not seed and not is_scan:
             self._send(400, {"error": "missing seed"})
@@ -130,30 +130,44 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Market-scan mode: no single-event prediction, but a ranked list
-        # of today's limit-up-relay candidates (many stocks). Data comes
-        # from eastmoney's push2ex pool + Sina K-lines (pure HTTP, no
-        # akshare). If the live fetch fails — e.g. the finance endpoints
-        # block Vercel's overseas IPs — we degrade to the most recent
-        # git-tracked ledger batch so the page always renders something.
-        if (body.get("scan") or "") == "zt":
-            from foresight import screener
+        # of many stocks. Two flavours share this path:
+        #   zt     — today's limit-up-relay candidates (eastmoney push2ex
+        #            pool + Sina K-lines), one LLM adjust per stock.
+        #   funnel — a slow-money basket (eastmoney earnings pre-announce
+        #            + Sina K-lines), one LLM pick over the shortlist.
+        # All data is pure HTTP, no akshare. If the live fetch fails — e.g.
+        # the finance endpoints block Vercel's overseas IPs — we degrade to
+        # the most recent git-tracked ledger batch so the page always
+        # renders something.
+        scan_kind = body.get("scan") or ""
+        if scan_kind in ("zt", "funnel"):
             from foresight.llm import LLM
 
             try:
-                top = int(body.get("top") or 8)
+                top = int(body.get("top") or (8 if scan_kind == "zt" else 12))
             except (TypeError, ValueError):
-                top = 8
-            top = max(1, min(top, 12))
+                top = 8 if scan_kind == "zt" else 12
+            top = max(1, min(top, 15))
 
             cfg = _llm_cfg_from_body(provider, api_key)
             mock = cfg.pop("mock", False)
+            llm = LLM(cfg, mock=mock)
+
+            if scan_kind == "zt":
+                from foresight import screener as mod
+                fetch = lambda: mod.rank(llm, top=top)  # noqa: E731
+            else:
+                from foresight import funnel as mod
+                # Smaller pre-list on the web to bound the K-line fetch time.
+                fetch = lambda: mod.rank(llm, top=top, pre=20)  # noqa: E731
+
             try:
-                payload = screener.rank(LLM(cfg, mock=mock), top=top)
+                payload = fetch()
                 if not payload.get("stocks"):
-                    payload = screener.latest_batch()
+                    payload = mod.latest_batch()
             except Exception:  # noqa: BLE001 — live fetch failed, fall back
-                payload = screener.latest_batch()
-            return self._send(200, {"scan": "zt", **payload})
+                payload = mod.latest_batch()
+            return self._send(200, {"scan": scan_kind, **payload})
 
         # All ForeSight predict_once kwargs are optional; we forward only
         # the ones the caller actually set so the function's own defaults

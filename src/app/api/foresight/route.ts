@@ -18,9 +18,10 @@ interface PredictRequest {
   /** Stock code for the market/quant domain (e.g. 600519). With it, the
    *  quant backend fetches real quotes (Sina daily K-line, no akshare). */
   symbol?: string
-  /** "zt" → market-scan mode: ignore seed, return many limit-up-relay
-   *  candidates. Data via eastmoney/Sina HTTP, no akshare. */
-  scan?: string
+  /** Market-scan mode: ignore seed, return many candidates. "zt" =
+   *  limit-up relay pool; "funnel" = slow-money basket. Data via
+   *  eastmoney/Sina HTTP, no akshare. */
+  scan?: "zt" | "funnel"
   top?: number
 }
 
@@ -47,8 +48,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Market-scan mode returns many candidates and carries no seed.
-  if (scan === "zt") {
-    const result = await scanMarket({ provider, apiKey }, { top })
+  if (scan === "zt" || scan === "funnel") {
+    const result = await scanMarket({ provider, apiKey }, { kind: scan, top })
     if (!result) {
       return NextResponse.json(
         { error: "scan failed — check your API key and try again" },

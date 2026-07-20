@@ -159,9 +159,10 @@ def candidates(period: str, yjyg_fetcher=None, min_growth: float = 50.0) -> list
     return sorted(best.values(), key=lambda x: -x["growth"])
 
 
-def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
-         yjyg_fetcher=None, hist_fetcher=None, bench_fetcher=None, verbose=True) -> list:
-    """跑一次完整漏斗并落账（同批次同股去重）。"""
+def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
+         yjyg_fetcher=None, hist_fetcher=None, verbose: bool = False) -> dict:
+    """跑漏斗前半段（业绩层 → 过热过滤 → LLM 选篮），返回观察篮多只
+    （不落台账、不算基准）。供网页 /predict 展示，也是 scan 落账前的共用步骤。"""
     date = date or time.strftime("%Y%m%d")
     period = _period(date)
     cands = candidates(period, yjyg_fetcher=yjyg_fetcher)
@@ -189,7 +190,7 @@ def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
     if verbose:
         print(f"  过热过滤（60日涨幅≤{HOT_CHG60:.0f}%）：{len(enriched)} 只")
     if not enriched:
-        return []
+        return {"date": date, "period": period, "stocks": []}
 
     cands_text = "\n".join(f'{c["code"]} {c["name"]} | 预增{c["growth"]}% | 60日{c["chg60"]}%'
                            for c in enriched)
@@ -207,6 +208,38 @@ def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
             c["tag"] = str(picked[c["code"]].get("tag", ""))[:30]
             c["why"] = str(picked[c["code"]].get("why", ""))[:80]
 
+    stocks = [{"code": c["code"], "name": c["name"], "growth": c["growth"],
+               "chg60": c["chg60"], "tag": c.get("tag", ""), "why": c.get("why", ""),
+               "entry_price": c["entry_price"]} for c in basket]
+    return {"date": date, "period": period, "stocks": stocks}
+
+
+def latest_batch() -> dict:
+    """台账里最近一批观察篮（可能已判定）。供网页实时抓取失败时降级展示。"""
+    entries = _load()
+    if not entries:
+        return {"date": None, "period": None, "stocks": [], "stale": True}
+    last = max(e["batch"] for e in entries)
+    rows = [e for e in entries if e["batch"] == last]
+    rows.sort(key=lambda e: -(e.get("growth") or 0))
+    stocks = [{
+        "code": e["code"], "name": e["name"], "growth": e.get("growth"),
+        "chg60": e.get("chg60"), "tag": e.get("tag", ""), "why": e.get("why", ""),
+        "entry_price": e.get("entry_price"), "ret": e.get("ret"), "alpha": e.get("alpha"),
+    } for e in rows]
+    return {"date": last, "period": _period(last), "stocks": stocks, "stale": True}
+
+
+def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
+         yjyg_fetcher=None, hist_fetcher=None, bench_fetcher=None, verbose=True) -> list:
+    """跑一次完整漏斗并落账（同批次同股去重）。复用 rank，再补基准入场价后落账。"""
+    r = rank(llm, date=date, top=top, pre=pre, yjyg_fetcher=yjyg_fetcher,
+             hist_fetcher=hist_fetcher, verbose=verbose)
+    date = r["date"]
+    if not r["stocks"]:
+        return []
+
+    lookback = str(int(date[:4]) - 1) + date[4:]
     try:
         bench_rows = (bench_fetcher or _default_bench)(lookback)
         bench_entry = bench_rows[-1]["close"] if bench_rows else None
@@ -216,18 +249,18 @@ def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
     entries = _load()
     seen = {(e["batch"], e["code"]) for e in entries}
     added = []
-    for c in basket:
+    for c in r["stocks"]:
         if (date, c["code"]) in seen:
             continue
         e = {"id": f'{date}-{c["code"]}', "batch": date, "code": c["code"], "name": c["name"],
-             "growth": c["growth"], "chg60": c["chg60"], "tag": c.get("tag", ""), "why": c.get("why", ""),
+             "growth": c["growth"], "chg60": c["chg60"], "tag": c["tag"], "why": c["why"],
              "entry_price": c["entry_price"], "bench_entry": bench_entry, "hold_days": HOLD_DAYS,
              "exit_price": None, "bench_exit": None, "ret": None, "bench_ret": None,
              "alpha": None, "resolved_ts": None}
         entries.append(e)
         added.append(e)
         if verbose:
-            print(f'  ✓ {c["name"]}({c["code"]}) 预增{c["growth"]}% 60日{c["chg60"]}%｜{c.get("tag","")}｜{c.get("why","")}')
+            print(f'  ✓ {c["name"]}({c["code"]}) 预增{c["growth"]}% 60日{c["chg60"]}%｜{c["tag"]}｜{c["why"]}')
     _save(entries)
     if verbose:
         print(f"本批入篮 {len(added)} 只（台账共 {len(entries)} 条）→ {LEDGER}")

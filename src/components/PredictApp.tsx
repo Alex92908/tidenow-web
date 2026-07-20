@@ -13,22 +13,34 @@ interface PredictResult {
   markdown: string
 }
 
+type ScanKind = "zt" | "funnel"
+
 interface ScanStock {
   code: string
   name: string
-  height: number
-  price: number | null
+  reason?: string
+  // zt
+  height?: number
+  price?: number | null
   industry?: string
   break_n?: number | null
-  prob: number | null
-  reason: string
+  prob?: number | null
   outcome?: number | null
+  // funnel
+  growth?: number | null
+  chg60?: number | null
+  tag?: string
+  why?: string
+  entry_price?: number | null
+  alpha?: number | null
+  // shared (resolved)
   ret?: number | null
 }
 
 interface MarketScan {
-  scan: string
+  scan: ScanKind
   date: string | null
+  period?: string | null
   stocks: ScanStock[]
   stale?: boolean
 }
@@ -98,7 +110,7 @@ export function PredictApp({ locale }: Props) {
     return { provider: settings.provider, apiKey: settings.apiKey }
   }
 
-  async function handleScan() {
+  async function handleScan(kind: ScanKind) {
     setError(null)
     const key = readKey()
     if (!key) return
@@ -109,7 +121,7 @@ export function PredictApp({ locale }: Props) {
       const res = await fetch("/api/foresight", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...key, scan: "zt", top: 10 }),
+        body: JSON.stringify({ ...key, scan: kind, top: kind === "zt" ? 10 : 12 }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -186,13 +198,18 @@ export function PredictApp({ locale }: Props) {
       {isMarket && (
         <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
           {t(
-            "不用输代码——直接扫当日涨停池（二板及以上），对每只给「明日再涨停」的校准概率。数据走东财/新浪，无需 akshare。",
-            "No code needed — scans today's limit-up pool (2nd board and up) and gives each a calibrated 'limit-up again tomorrow' probability. Data via eastmoney / Sina, no akshare."
+            "不用输代码,两种扫法都自动扫全市场,数据走东财/新浪,无需 akshare：",
+            "No code needed — both scans sweep the whole market via eastmoney / Sina, no akshare:"
           )}
+          <br />
+          <span className="text-rose-600 dark:text-rose-400 font-medium">{t("🔥 打板(快钱)", "🔥 Relay (fast)")}</span>
+          {t("：当日涨停池(二板及以上),给「明日再涨停」概率。", " — today's limit-up pool (2nd board+), 'limit-up again tomorrow' probability. ")}
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("🐢 漏斗(慢钱)", "🐢 Funnel (slow)")}</span>
+          {t("：业绩预增+卖铲子位置的观察篮,持有 20 日对比沪深300。", " — an earnings-growth 'sell-shovels' basket, held 20 days vs CSI 300.")}
         </p>
       )}
 
-      {/* Domain picker + action button */}
+      {/* Domain picker + action button(s) */}
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={domain}
@@ -206,14 +223,24 @@ export function PredictApp({ locale }: Props) {
           ))}
         </select>
         {isMarket ? (
-          <button
-            type="button"
-            onClick={handleScan}
-            disabled={loading}
-            className="px-4 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading ? t("🔥 扫描中…", "🔥 Scanning…") : t("🔥 扫今日热门（多只）", "🔥 Scan today's hot list")}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => handleScan("zt")}
+              disabled={loading}
+              className="px-4 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t("🔥 扫打板", "🔥 Relay")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScan("funnel")}
+              disabled={loading}
+              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t("🐢 扫漏斗", "🐢 Funnel")}
+            </button>
+          </>
         ) : (
           <button
             type="button"
@@ -227,7 +254,7 @@ export function PredictApp({ locale }: Props) {
         {loading && (
           <span className="text-[11px] text-gray-400 dark:text-zinc-600">
             {isMarket
-              ? t("逐只打分，约 15-40 秒", "Scoring each stock, ~15-40s")
+              ? t("扫描 + 逐只打分,约 15-40 秒", "Scanning + scoring, ~15-40s")
               : t("情景推演可能需要 20-40 秒", "Scenario reasoning takes 20-40s")}
           </span>
         )}
@@ -237,13 +264,21 @@ export function PredictApp({ locale }: Props) {
         <p className="text-xs text-rose-500 leading-snug">{error}</p>
       )}
 
-      {/* Market scan — a ranked table of many candidates */}
-      {scan && (
+      {/* Market scan — a ranked table of many candidates (zt or funnel) */}
+      {scan && (() => {
+        const isFunnel = scan.scan === "funnel"
+        const accent = isFunnel
+          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+          : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+        return (
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
-              🔥 {t("涨停接力候选", "Limit-up relay candidates")}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${accent}`}>
+              {isFunnel
+                ? `🐢 ${t("慢钱漏斗观察篮", "Slow-money basket")}`
+                : `🔥 ${t("涨停接力候选", "Limit-up relay candidates")}`}
               {scan.date ? ` · ${scan.date}` : ""}
+              {isFunnel && scan.period ? t(`（业绩期 ${scan.period}）`, ` (${scan.period})`) : ""}
             </span>
             {scan.stale && (
               <span className="text-[11px] text-amber-600 dark:text-amber-400">
@@ -254,7 +289,9 @@ export function PredictApp({ locale }: Props) {
 
           {scan.stocks.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-zinc-400">
-              {t("今日涨停池暂无二板及以上标的（或非交易日）。", "No 2nd-board+ stocks in today's pool (or not a trading day).")}
+              {isFunnel
+                ? t("暂无满足条件的预增标的（或非交易日）。", "No qualifying earnings-growth names (or not a trading day).")
+                : t("今日涨停池暂无二板及以上标的（或非交易日）。", "No 2nd-board+ stocks in today's pool (or not a trading day).")}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -262,9 +299,19 @@ export function PredictApp({ locale }: Props) {
                 <thead>
                   <tr className="text-left text-[11px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
                     <th className="py-1.5 pr-2 font-medium">{t("名称", "Name")}</th>
-                    <th className="py-1.5 px-2 font-medium">{t("连板", "Streak")}</th>
-                    <th className="py-1.5 px-2 font-medium tabular-nums">{t("现价", "Price")}</th>
-                    <th className="py-1.5 px-2 font-medium">{t("再板概率", "Next-day prob")}</th>
+                    {isFunnel ? (
+                      <>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("净利预增", "Profit growth")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("60日涨幅", "60d chg")}</th>
+                        <th className="py-1.5 px-2 font-medium">{t("标签", "Tag")}</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="py-1.5 px-2 font-medium">{t("连板", "Streak")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("现价", "Price")}</th>
+                        <th className="py-1.5 px-2 font-medium">{t("再板概率", "Next-day prob")}</th>
+                      </>
+                    )}
                     <th className="py-1.5 pl-2 font-medium">{t("理由", "Why")}</th>
                   </tr>
                 </thead>
@@ -283,35 +330,56 @@ export function PredictApp({ locale }: Props) {
                             <span className="block text-[11px] text-gray-400 dark:text-zinc-600">{s.industry}</span>
                           ) : null}
                         </td>
-                        <td className="py-2 px-2 whitespace-nowrap tabular-nums text-gray-600 dark:text-zinc-400">
-                          {s.height}{t("板", "")}
-                        </td>
-                        <td className="py-2 px-2 tabular-nums text-gray-600 dark:text-zinc-400">
-                          {s.price != null ? s.price.toFixed(2) : "—"}
-                        </td>
-                        <td className="py-2 px-2">
-                          {p != null ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <span className="tabular-nums font-semibold text-gray-900 dark:text-zinc-100">{p}%</span>
-                              <span className="inline-block h-1.5 w-10 rounded-full bg-gray-100 dark:bg-white/5 overflow-hidden align-middle">
-                                <span
-                                  className="block h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400"
-                                  style={{ width: `${p}%` }}
-                                />
-                              </span>
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                          {s.outcome != null && (
-                            <span className={`block text-[11px] ${s.outcome ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
-                              {s.outcome ? t("次日已晋级", "advanced") : t("次日断板", "broke")}
-                              {s.ret != null ? ` ${(s.ret * 100).toFixed(1)}%` : ""}
-                            </span>
-                          )}
-                        </td>
+                        {isFunnel ? (
+                          <>
+                            <td className="py-2 px-2 whitespace-nowrap tabular-nums text-emerald-600 dark:text-emerald-400 font-medium">
+                              {s.growth != null ? `+${s.growth >= 1000 ? Math.round(s.growth) : s.growth}%` : "—"}
+                            </td>
+                            <td className={`py-2 px-2 whitespace-nowrap tabular-nums ${(s.chg60 ?? 0) < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                              {s.chg60 != null ? `${s.chg60 > 0 ? "+" : ""}${s.chg60}%` : "—"}
+                            </td>
+                            <td className="py-2 px-2 text-[12px] text-gray-600 dark:text-zinc-300">
+                              {s.tag || "—"}
+                              {s.alpha != null && (
+                                <span className={`block text-[11px] ${s.alpha > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
+                                  {t("超额", "α")} {(s.alpha * 100).toFixed(1)}%
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-2 px-2 whitespace-nowrap tabular-nums text-gray-600 dark:text-zinc-400">
+                              {s.height}{t("板", "")}
+                            </td>
+                            <td className="py-2 px-2 tabular-nums text-gray-600 dark:text-zinc-400">
+                              {s.price != null ? s.price.toFixed(2) : "—"}
+                            </td>
+                            <td className="py-2 px-2">
+                              {p != null ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="tabular-nums font-semibold text-gray-900 dark:text-zinc-100">{p}%</span>
+                                  <span className="inline-block h-1.5 w-10 rounded-full bg-gray-100 dark:bg-white/5 overflow-hidden align-middle">
+                                    <span
+                                      className="block h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400"
+                                      style={{ width: `${p}%` }}
+                                    />
+                                  </span>
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                              {s.outcome != null && (
+                                <span className={`block text-[11px] ${s.outcome ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
+                                  {s.outcome ? t("次日已晋级", "advanced") : t("次日断板", "broke")}
+                                  {s.ret != null ? ` ${(s.ret * 100).toFixed(1)}%` : ""}
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        )}
                         <td className="py-2 pl-2 text-[12px] text-gray-500 dark:text-zinc-400 leading-snug max-w-[16rem]">
-                          {s.reason}
+                          {isFunnel ? s.why : s.reason}
                         </td>
                       </tr>
                     )
@@ -322,13 +390,19 @@ export function PredictApp({ locale }: Props) {
           )}
 
           <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-3">
-            {t(
-              "概率=历史基率经 LLM 微调后的「明日再涨停」校准值，不等于「该买」。涨停接力长期胜负需台账验证——预注册假设为盈亏偏负。仅供参考，非投资建议。",
-              "Probability is a calibrated 'limit-up again tomorrow' estimate (base rate + LLM nudge), not a buy signal. Whether limit-up relay pays needs ledger validation — the pre-registered hypothesis is net-negative P&L. Reference only, not investment advice."
-            )}
+            {isFunnel
+              ? t(
+                  "篮子=业绩预增中挑「政策主线+卖铲子位置」、剔除已爆炒(60日>80%)的观察组,等权持有 20 个交易日对比沪深300。业绩预告全市场可见,非私有信息——赚的只能是「耐心+纪律」的钱。预注册假设:小幅跑赢基准。仅供参考,非投资建议。",
+                  "The basket picks 'policy-mainline + sell-shovels' names from earnings-growth candidates, drops the over-heated (60d >80%), and holds equal-weight 20 trading days vs CSI 300. Earnings pre-announcements are public, not private info — the only edge is patience + discipline. Pre-registered hypothesis: mild outperformance. Reference only, not investment advice."
+                )
+              : t(
+                  "概率=历史基率经 LLM 微调后的「明日再涨停」校准值，不等于「该买」。涨停接力长期胜负需台账验证——预注册假设为盈亏偏负。仅供参考，非投资建议。",
+                  "Probability is a calibrated 'limit-up again tomorrow' estimate (base rate + LLM nudge), not a buy signal. Whether limit-up relay pays needs ledger validation — the pre-registered hypothesis is net-negative P&L. Reference only, not investment advice."
+                )}
           </p>
         </div>
-      )}
+        )
+      })()}
 
       {/* Result */}
       {result && (

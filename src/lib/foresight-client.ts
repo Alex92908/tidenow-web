@@ -84,41 +84,56 @@ export async function getForesight(
   }
 }
 
-/** One stock in a market scan — a limit-up-relay candidate with the
- *  engine's "goes limit-up again tomorrow" probability. */
+/** One stock in a market scan. Fields are a superset of both scan kinds:
+ *  zt (limit-up relay) uses height/price/prob/reason; funnel (slow-money
+ *  basket) uses growth/chg60/tag/why. Resolved ledger rows add outcome/
+ *  ret (zt) or ret/alpha (funnel). */
 export interface ScanStock {
   code: string
   name: string
-  height: number
-  price: number | null
+  reason?: string
+  // zt fields
+  height?: number
+  price?: number | null
   industry?: string
   break_n?: number | null
-  prob: number | null
-  reason: string
-  /** Present only for stale (ledger) rows already resolved. */
+  prob?: number | null
   outcome?: number | null
+  // funnel fields
+  growth?: number | null
+  chg60?: number | null
+  tag?: string
+  why?: string
+  entry_price?: number | null
+  alpha?: number | null
+  // shared (resolved)
   ret?: number | null
 }
 
+export type ScanKind = "zt" | "funnel"
+
 export interface MarketScan {
-  scan: string
+  scan: ScanKind
   /** Trading day of the batch, YYYYMMDD, or null if the ledger is empty. */
   date: string | null
+  /** funnel only: the earnings report period the basket keys off. */
+  period?: string | null
   stocks: ScanStock[]
   /** True when live fetch failed and we fell back to the git ledger. */
   stale?: boolean
 }
 
 /**
- * Scan today's limit-up pool and return MANY scored candidates (not a
- * single-event prediction). Data is eastmoney push2ex + Sina K-lines
- * (pure HTTP, no akshare). Reuses the caller's BYOK key for the per-stock
- * LLM adjustment. Returns null only on total failure — the Python side
- * already degrades to the git ledger, so a non-null result may be `stale`.
+ * Scan the market and return MANY candidates (not a single-event
+ * prediction). kind "zt" = today's limit-up-relay pool; "funnel" = a
+ * slow-money earnings-growth basket. Data is eastmoney + Sina over plain
+ * HTTP (no akshare), scored with the caller's BYOK key. Returns null only
+ * on total failure — the Python side already degrades to the git ledger,
+ * so a non-null result may be `stale`.
  */
 export async function scanMarket(
   byok: { provider: string; apiKey: string },
-  opts: { top?: number; signal?: AbortSignal } = {}
+  opts: { kind?: ScanKind; top?: number; signal?: AbortSignal } = {}
 ): Promise<MarketScan | null> {
   if (byok.provider === "gemini" || byok.provider === "gemini-nano") return null
   if (!byok.apiKey) return null
@@ -133,8 +148,8 @@ export async function scanMarket(
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        scan: "zt",
-        top: opts.top ?? 8,
+        scan: opts.kind ?? "zt",
+        ...(opts.top ? { top: opts.top } : {}),
         provider: byok.provider,
         apiKey: byok.apiKey,
       }),
