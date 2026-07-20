@@ -22,8 +22,9 @@
   FORESIGHT_BASE_URL  默认 https://api.deepseek.com
   FORESIGHT_MODEL     默认 deepseek-chat
 
-依赖：scan/resolve 需要 akshare 拉行情（pip install akshare）。
-台账已含历史记录，stats 不需要 akshare。
+数据源：全部纯 requests，无需 akshare——
+  涨停池/连板 → 东财 push2ex；业绩预告 → 东财 datacenter；
+  个股/指数日线 → 新浪 K 线。
 """
 from __future__ import annotations
 

@@ -1,12 +1,13 @@
 """quant：股票/期货量化信号后端。
 
 设计原则：不用 LLM 预测价格（那是玄学），而是：
-1. 拉取真实行情（akshare，多源；未安装则接受手动 CSV）
+1. 拉取真实行情（新浪日线，纯 requests，无需 akshare）
 2. 计算 RSI / MACD / 布林带 / 动量
 3. 输出"信号组合 + 历史基率"式的概率判断，而非点预测
 4. LLM 只负责把信号翻译成人话 + 提示风险
 
-数据源优先级：akshare 自动拉取 → 手动 CSV 兜底（akshare 网络不稳时）。
+数据源：新浪日线（A股 6 位代码 / 指数 sh000300 等）→ 手动 CSV 兜底。
+港股（5 位）新浪该接口不支持，请用 --csv 提供收盘价。
 """
 from __future__ import annotations
 
@@ -20,16 +21,16 @@ def _try_fetch_sina(symbol: str, verbose=True):
     """轻量行情抓取：直接打新浪财经日线接口，纯 requests，无需 akshare。
     akshare 底层也是调这类接口，这里省掉那一大坨 pandas 依赖。
 
-    symbol 归一化：6位数字→ A股（6开头=sh，其余=sz）；sh/sz 前缀→原样；
-    5位数字（港股）新浪这个接口不支持，返回 None 让上层降级到 akshare。
+    symbol 归一化：6位数字→ A股（6/9开头=sh，其余=sz）；sh/sz 前缀（含指数
+    sh000300）→原样；其它（港股 5 位等）本接口不支持，返回 None → 上层提示用 CSV。
     """
     s = symbol.lower().strip()
     if s.isdigit() and len(s) == 6:
-        sina_sym = ("sh" if s[0] == "6" else "sz") + s
+        sina_sym = ("sh" if s[0] in ("6", "9") else "sz") + s
     elif s[:2] in ("sh", "sz") and s[2:].isdigit():
-        sina_sym = s
+        sina_sym = s  # A股带前缀 或 指数（sh000300 / sz399006）
     else:
-        return None  # 港股/指数等交给 akshare 分支
+        return None  # 港股/其它：交给 CSV 兜底
 
     try:
         r = requests.get(
@@ -44,56 +45,8 @@ def _try_fetch_sina(symbol: str, verbose=True):
         return closes[-120:] if closes else None
     except Exception as e:
         if verbose:
-            print(f"    ! 新浪接口失败（{type(e).__name__}），尝试 akshare…")
+            print(f"    ! 新浪接口失败（{type(e).__name__}）")
         return None
-
-
-def _try_fetch_akshare(symbol: str, verbose=True):
-    """尝试用 akshare 拉 A 股/港股/指数日线，多源降级（东财→新浪），失败返回 None。
-
-    symbol 形态：6位数字=A股个股；5位数字=港股；sh/sz/csi 前缀=指数（如 sh000001 上证）。
-    国内源在开代理的机器上易被截断（ProxyError/RemoteDisconnected），故按源逐个降级。
-    """
-    try:
-        import akshare as ak
-    except ImportError:
-        if verbose:
-            print("    ! 未安装 akshare（pip install akshare），无法自动拉取行情")
-        return None
-
-    def _hk():
-        return ak.stock_hk_daily(symbol=symbol)["close"].tolist()
-
-    def _a_east():
-        return ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")["收盘"].tolist()
-
-    def _a_sina():
-        return ak.stock_zh_a_daily(symbol=("sh" if symbol.startswith("6") else "sz") + symbol,
-                                   adjust="qfq")["close"].tolist()
-
-    def _index_sina():
-        return ak.stock_zh_index_daily(symbol=symbol)["close"].tolist()
-
-    def _index_east():
-        return ak.index_zh_a_hist(symbol=symbol[2:] if symbol[:2] in ("sh", "sz") else symbol,
-                                  period="daily")["收盘"].tolist()
-
-    if symbol.isdigit() and len(symbol) == 5:
-        fetchers = [("hk", _hk)]
-    elif symbol[:2].lower() in ("sh", "sz", "cs") and not symbol.isdigit():
-        fetchers = [("index_sina", _index_sina), ("index_east", _index_east)]
-    else:
-        fetchers = [("a_east", _a_east), ("a_sina", _a_sina)]
-
-    for name, fn in fetchers:
-        try:
-            closes = fn()[-120:]
-            if closes:
-                return [float(c) for c in closes]
-        except Exception as e:
-            if verbose:
-                print(f"    ! 源 {name} 失败（{type(e).__name__}），尝试下一个…")
-    return None
 
 
 def _load_csv(path: str):
@@ -181,19 +134,11 @@ def run(llm, seed: str, symbol: str | None = None, csv: str | None = None, verbo
         closes = _load_csv(csv)
         src = f"CSV: {csv}"
     elif symbol:
-        # 优先轻量新浪接口（A股，无需 akshare），失败再降级 akshare（港股/指数）
+        # 新浪日线：A股 6 位代码 / 指数 sh000300 等，纯 requests，无需 akshare。
         closes = _try_fetch_sina(symbol, verbose)
-        if closes:
-            src = f"sina: {symbol}"
-        else:
-            closes = _try_fetch_akshare(symbol, verbose)
-            src = f"akshare: {symbol}"
+        src = f"sina: {symbol}" if closes else None
     if not closes:
-        try:
-            import akshare  # noqa: F401
-            reason = "拉取失败（网络问题或代码不存在）。A股用6位代码（如600519），港股/指数需装 akshare，或用 --csv 提供收盘价。"
-        except ImportError:
-            reason = "A股用6位代码（如600519）走轻量新浪接口即可；港股/指数需 pip install akshare，或用 --csv 提供收盘价。"
+        reason = "A股用6位代码（如600519）、指数用带前缀（如sh000300）走新浪接口；港股或拉取失败请用 --csv 提供收盘价。"
         if not symbol and not csv:
             reason = "market 域需要数据源：--symbol 股票代码 或 --csv 收盘价文件。"
         return {"backend": "quant", "error": reason}

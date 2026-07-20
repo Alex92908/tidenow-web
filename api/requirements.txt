@@ -1,7 +1,9 @@
 # Pinning major versions only — Vercel resolves the latest patch.
 # akshare and PyQt6 from the original ForeSight requirements are
-# intentionally omitted: akshare's quant backend gracefully degrades
-# (try/except wraps the import) and PyQt6 was only for the desktop GUI.
+# intentionally omitted. All market data (limit-up pool, earnings
+# pre-announcements, K-lines, indices) is fetched with plain `requests`
+# from eastmoney/Sina HTTP endpoints — no akshare anywhere. PyQt6 was
+# only for the desktop GUI.
 requests>=2.28
 pyyaml>=6.0
 # Needed only when a TideNow user's BYOK provider is Anthropic — ForeSight's

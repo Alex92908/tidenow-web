@@ -20,7 +20,13 @@ import json
 import os
 import time
 
+import requests
+
 from .backends.common import safe_chat_json
+from .screener import KLINE_URL, _sina_sym  # 新浪日线 helper，单一来源
+
+# 东财业绩预告（datacenter，akshare stock_yjyg_em 底层同源），纯 requests。
+YJYG_URL = "https://datacenter-web.eastmoney.com/api/data/v1/get"
 
 # Project root is two levels up from lib/foresight/. Ledger is git-tracked
 # under src/data/experiments/ so the falsifiable record survives machine
@@ -59,37 +65,58 @@ def _period(date: str) -> str:
 
 
 def _default_yjyg(period: str) -> list:
-    import akshare as ak
-    df = ak.stock_yjyg_em(date=period)
-    return df.to_dict("records")
+    """东财业绩预告，纯 requests，无需 akshare。period 形如 20260331；分页拉全，
+    映射成下方 candidates() 认的中文键（预告类型/业绩变动幅度/预测数值…）。
+    业绩变动幅度取增幅上下限均值；预测数值取净利下限（>0 即最坏也盈利）。"""
+    rpt = f"{period[:4]}-{period[4:6]}-{period[6:]}"
+    out, page = [], 1
+    while page <= 6:  # 单期通常几百条，6×500 足够兜底
+        j = requests.get(YJYG_URL, params={
+            "sortColumns": "ADD_AMP_LOWER", "sortTypes": "-1",
+            "pageSize": 500, "pageNumber": page,
+            "reportName": "RPT_PUBLIC_OP_NEWPREDICT", "columns": "ALL",
+            "filter": f"(REPORT_DATE='{rpt}')",
+        }, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://data.eastmoney.com/"},
+            timeout=15).json()
+        data = ((j or {}).get("result") or {}).get("data") or []
+        if not data:
+            break
+        for d in data:
+            amps = [x for x in (d.get("ADD_AMP_LOWER"), d.get("ADD_AMP_UPPER"))
+                    if isinstance(x, (int, float))]
+            out.append({
+                "股票代码": str(d.get("SECURITY_CODE", "")),
+                "股票简称": str(d.get("SECURITY_NAME_ABBR", "")),
+                "预测指标": str(d.get("PREDICT_FINANCE", "")),
+                "预告类型": str(d.get("PREDICT_TYPE", "")),
+                "业绩变动幅度": sum(amps) / len(amps) if amps else 0.0,
+                "预测数值": d.get("PREDICT_AMT_LOWER") or 0,
+            })
+        if len(data) < 500:
+            break
+        page += 1
+    return out
+
+
+def _sina_hist(sym: str, start_date: str) -> list:
+    """新浪日线（不复权），纯 requests。sym 为带前缀符号（sh600519/sh000300）。"""
+    r = requests.get(KLINE_URL, params={"symbol": sym, "scale": 240, "ma": "no",
+                     "datalen": 300}, headers={"User-Agent": "Mozilla/5.0",
+                     "Referer": "https://finance.sina.com.cn"}, timeout=12)
+    r.raise_for_status()
+    data = json.loads(r.text)
+    return [{"date": str(d["day"]).replace("-", ""), "close": float(d["close"])}
+            for d in data if str(d["day"]).replace("-", "") >= start_date]
 
 
 def _hist(code: str, start_date: str) -> list:
-    """日线（不复权），东财→新浪降级。返回 [{date, close}]，date 为 YYYYMMDD。"""
-    import akshare as ak
-    try:
-        df = ak.stock_zh_a_hist(symbol=code, period="daily", start_date=start_date, adjust="")
-        return [{"date": str(r["日期"]).replace("-", ""), "close": float(r["收盘"])}
-                for _, r in df.iterrows()]
-    except Exception:
-        df = ak.stock_zh_a_daily(symbol=("sh" if code.startswith("6") else "sz") + code, adjust="")
-        out = []
-        for _, r in df.iterrows():
-            d = str(r["date"]).replace("-", "")[:8]
-            if d >= start_date:
-                out.append({"date": d, "close": float(r["close"])})
-        return out
+    """个股日线（新浪），无需 akshare。返回 [{date, close}]，date 为 YYYYMMDD。"""
+    return _sina_hist(_sina_sym(code), start_date)
 
 
 def _default_bench(start_date: str) -> list:
-    import akshare as ak
-    df = ak.stock_zh_index_daily(symbol=BENCH)
-    out = []
-    for _, r in df.iterrows():
-        d = str(r["date"]).replace("-", "")[:8]
-        if d >= start_date:
-            out.append({"date": d, "close": float(r["close"])})
-    return out
+    """沪深300 指数日线（新浪），无需 akshare。BENCH 已是带前缀符号 sh000300。"""
+    return _sina_hist(BENCH, start_date)
 
 
 def _load() -> list:
