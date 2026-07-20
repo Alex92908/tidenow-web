@@ -67,12 +67,99 @@ const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "market", en: "Stocks (A-share)", zh: "股票（A股）" },
   { id: "nature", en: "Weather / nature", zh: "天气/自然" },
   { id: "metaphysics", en: "Metaphysics / fortune", zh: "玄学/命理" },
+  { id: "lottery", en: "Lottery / lucky pick", zh: "彩票/幸运号" },
 ]
 
 // Domain → display label + accent. Keeps the result badge readable.
 const DOMAIN_LABEL: Record<string, { en: string; zh: string }> = Object.fromEntries(
   DOMAINS.filter((d) => d.id !== "auto").map((d) => [d.id, { en: d.en, zh: d.zh }])
 )
+
+// ── Lottery quick-pick (client-side) ─────────────────────────────────
+// Lottery numbers are provably unpredictable, so there is nothing to
+// "predict" and no reason to route them through an LLM — an "AI picked
+// your numbers" implication is exactly the con this project refuses to
+// run. We generate a fair random quick-pick locally with the browser CSPRNG
+// (crypto.getRandomValues), instantly and with no API key, and pair it
+// with the game's real payout ratio so the framing stays honest.
+type LotteryGroup =
+  | { name: { zh: string; en: string }; kind: "pick"; min: number; max: number; count: number }
+  | { name: { zh: string; en: string }; kind: "digits"; count: number }
+
+interface Lottery {
+  id: string
+  zh: string
+  en: string
+  groups: LotteryGroup[]
+  /** Official return-to-player, shown verbatim in the honest note. */
+  rtp: string
+}
+
+const LOTTERIES: Lottery[] = [
+  {
+    id: "ssq", zh: "双色球", en: "Double Color Ball", rtp: "≈50%",
+    groups: [
+      { name: { zh: "红球", en: "Red" }, kind: "pick", min: 1, max: 33, count: 6 },
+      { name: { zh: "蓝球", en: "Blue" }, kind: "pick", min: 1, max: 16, count: 1 },
+    ],
+  },
+  {
+    id: "dlt", zh: "大乐透", en: "Grand Lotto", rtp: "≈50%",
+    groups: [
+      { name: { zh: "前区", en: "Front" }, kind: "pick", min: 1, max: 35, count: 5 },
+      { name: { zh: "后区", en: "Back" }, kind: "pick", min: 1, max: 12, count: 2 },
+    ],
+  },
+  {
+    id: "qlc", zh: "七乐彩", en: "Seven Lotto", rtp: "≈50%",
+    groups: [{ name: { zh: "基本号", en: "Main" }, kind: "pick", min: 1, max: 30, count: 7 }],
+  },
+  {
+    id: "fc3d", zh: "福彩3D", en: "Fucai 3D", rtp: "≈50%",
+    groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 3 }],
+  },
+  {
+    id: "pl5", zh: "排列5", en: "Pailie 5", rtp: "≈50%",
+    groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 5 }],
+  },
+]
+
+/** Uniform integer in [min, max] via CSPRNG, rejection-sampled to avoid
+ *  modulo bias. */
+function randInt(min: number, max: number): number {
+  const range = max - min + 1
+  const limit = Math.floor(0xffffffff / range) * range
+  const buf = new Uint32Array(1)
+  do {
+    crypto.getRandomValues(buf)
+  } while (buf[0] >= limit)
+  return min + (buf[0] % range)
+}
+
+interface LotteryPick {
+  gameId: string
+  label: string
+  groups: { name: string; numbers: number[] }[]
+}
+
+function pickLottery(game: Lottery, isZh: boolean): LotteryPick {
+  const groups = game.groups.map((g) => {
+    let numbers: number[]
+    if (g.kind === "pick") {
+      const pool = Array.from({ length: g.max - g.min + 1 }, (_, i) => g.min + i)
+      for (let i = 0; i < g.count; i++) {
+        const j = i + randInt(0, pool.length - 1 - i)
+        ;[pool[i], pool[j]] = [pool[j], pool[i]]
+      }
+      numbers = pool.slice(0, g.count).sort((a, b) => a - b)
+    } else {
+      // Independent digits 0-9, order matters, repeats allowed.
+      numbers = Array.from({ length: g.count }, () => randInt(0, 9))
+    }
+    return { name: isZh ? g.name.zh : g.name.en, numbers }
+  })
+  return { gameId: game.id, label: isZh ? game.zh : game.en, groups }
+}
 
 export function PredictApp({ locale }: Props) {
   const [seed, setSeed] = useState("")
@@ -81,10 +168,19 @@ export function PredictApp({ locale }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<PredictResult | null>(null)
   const [scan, setScan] = useState<MarketScan | null>(null)
+  const [lottery, setLottery] = useState<LotteryPick | null>(null)
 
   const isZh = locale === "zh"
   const t = (zh: string, en: string) => (isZh ? zh : en)
   const isMarket = domain === "market"
+  const isLottery = domain === "lottery"
+
+  function handleLottery(game: Lottery) {
+    setError(null)
+    setResult(null)
+    setScan(null)
+    setLottery(pickLottery(game, isZh))
+  }
 
   // Read the BYOK key, surfacing the same errors for both flows.
   function readKey(): { provider: string; apiKey: string } | null {
@@ -181,8 +277,8 @@ export function PredictApp({ locale }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Input — hidden in market-scan mode, which needs no seed. */}
-      {!isMarket && (
+      {/* Input — hidden in market-scan and lottery modes (no seed). */}
+      {!isMarket && !isLottery && (
         <textarea
           value={seed}
           onChange={(e) => setSeed(e.target.value)}
@@ -206,6 +302,15 @@ export function PredictApp({ locale }: Props) {
           {t("：当日涨停池(二板及以上),给「明日再涨停」概率。", " — today's limit-up pool (2nd board+), 'limit-up again tomorrow' probability. ")}
           <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("🐢 漏斗(慢钱)", "🐢 Funnel (slow)")}</span>
           {t("：业绩预增+卖铲子位置的观察篮,持有 20 日对比沪深300。", " — an earnings-growth 'sell-shovels' basket, held 20 days vs CSI 300.")}
+        </p>
+      )}
+
+      {isLottery && (
+        <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+          {t(
+            "选个彩种一键机选——号码由你浏览器的密码学随机数即时生成,不经过 AI,不上传。彩票每期独立、无记忆,任何「预测」都无效;这只是把机选搬到本地,纯娱乐。",
+            "Pick a game for an instant quick-pick — numbers come straight from your browser's cryptographic RNG, no AI, nothing uploaded. Each draw is independent and memoryless, so any 'prediction' is void; this is just a local quick-pick, for fun only."
+          )}
         </p>
       )}
 
@@ -241,6 +346,17 @@ export function PredictApp({ locale }: Props) {
               {t("🐢 扫漏斗", "🐢 Funnel")}
             </button>
           </>
+        ) : isLottery ? (
+          LOTTERIES.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => handleLottery(g)}
+              className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium shadow-sm transition-colors"
+            >
+              🎲 {isZh ? g.zh : g.en}
+            </button>
+          ))
         ) : (
           <button
             type="button"
@@ -262,6 +378,54 @@ export function PredictApp({ locale }: Props) {
 
       {error && (
         <p className="text-xs text-rose-500 leading-snug">{error}</p>
+      )}
+
+      {/* Lottery quick-pick result — balls + honest note */}
+      {lottery && (
+        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+              🎲 {lottery.label} · {t("机选一注", "one quick-pick")}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const g = LOTTERIES.find((x) => x.id === lottery.gameId)
+                if (g) handleLottery(g)
+              }}
+              className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline"
+            >
+              {t("↻ 再来一注", "↻ Pick again")}
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {lottery.groups.map((grp, gi) => (
+              <div key={gi} className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-400 dark:text-zinc-500 w-12 shrink-0">{grp.name}</span>
+                {grp.numbers.map((n, ni) => (
+                  <span
+                    key={ni}
+                    className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-sm font-semibold tabular-nums ${
+                      gi === 0
+                        ? "bg-rose-500 text-white"
+                        : "bg-sky-500 text-white"
+                    }`}
+                  >
+                    {String(n).padStart(2, "0")}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-3">
+            {t(
+              `号码由浏览器密码学随机数(crypto)即时生成,每个号等概率,不改变任何中奖概率。${lottery.label}官方返奖率约 50%——长期每投 100 元约返 50 元。请把它当乐趣的花费,不是投资。声称能算中彩票的都是骗局。`,
+              `Numbers come from the browser's cryptographic RNG — every number equally likely, changing no odds. ${lottery.label}'s official payout is ~50%, i.e. long-run you get back ~50 of every 100 spent. Treat it as the cost of fun, not an investment. Anyone claiming to predict the lottery is running a con.`
+            )}
+          </p>
+        </div>
       )}
 
       {/* Market scan — a ranked table of many candidates (zt or funnel) */}
