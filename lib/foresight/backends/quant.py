@@ -10,7 +10,42 @@
 """
 from __future__ import annotations
 
+import json
 import statistics
+
+import requests
+
+
+def _try_fetch_sina(symbol: str, verbose=True):
+    """轻量行情抓取：直接打新浪财经日线接口，纯 requests，无需 akshare。
+    akshare 底层也是调这类接口，这里省掉那一大坨 pandas 依赖。
+
+    symbol 归一化：6位数字→ A股（6开头=sh，其余=sz）；sh/sz 前缀→原样；
+    5位数字（港股）新浪这个接口不支持，返回 None 让上层降级到 akshare。
+    """
+    s = symbol.lower().strip()
+    if s.isdigit() and len(s) == 6:
+        sina_sym = ("sh" if s[0] == "6" else "sz") + s
+    elif s[:2] in ("sh", "sz") and s[2:].isdigit():
+        sina_sym = s
+    else:
+        return None  # 港股/指数等交给 akshare 分支
+
+    try:
+        r = requests.get(
+            "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData",
+            params={"symbol": sina_sym, "scale": 240, "ma": "no", "datalen": 120},
+            headers={"User-Agent": "Mozilla/5.0", "Referer": "https://finance.sina.com.cn"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = json.loads(r.text)
+        closes = [float(d["close"]) for d in data if d.get("close")]
+        return closes[-120:] if closes else None
+    except Exception as e:
+        if verbose:
+            print(f"    ! 新浪接口失败（{type(e).__name__}），尝试 akshare…")
+        return None
 
 
 def _try_fetch_akshare(symbol: str, verbose=True):
@@ -146,14 +181,19 @@ def run(llm, seed: str, symbol: str | None = None, csv: str | None = None, verbo
         closes = _load_csv(csv)
         src = f"CSV: {csv}"
     elif symbol:
-        closes = _try_fetch_akshare(symbol)
-        src = f"akshare: {symbol}"
+        # 优先轻量新浪接口（A股，无需 akshare），失败再降级 akshare（港股/指数）
+        closes = _try_fetch_sina(symbol, verbose)
+        if closes:
+            src = f"sina: {symbol}"
+        else:
+            closes = _try_fetch_akshare(symbol, verbose)
+            src = f"akshare: {symbol}"
     if not closes:
         try:
             import akshare  # noqa: F401
-            reason = "akshare 已安装但拉取失败（多为网络问题或代码不存在），可重试或改用 --csv 提供收盘价。"
+            reason = "拉取失败（网络问题或代码不存在）。A股用6位代码（如600519），港股/指数需装 akshare，或用 --csv 提供收盘价。"
         except ImportError:
-            reason = "未安装 akshare（pip install akshare），或改用 --csv 提供收盘价文件。"
+            reason = "A股用6位代码（如600519）走轻量新浪接口即可；港股/指数需 pip install akshare，或用 --csv 提供收盘价。"
         if not symbol and not csv:
             reason = "market 域需要数据源：--symbol 股票代码 或 --csv 收盘价文件。"
         return {"backend": "quant", "error": reason}

@@ -32,6 +32,7 @@ const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "trend", en: "Consumer trend", zh: "消费趋势" },
   { id: "election", en: "Elections", zh: "选举" },
   { id: "boxoffice", en: "Box office", zh: "影视票房" },
+  { id: "market", en: "Stocks (A-share)", zh: "股票（A股）" },
   { id: "nature", en: "Weather / nature", zh: "天气/自然" },
   { id: "metaphysics", en: "Metaphysics / fortune", zh: "玄学/命理" },
 ]

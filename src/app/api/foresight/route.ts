@@ -15,6 +15,9 @@ interface PredictRequest {
   apiKey: string
   seed: string
   domain?: string
+  /** Stock code for the market/quant domain (e.g. 600519). With it, the
+   *  quant backend fetches real quotes (Sina daily K-line, no akshare). */
+  symbol?: string
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 })
   }
-  const { provider, apiKey, seed, domain } = body
+  const { provider, apiKey, seed, domain, symbol } = body
   if (!provider || !apiKey) {
     return NextResponse.json({ error: "missing provider/apiKey" }, { status: 503 })
   }
@@ -42,15 +45,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain })
+  let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain, symbol })
 
-  // The 'market' (quant) backend needs a price feed (akshare or an
-  // uploaded CSV), neither of which exists in this deployment — so a
-  // market route always errors with "需要数据源". When auto-routing lands
-  // there, silently redo the prediction as 'scenario' (the general
-  // narrative-forecast backend), which handles company/price events fine
-  // without market data. This costs one extra call only in that case.
-  if (fs && fs.domain === "market") {
+  // The 'market' (quant) backend needs a price feed. With a symbol it
+  // fetches real quotes (Sina daily K-line). WITHOUT a symbol it can't,
+  // so an auto-route that lands on market with no code is silently redone
+  // as 'scenario' (the general narrative backend, which handles company/
+  // price events fine). If the user gave a symbol, let market run.
+  if (fs && fs.domain === "market" && !symbol) {
     const retried = await getForesight(seed.trim(), { provider, apiKey }, { domain: "scenario" })
     if (retried) fs = retried
   }
