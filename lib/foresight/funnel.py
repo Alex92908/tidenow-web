@@ -166,14 +166,27 @@ def candidates(period: str, yjyg_fetcher=None, min_growth: float = 50.0) -> list
 
 
 def rank(llm, date: str | None = None, top: int = 12, pre: int = 60,
+         mode: str = "growth",
          yjyg_fetcher=None, hist_fetcher=None, verbose: bool = False) -> dict:
     """跑漏斗前半段（业绩层 → 过热过滤 → LLM 选篮），返回观察篮多只
-    （不落台账、不算基准）。供网页 /predict 展示，也是 scan 落账前的共用步骤。"""
+    （不落台账、不算基准）。供网页 /predict 展示，也是 scan 落账前的共用步骤。
+
+    mode 决定进入 LLM 视野的候选口径：
+      growth  预增幅优先（默认）——按预增幅降序直取，含低基数怪胎；
+      quality 质量优先——剔除极端预增（>1000%，多为低基数/并表/投资收益）
+              与近 15 日暴跌（<-30%，接飞刀），偏温和真增长；
+      wide    广撒网——放大候选池（pre≥80），给 LLM 更大挑选余地。"""
     date = date or time.strftime("%Y%m%d")
     period = _period(date)
     cands = candidates(period, yjyg_fetcher=yjyg_fetcher)
     if verbose:
         print(f"  业绩层（{period} 预增≥50%且盈利）：{len(cands)} 只")
+    if mode == "quality":
+        cands = [c for c in cands if c["growth"] <= 1000]
+        if verbose:
+            print(f"  质量口径（剔除预增>1000%）：{len(cands)} 只")
+    elif mode == "wide":
+        pre = max(pre, 80)
 
     hist = hist_fetcher or _hist
     lookback = str(int(date[:4]) - 1) + date[4:]
@@ -206,6 +219,12 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 60,
         enriched = [c for c in ex.map(_enrich, cands[:pre]) if c]
     if verbose:
         print(f"  过热过滤（60日涨幅≤{HOT_CHG60:.0f}%）：{len(enriched)} 只")
+    if mode == "quality":
+        # 接飞刀过滤：近 15 日跌超 30% 说明正在崩（如存储股半月 -40%），
+        # 质量口径下不接。growth/wide 口径保留，交给 LLM 和台账判断。
+        enriched = [c for c in enriched if c.get("chg15") is None or c["chg15"] > -30]
+        if verbose:
+            print(f"  飞刀过滤（15日跌幅≤30%）：{len(enriched)} 只")
     if not enriched:
         return {"date": date, "period": period, "stocks": []}
 

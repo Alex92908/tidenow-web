@@ -164,7 +164,9 @@ class handler(BaseHTTPRequestHandler):
                 # reasonable-growth quality names reach the LLM at all.
                 # 40 parallel fetches ≈ 4 waves of 10 workers — a few seconds
                 # healthy, and the frontend degrades gracefully if slow.
-                fetch = lambda: mod.rank(llm, top=top, pre=40)  # noqa: E731
+                # mode: growth (default) / quality / wide — see funnel.rank.
+                mode = body.get("mode") if body.get("mode") in ("growth", "quality", "wide") else "growth"
+                fetch = lambda: mod.rank(llm, top=top, pre=40, mode=mode)  # noqa: E731
 
             try:
                 payload = fetch()

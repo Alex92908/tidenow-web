@@ -14,6 +14,18 @@ interface PredictResult {
 }
 
 type ScanKind = "zt" | "funnel"
+type FunnelMode = "growth" | "quality" | "wide"
+
+// Funnel candidate strategies — which slice of the earnings-growth pool
+// reaches the LLM. Kept as data so the chips row renders from one list.
+const FUNNEL_MODES: { id: FunnelMode; zh: string; en: string; zhTip: string; enTip: string }[] = [
+  { id: "growth", zh: "🚀 预增幅优先", en: "🚀 Top growth",
+    zhTip: "按预增幅降序直取（含低基数怪胎）", enTip: "sorted by growth, low-base freaks included" },
+  { id: "quality", zh: "🧐 质量优先", en: "🧐 Quality",
+    zhTip: "剔除预增>1000%（低基数/并表）与近15日暴跌>30%（飞刀）", enTip: "drops >1000% low-base freaks and 15d>-30% falling knives" },
+  { id: "wide", zh: "🌊 广撒网", en: "🌊 Wide net",
+    zhTip: "候选池放大到80只，篮子最多15只", enTip: "80-candidate pool, basket up to 15" },
+]
 
 interface ScanStock {
   code: string
@@ -172,6 +184,7 @@ export function PredictApp({ locale }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<PredictResult | null>(null)
   const [scan, setScan] = useState<MarketScan | null>(null)
+  const [funnelMode, setFunnelMode] = useState<FunnelMode>("growth")
   const [lottery, setLottery] = useState<LotteryPick | null>(null)
 
   const isZh = locale === "zh"
@@ -221,7 +234,12 @@ export function PredictApp({ locale }: Props) {
       const res = await fetch("/api/foresight", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...key, scan: kind, top: kind === "zt" ? 10 : 12 }),
+        body: JSON.stringify({
+          ...key,
+          scan: kind,
+          top: kind === "zt" ? 10 : funnelMode === "wide" ? 15 : 12,
+          ...(kind === "funnel" ? { mode: funnelMode } : {}),
+        }),
       })
       // The response may not be JSON — e.g. a slow scan that trips the
       // serverless timeout returns a plain-text error page. Parse defensively
@@ -364,6 +382,25 @@ export function PredictApp({ locale }: Props) {
             >
               {t("🐢 扫漏斗", "🐢 Funnel")}
             </button>
+            {/* Funnel candidate-strategy chips (only affect the funnel scan) */}
+            <span className="inline-flex items-center gap-1 flex-wrap">
+              {FUNNEL_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setFunnelMode(m.id)}
+                  disabled={loading}
+                  title={isZh ? m.zhTip : m.enTip}
+                  className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors disabled:opacity-40 ${
+                    funnelMode === m.id
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-emerald-400/50"
+                      : "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                  }`}
+                >
+                  {isZh ? m.zh : m.en}
+                </button>
+              ))}
+            </span>
           </>
         ) : isLottery ? (
           LOTTERIES.map((g) => (

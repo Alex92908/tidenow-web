@@ -135,9 +135,11 @@ export interface MarketScan {
  * on total failure — the Python side already degrades to the git ledger,
  * so a non-null result may be `stale`.
  */
+export type FunnelMode = "growth" | "quality" | "wide"
+
 export async function scanMarket(
   byok: { provider: string; apiKey: string },
-  opts: { kind?: ScanKind; top?: number; signal?: AbortSignal } = {}
+  opts: { kind?: ScanKind; top?: number; mode?: FunnelMode; signal?: AbortSignal } = {}
 ): Promise<MarketScan | null> {
   if (byok.provider === "gemini" || byok.provider === "gemini-nano") return null
   if (!byok.apiKey) return null
@@ -154,6 +156,7 @@ export async function scanMarket(
       body: JSON.stringify({
         scan: opts.kind ?? "zt",
         ...(opts.top ? { top: opts.top } : {}),
+        ...(opts.mode ? { mode: opts.mode } : {}),
         provider: byok.provider,
         apiKey: byok.apiKey,
       }),

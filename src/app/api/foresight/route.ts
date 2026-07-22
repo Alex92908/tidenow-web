@@ -23,6 +23,8 @@ interface PredictRequest {
    *  eastmoney/Sina HTTP, no akshare. */
   scan?: "zt" | "funnel"
   top?: number
+  /** funnel candidate strategy: growth (default) / quality / wide. */
+  mode?: "growth" | "quality" | "wide"
 }
 
 export async function POST(req: NextRequest) {
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 })
   }
-  const { provider, apiKey, seed, domain, symbol, scan, top } = body
+  const { provider, apiKey, seed, domain, symbol, scan, top, mode } = body
   if (!provider || !apiKey) {
     return NextResponse.json({ error: "missing provider/apiKey" }, { status: 503 })
   }
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   // Market-scan mode returns many candidates and carries no seed.
   if (scan === "zt" || scan === "funnel") {
-    const result = await scanMarket({ provider, apiKey }, { kind: scan, top })
+    const result = await scanMarket({ provider, apiKey }, { kind: scan, top, mode })
     if (!result) {
       return NextResponse.json(
         { error: "scan failed — check your API key and try again" },
