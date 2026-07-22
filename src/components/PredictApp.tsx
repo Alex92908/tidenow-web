@@ -219,9 +219,24 @@ export function PredictApp({ locale }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...key, scan: kind, top: kind === "zt" ? 10 : 12 }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? `HTTP ${res.status}`)
+      // The response may not be JSON — e.g. a slow scan that trips the
+      // serverless timeout returns a plain-text error page. Parse defensively
+      // so we show a clean message instead of "Unexpected token …".
+      const raw = await res.text()
+      let data: (MarketScan & { error?: string }) | null = null
+      try {
+        data = raw ? JSON.parse(raw) : null
+      } catch {
+        data = null
+      }
+      if (!res.ok || !data) {
+        setError(
+          data?.error ??
+            t(
+              "扫描失败或超时（漏斗要拉全市场行情，偶尔较慢）。稍等几秒再点一次。",
+              "Scan failed or timed out (the funnel fetches market-wide quotes and can be slow). Wait a moment and try again."
+            )
+        )
         return
       }
       setScan(data as MarketScan)

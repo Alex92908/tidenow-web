@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -102,7 +103,7 @@ def _sina_hist(sym: str, start_date: str) -> list:
     """新浪日线（不复权），纯 requests。sym 为带前缀符号（sh600519/sh000300）。"""
     r = requests.get(KLINE_URL, params={"symbol": sym, "scale": 240, "ma": "no",
                      "datalen": 300}, headers={"User-Agent": "Mozilla/5.0",
-                     "Referer": "https://finance.sina.com.cn"}, timeout=12)
+                     "Referer": "https://finance.sina.com.cn"}, timeout=8)
     r.raise_for_status()
     data = json.loads(r.text)
     return [{"date": str(d["day"]).replace("-", ""), "close": float(d["close"])}
@@ -170,23 +171,29 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
         print(f"  业绩层（{period} 预增≥50%且盈利）：{len(cands)} 只")
 
     hist = hist_fetcher or _hist
-    enriched = []
     lookback = str(int(date[:4]) - 1) + date[4:]
-    for c in cands[:pre]:
+
+    def _enrich(c):
+        """拉一只的 60 日 K 线，算涨幅、过滤超热。失败/不足/过热返回 None。"""
         try:
             rows = hist(c["code"], lookback)
         except Exception:
-            continue
+            return None
         if len(rows) < 61:
-            continue
+            return None
         closes = [r["close"] for r in rows]
         chg60 = (closes[-1] / closes[-61] - 1) * 100
         if chg60 > HOT_CHG60:
-            continue  # 超热剔除：不追已爆炒
+            return None  # 超热剔除：不追已爆炒
         c = dict(c)
         c["entry_price"] = closes[-1]
         c["chg60"] = round(chg60, 1)
-        enriched.append(c)
+        return c
+
+    # 并发拉 K 线：串行经代理会拖到 40s+ 超时，并发压到几秒。
+    # ex.map 保序 → 保持按预增幅度降序。max_workers 不宜过大，避免新浪限流。
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        enriched = [c for c in ex.map(_enrich, cands[:pre]) if c]
     if verbose:
         print(f"  过热过滤（60日涨幅≤{HOT_CHG60:.0f}%）：{len(enriched)} 只")
     if not enriched:

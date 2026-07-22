@@ -158,8 +158,10 @@ class handler(BaseHTTPRequestHandler):
                 fetch = lambda: mod.rank(llm, top=top)  # noqa: E731
             else:
                 from foresight import funnel as mod
-                # Smaller pre-list on the web to bound the K-line fetch time.
-                fetch = lambda: mod.rank(llm, top=top, pre=20)  # noqa: E731
+                # Small pre-list on the web to bound the (parallel) K-line
+                # fetch — funnel pulls one 60d K-line per candidate, so this
+                # caps how many quotes we hit before the LLM picks the basket.
+                fetch = lambda: mod.rank(llm, top=top, pre=12)  # noqa: E731
 
             try:
                 payload = fetch()
