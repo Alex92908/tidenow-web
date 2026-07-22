@@ -62,6 +62,8 @@ SYSTEM_KNOWLEDGE = """【⚠️ 知识库定位声明——先读这条】
     Cocos=轻量 2D+小游戏国内为王；Godot=独立 2D 新兴、商业生态弱
 ◆ 独立开发订阅出海——**按出身选载体，别默认 iOS**：
   - 移动端出身 → App（SwiftUI 纯 iOS 上限高 / Flutter 跨端），App Store 订阅生态强；
+    ⚠️ 收款规则别搞混：App 内数字商品/订阅**必须走苹果 IAP**（StoreKit/RevenueCat），
+    塞 Stripe 会被拒审；Stripe/Paddle 只用于 Web 端或实物电商；
   - **后端/全栈出身 → Web SaaS 首选**（Stripe/Paddle/Lemon Squeezy 网页收款，
     不碰移动端、不交苹果 30% 抽成、不过审核）——API 服务/自动化工具/垂直 AI SaaS，
     Java/Go/Node 直接上，这条比让后端学 Swift 顺滑十倍；
