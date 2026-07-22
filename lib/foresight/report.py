@@ -228,6 +228,33 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                   f"⚖️ {result.get('honest_note','')}",
                   "", "（传统文化娱乐，不写入校准日志）"]
 
+    elif b == "industry":
+        lines += [f"## 💼 行业前瞻（{result.get('industry','')}）", ""]
+        if result.get("profile_note"):
+            lines += [f"**画像假设：** {result['profile_note']}", ""]
+        lines += ["### 核心判断", result.get("outlook", ""), "",
+                  "### 可执行方向"]
+        for i, dd in enumerate(result.get("directions", []), 1):
+            lines.append(f"#### {i}. {dd.get('name','')}")
+            lines.append(dd.get("why", ""))
+            projs = dd.get("projects", [])
+            if projs:
+                lines.append("- **可开工项目**：" + "；".join(str(p) for p in projs))
+            if dd.get("tech"):
+                lines.append(f"- **技术选型**：{dd['tech']}")
+            if dd.get("region"):
+                lines.append(f"- **地域适配**：{dd['region']}")
+            if dd.get("cost"):
+                lines.append(f"- **成本**：{dd['cost']}")
+            if dd.get("horizon"):
+                lines.append(f"- **见效周期**：{dd['horizon']}")
+            lines.append("")
+        avoid = result.get("avoid", [])
+        if avoid:
+            lines += ["### ⛔ 别碰的坑"] + [f"- {a}" for a in avoid] + [""]
+        lines += [f"⚖️ **判断失效条件：** {result.get('honest_note','')}",
+                  "", "（方向建议不写入校准日志）"]
+
     elif b == "oracle":
         lines += ["## 🔮 元引擎：五路独立推理", "", f"**核心问题：** {result.get('key_question','')}", ""]
         for e in result.get("estimates", []):

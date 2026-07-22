@@ -8,7 +8,7 @@ from .llm import LLM
 from . import router as router_mod, calibration, report, search
 from .backends import (swarm, quant, scenario, sports, macro, trend,
                        election, boxoffice, nature, randomness, oracle, counterfactual, strange,
-                       screenplay, novelist, metaphysics)
+                       screenplay, novelist, metaphysics, industry)
 from .backends.common import to_prob
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -118,6 +118,9 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
     elif d == "metaphysics":
         result = metaphysics.run(llm, enriched_seed, verbose=False)
         question = "（玄学解读，不产生可校准预测）"
+    elif d == "industry":
+        result = industry.run(llm, enriched_seed, verbose=False)
+        question = "（行业前瞻建议，不产生可校准预测）"
     else:
         backend = {"macro": macro, "trend": trend, "election": election,
                    "boxoffice": boxoffice, "nature": nature}.get(d, scenario)

@@ -82,6 +82,7 @@ const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "market", en: "Stocks (A-share)", zh: "股票（A股）" },
   { id: "nature", en: "Weather / nature", zh: "天气/自然" },
   { id: "metaphysics", en: "Metaphysics / fortune", zh: "玄学/命理" },
+  { id: "industry", en: "Industry / career", zh: "行业/职业前瞻" },
   { id: "lottery", en: "Lottery / lucky pick", zh: "彩票/幸运号" },
 ]
 

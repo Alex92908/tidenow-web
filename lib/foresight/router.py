@@ -12,7 +12,7 @@ from __future__ import annotations
 
 DOMAINS = ("opinion", "market", "scenario", "sports", "macro", "trend",
            "election", "boxoffice", "nature", "randomness", "counterfactual",
-           "metaphysics")
+           "metaphysics", "industry")
 
 ROUTER_PROMPT = """你是一个预测任务分类器。根据种子信息，判断它属于哪类预测任务：
 
@@ -28,6 +28,7 @@ ROUTER_PROMPT = """你是一个预测任务分类器。根据种子信息，判�
 - "randomness"：彩票号码、轮盘、骰子等数学上纯随机的事件
 - "counterfactual"：已发生事件的复盘推演——"如果当初""哪一步走错了""在哪个环节还能挽救"（历史事件、投资复盘、项目失败分析）
 - "metaphysics"：星座运势、八字命理、周易卦象、风水、紫微斗数、塔罗——传统玄学/命理解读（娱乐性质）
+- "industry"  ：行业前景、职业/转型选择、"该做什么项目/产品"、技术选型（如"前端还有前途吗""做什么游戏好""用Unity还是UE"）
 
 注意区分：问"茅台股价" → market；问"白酒消费是否复苏" → trend 或 macro；
 问"央行是否降息" → macro；问"降息对市场的连锁影响" → scenario；
@@ -35,7 +36,7 @@ ROUTER_PROMPT = """你是一个预测任务分类器。根据种子信息，判�
 问"大选谁赢" → election，问"选举结果对外交的影响" → scenario；
 电竞比赛胜负 → sports。
 
-只返回 JSON：{"domain": "opinion|market|scenario|sports|macro|trend|election|boxoffice|nature|randomness|counterfactual|metaphysics", "reason": "一句话理由"}
+只返回 JSON：{"domain": "opinion|market|scenario|sports|macro|trend|election|boxoffice|nature|randomness|counterfactual|metaphysics|industry", "reason": "一句话理由"}
 
 种子信息：
 """
