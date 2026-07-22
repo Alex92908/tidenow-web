@@ -192,6 +192,7 @@ export function PredictApp({ locale }: Props) {
   const t = (zh: string, en: string) => (isZh ? zh : en)
   const isMarket = domain === "market"
   const isLottery = domain === "lottery"
+  const isIndustry = domain === "industry"
 
   function handleLottery(game: Lottery) {
     setError(null)
@@ -320,10 +321,17 @@ export function PredictApp({ locale }: Props) {
         <textarea
           value={seed}
           onChange={(e) => setSeed(e.target.value)}
-          placeholder={t(
-            "描述一个未来事件，例如：美伊关系未来 60 天是否会升级？特斯拉下季度交付量会创新高吗？",
-            "Describe a future event, e.g. Will US-Iran tensions escalate in the next 60 days? Will Tesla set a delivery record next quarter?"
-          )}
+          placeholder={
+            isIndustry
+              ? t(
+                  "带上背景建议才定制：城市/技能/资金/每周可投入时间。例：成都前端5年、有10万、每周20小时,想转游戏,做什么品类?用Unity还是Cocos?也可以直接问:2026现在的风口是什么?",
+                  "Add your context for tailored advice: city, skills, budget, weekly hours. E.g. 5y frontend in Chengdu, $15k, 20h/week — which game genre? Unity or Cocos? Or just ask: what's the hot wave in 2026?"
+                )
+              : t(
+                  "描述一个未来事件，例如：美伊关系未来 60 天是否会升级？特斯拉下季度交付量会创新高吗？",
+                  "Describe a future event, e.g. Will US-Iran tensions escalate in the next 60 days? Will Tesla set a delivery record next quarter?"
+                )
+          }
           rows={3}
           className="w-full resize-y rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 px-3 py-2 text-sm text-gray-800 dark:text-zinc-200 placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-sky-400"
         />
@@ -340,6 +348,15 @@ export function PredictApp({ locale }: Props) {
           {t("：当日涨停池(二板及以上),给「明日再涨停」概率。", " — today's limit-up pool (2nd board+), 'limit-up again tomorrow' probability. ")}
           <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("🐢 漏斗(慢钱)", "🐢 Funnel (slow)")}</span>
           {t("：业绩预增+卖铲子位置的观察篮,持有 20 日对比沪深300。", " — an earnings-growth 'sell-shovels' basket, held 20 days vs CSI 300.")}
+        </p>
+      )}
+
+      {isIndustry && (
+        <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+          {t(
+            "输出会落到「具体项目 + 技术选型 + 地域适配」三件套,并附「别碰的坑」与判断失效条件。风口类问题直接点名排序;建议仅供参考,重大决定请多方求证。",
+            "Answers land on three concrete things — projects to start, tech choices, and regional fit — plus pitfalls to avoid and when the judgment breaks. Hot-wave questions get a direct ranked answer. Reference only; verify before big decisions."
+          )}
         </p>
       )}
 
