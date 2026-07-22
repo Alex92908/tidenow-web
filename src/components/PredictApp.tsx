@@ -28,7 +28,11 @@ interface ScanStock {
   outcome?: number | null
   // funnel
   growth?: number | null
+  chg120?: number | null
   chg60?: number | null
+  chg30?: number | null
+  chg15?: number | null
+  chg7?: number | null
   tag?: string
   why?: string
   entry_price?: number | null
@@ -481,7 +485,11 @@ export function PredictApp({ locale }: Props) {
                     {isFunnel ? (
                       <>
                         <th className="py-1.5 px-2 font-medium tabular-nums">{t("净利预增", "Profit growth")}</th>
-                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("60日涨幅", "60d chg")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("120日", "120d")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("60日", "60d")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("30日", "30d")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("15日", "15d")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("7日", "7d")}</th>
                         <th className="py-1.5 px-2 font-medium">{t("标签", "Tag")}</th>
                       </>
                     ) : (
@@ -514,9 +522,20 @@ export function PredictApp({ locale }: Props) {
                             <td className="py-2 px-2 whitespace-nowrap tabular-nums text-emerald-600 dark:text-emerald-400 font-medium">
                               {s.growth != null ? `+${s.growth >= 1000 ? Math.round(s.growth) : s.growth}%` : "—"}
                             </td>
-                            <td className={`py-2 px-2 whitespace-nowrap tabular-nums ${(s.chg60 ?? 0) < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                              {s.chg60 != null ? `${s.chg60 > 0 ? "+" : ""}${s.chg60}%` : "—"}
-                            </td>
+                            {([s.chg120, s.chg60, s.chg30, s.chg15, s.chg7] as (number | null | undefined)[]).map((chg, ci) => (
+                              <td
+                                key={ci}
+                                className={`py-2 px-2 whitespace-nowrap tabular-nums ${
+                                  chg == null
+                                    ? "text-gray-400 dark:text-zinc-600"
+                                    : chg < 0
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-rose-500 dark:text-rose-400"
+                                }`}
+                              >
+                                {chg != null ? `${chg > 0 ? "+" : ""}${chg}%` : "—"}
+                              </td>
+                            ))}
                             <td className="py-2 px-2 text-[12px] text-gray-600 dark:text-zinc-300">
                               {s.tag || "—"}
                               {s.alpha != null && (

@@ -179,7 +179,9 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
     lookback = str(int(date[:4]) - 1) + date[4:]
 
     def _enrich(c):
-        """拉一只的 60 日 K 线，算涨幅、过滤超热。失败/不足/过热返回 None。"""
+        """拉一只近一年 K 线，算多窗口涨幅（120/60/30/15/7 日）、过滤超热。
+        失败/数据不足/过热返回 None。60 日仍是过热判定口径；其余窗口
+        帮你看位置：长期(120)在哪、近期(7/15)是否刚启动。"""
         try:
             rows = hist(c["code"], lookback)
         except Exception:
@@ -193,6 +195,9 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
         c = dict(c)
         c["entry_price"] = closes[-1]
         c["chg60"] = round(chg60, 1)
+        for n in (120, 30, 15, 7):
+            c[f"chg{n}"] = (round((closes[-1] / closes[-n - 1] - 1) * 100, 1)
+                            if len(closes) > n else None)
         return c
 
     # 并发拉 K 线：串行经代理会拖到 40s+ 超时，并发压到几秒。
@@ -204,8 +209,10 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
     if not enriched:
         return {"date": date, "period": period, "stocks": []}
 
-    cands_text = "\n".join(f'{c["code"]} {c["name"]} | 预增{c["growth"]}% | 60日{c["chg60"]}%'
-                           for c in enriched)
+    cands_text = "\n".join(
+        f'{c["code"]} {c["name"]} | 预增{c["growth"]}% | '
+        f'120日{c.get("chg120")}% 60日{c["chg60"]}% 30日{c.get("chg30")}% 7日{c.get("chg7")}%'
+        for c in enriched)
     data, err = safe_chat_json(llm, FUNNEL_PROMPT.format(cands=cands_text), temperature=0.3)
     picked = {}
     if not err and isinstance(data, dict) and isinstance(data.get("picks"), list):
@@ -221,7 +228,9 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
             c["why"] = str(picked[c["code"]].get("why", ""))[:80]
 
     stocks = [{"code": c["code"], "name": c["name"], "growth": c["growth"],
-               "chg60": c["chg60"], "tag": c.get("tag", ""), "why": c.get("why", ""),
+               "chg120": c.get("chg120"), "chg60": c["chg60"], "chg30": c.get("chg30"),
+               "chg15": c.get("chg15"), "chg7": c.get("chg7"),
+               "tag": c.get("tag", ""), "why": c.get("why", ""),
                "entry_price": c["entry_price"]} for c in basket]
     return {"date": date, "period": period, "stocks": stocks}
 
@@ -236,7 +245,9 @@ def latest_batch() -> dict:
     rows.sort(key=lambda e: -(e.get("growth") or 0))
     stocks = [{
         "code": e["code"], "name": e["name"], "growth": e.get("growth"),
-        "chg60": e.get("chg60"), "tag": e.get("tag", ""), "why": e.get("why", ""),
+        "chg120": e.get("chg120"), "chg60": e.get("chg60"), "chg30": e.get("chg30"),
+        "chg15": e.get("chg15"), "chg7": e.get("chg7"),
+        "tag": e.get("tag", ""), "why": e.get("why", ""),
         "entry_price": e.get("entry_price"), "ret": e.get("ret"), "alpha": e.get("alpha"),
     } for e in rows]
     return {"date": last, "period": _period(last), "stocks": stocks, "stale": True}
@@ -265,7 +276,9 @@ def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
         if (date, c["code"]) in seen:
             continue
         e = {"id": f'{date}-{c["code"]}', "batch": date, "code": c["code"], "name": c["name"],
-             "growth": c["growth"], "chg60": c["chg60"], "tag": c["tag"], "why": c["why"],
+             "growth": c["growth"], "chg120": c.get("chg120"), "chg60": c["chg60"],
+             "chg30": c.get("chg30"), "chg15": c.get("chg15"), "chg7": c.get("chg7"),
+             "tag": c["tag"], "why": c["why"],
              "entry_price": c["entry_price"], "bench_entry": bench_entry, "hold_days": HOLD_DAYS,
              "exit_price": None, "bench_exit": None, "ret": None, "bench_ret": None,
              "alpha": None, "resolved_ts": None}

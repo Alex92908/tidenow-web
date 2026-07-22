@@ -101,7 +101,11 @@ export interface ScanStock {
   outcome?: number | null
   // funnel fields
   growth?: number | null
+  chg120?: number | null
   chg60?: number | null
+  chg30?: number | null
+  chg15?: number | null
+  chg7?: number | null
   tag?: string
   why?: string
   entry_price?: number | null
