@@ -185,6 +185,7 @@ export function PredictApp({ locale }: Props) {
   const [result, setResult] = useState<PredictResult | null>(null)
   const [scan, setScan] = useState<MarketScan | null>(null)
   const [funnelMode, setFunnelMode] = useState<FunnelMode>("growth")
+  const [scanTop, setScanTop] = useState(12)
   const [lottery, setLottery] = useState<LotteryPick | null>(null)
 
   const isZh = locale === "zh"
@@ -237,7 +238,7 @@ export function PredictApp({ locale }: Props) {
         body: JSON.stringify({
           ...key,
           scan: kind,
-          top: kind === "zt" ? 10 : funnelMode === "wide" ? 15 : 12,
+          top: Math.max(1, Math.min(scanTop || 12, 15)),
           ...(kind === "funnel" ? { mode: funnelMode } : {}),
         }),
       })
@@ -382,6 +383,19 @@ export function PredictApp({ locale }: Props) {
             >
               {t("🐢 扫漏斗", "🐢 Funnel")}
             </button>
+            {/* How many names to return (both scans; server clamps to 1-15) */}
+            <label className="inline-flex items-center gap-1 text-[11px] text-gray-400 dark:text-zinc-500">
+              {t("数量", "Count")}
+              <input
+                type="number"
+                min={1}
+                max={15}
+                value={scanTop}
+                onChange={(e) => setScanTop(Number(e.target.value))}
+                disabled={loading}
+                className="w-14 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 px-1.5 py-1 text-xs text-gray-700 dark:text-zinc-300 tabular-nums focus:outline-none focus:ring-1 focus:ring-sky-400 disabled:opacity-40"
+              />
+            </label>
             {/* Funnel candidate-strategy chips (only affect the funnel scan) */}
             <span className="inline-flex items-center gap-1 flex-wrap">
               {FUNNEL_MODES.map((m) => (
