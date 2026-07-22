@@ -165,7 +165,7 @@ def candidates(period: str, yjyg_fetcher=None, min_growth: float = 50.0) -> list
     return sorted(best.values(), key=lambda x: -x["growth"])
 
 
-def rank(llm, date: str | None = None, top: int = 12, pre: int = 30,
+def rank(llm, date: str | None = None, top: int = 12, pre: int = 60,
          yjyg_fetcher=None, hist_fetcher=None, verbose: bool = False) -> dict:
     """跑漏斗前半段（业绩层 → 过热过滤 → LLM 选篮），返回观察篮多只
     （不落台账、不算基准）。供网页 /predict 展示，也是 scan 落账前的共用步骤。"""
@@ -253,7 +253,7 @@ def latest_batch() -> dict:
     return {"date": last, "period": _period(last), "stocks": stocks, "stale": True}
 
 
-def scan(llm, date: str | None = None, top: int = 12, pre: int = 30,
+def scan(llm, date: str | None = None, top: int = 12, pre: int = 60,
          yjyg_fetcher=None, hist_fetcher=None, bench_fetcher=None, verbose=True) -> list:
     """跑一次完整漏斗并落账（同批次同股去重）。复用 rank，再补基准入场价后落账。"""
     r = rank(llm, date=date, top=top, pre=pre, yjyg_fetcher=yjyg_fetcher,

@@ -158,10 +158,13 @@ class handler(BaseHTTPRequestHandler):
                 fetch = lambda: mod.rank(llm, top=top)  # noqa: E731
             else:
                 from foresight import funnel as mod
-                # Small pre-list on the web to bound the (parallel) K-line
-                # fetch — funnel pulls one 60d K-line per candidate, so this
-                # caps how many quotes we hit before the LLM picks the basket.
-                fetch = lambda: mod.rank(llm, top=top, pre=12)  # noqa: E731
+                # pre bounds how many candidates get a K-line fetch before
+                # the LLM picks. Growth-sorted, the very top is dominated by
+                # low-base freaks (+60000%), so a bigger pool is what lets
+                # reasonable-growth quality names reach the LLM at all.
+                # 40 parallel fetches ≈ 4 waves of 10 workers — a few seconds
+                # healthy, and the frontend degrades gracefully if slow.
+                fetch = lambda: mod.rank(llm, top=top, pre=40)  # noqa: E731
 
             try:
                 payload = fetch()
