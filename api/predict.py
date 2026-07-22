@@ -147,7 +147,7 @@ class handler(BaseHTTPRequestHandler):
                 top = int(body.get("top") or (8 if scan_kind == "zt" else 12))
             except (TypeError, ValueError):
                 top = 8 if scan_kind == "zt" else 12
-            top = max(1, min(top, 15))
+            top = max(1, min(top, 30))
 
             cfg = _llm_cfg_from_body(provider, api_key)
             mock = cfg.pop("mock", False)

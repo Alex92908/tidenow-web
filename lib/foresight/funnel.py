@@ -41,7 +41,7 @@ HOLD_DAYS = 20      # 持有交易日
 HOT_CHG60 = 80.0    # 60日涨幅超此值视为超热剔除
 BENCH = "sh000300"  # 基准：沪深300
 
-FUNNEL_PROMPT = """你是克制的"漏斗选篮"研究员。从以下业绩预增候选中挑 6-12 只组成观察篮。
+FUNNEL_PROMPT = """你是克制的"漏斗选篮"研究员。从以下业绩预增候选中挑 6-{max_n} 只组成观察篮。
 偏好：政策主线（新质生产力：AI算力/存储/半导体/机器人/高端制造/创新药等）里的**卖铲子位置**
 （零部件/材料/设备/耗材/上游资源供应商）。
 
@@ -232,7 +232,8 @@ def rank(llm, date: str | None = None, top: int = 12, pre: int = 60,
         f'{c["code"]} {c["name"]} | 预增{c["growth"]}% | '
         f'120日{c.get("chg120")}% 60日{c["chg60"]}% 30日{c.get("chg30")}% 7日{c.get("chg7")}%'
         for c in enriched)
-    data, err = safe_chat_json(llm, FUNNEL_PROMPT.format(cands=cands_text), temperature=0.3)
+    data, err = safe_chat_json(llm, FUNNEL_PROMPT.format(cands=cands_text, max_n=max(top, 6)),
+                               temperature=0.3)
     picked = {}
     if not err and isinstance(data, dict) and isinstance(data.get("picks"), list):
         picked = {str(p.get("code")): p for p in data["picks"] if isinstance(p, dict)}

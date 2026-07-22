@@ -67,10 +67,9 @@ interface Props {
 
 // Domain options mirror ForeSight's router. "auto" lets the engine
 // classify; the rest let a user force a methodology.
-// 'market' is intentionally omitted — its quant backend needs a live
-// price feed (akshare / CSV) that this deployment doesn't have, so it
-// always errors. Auto-routing to market is caught server-side and redone
-// as scenario; users just can't pick it directly.
+// 'market' switches the UI into scan mode (limit-up relay / slow-money
+// funnel over live eastmoney/Sina quotes) instead of a seed textarea;
+// 'lottery' is a pure client-side quick-pick.
 const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "auto", en: "Auto", zh: "自动" },
   { id: "opinion", en: "Opinion / buzz", zh: "舆情/口碑" },
@@ -238,7 +237,7 @@ export function PredictApp({ locale }: Props) {
         body: JSON.stringify({
           ...key,
           scan: kind,
-          top: Math.max(1, Math.min(scanTop || 12, 15)),
+          top: Math.max(1, Math.min(scanTop || 12, 30)),
           ...(kind === "funnel" ? { mode: funnelMode } : {}),
         }),
       })
@@ -332,8 +331,8 @@ export function PredictApp({ locale }: Props) {
       {isMarket && (
         <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
           {t(
-            "不用输代码,两种扫法都自动扫全市场,数据走东财/新浪,无需 akshare：",
-            "No code needed — both scans sweep the whole market via eastmoney / Sina, no akshare:"
+            "不用输代码,两种扫法都自动扫全市场,行情来自东财/新浪：",
+            "No code needed — both scans sweep the whole market with live eastmoney / Sina quotes:"
           )}
           <br />
           <span className="text-rose-600 dark:text-rose-400 font-medium">{t("🔥 打板(快钱)", "🔥 Relay (fast)")}</span>
@@ -389,7 +388,7 @@ export function PredictApp({ locale }: Props) {
               <input
                 type="number"
                 min={1}
-                max={15}
+                max={30}
                 value={scanTop}
                 onChange={(e) => setScanTop(Number(e.target.value))}
                 disabled={loading}
