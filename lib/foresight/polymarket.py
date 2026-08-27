@@ -61,6 +61,25 @@ BANKROLL = 100.0          # 虚拟本金（单位），不复利：每笔独立�
 # 凯利的独立性假设在预测市场里几乎从不成立，必须按簇限额。
 CLUSTER_CAP = 0.10
 
+# ---- 多次采样聚合（第二批实测教训）----
+# 实测：同一市场、同一搜索上下文、temperature=0.2，六次盲估给出
+# 35/65/60/60/45/35——标准差 12.2%，比触发线 EDGE_MIN(8%) 还大 1.5 倍。
+# 单次采样的"偏差"绝大部分是抽样噪声：同一时刻重扫一次，-32% 可以变成 -3%，
+# 下注与否完全相反。所以盲估必须多次采样取中位数，并把离散度当一等公民。
+#
+# 这不是新发明——本项目 oracle 引擎早就是"多路独立推理 + 把 dispersion 当作
+# 该问题可知性的信号"（见 docs/DECISIONS.md §2）。这里把同一条纪律用到盲估上。
+# 关键区分：**记录**与**下注**是两件事，用两套门槛。
+#   记录：只要模型没整体弃权就记，并把 σ 一起记下来。按离散度事后剔除样本会让
+#         台账按"我们后来觉得不靠谱"筛选，反而引入偏差；留着才能回答"模型在它
+#         自己有把握的题上是不是更准"——那比丢掉数据有意思得多。
+#   下注：偏差必须同时超过固定门槛、与中位数自身的不确定性；σ 过大直接不下注。
+SAMPLES = 5               # 每个市场采样次数（用 oracle 的极化 log-odds 聚合）
+SIGMA_MAX = 0.10          # 原始离散度上限：超过就只记录、绝不下注
+SIGMA_K = 2.0             # 触发线自适应：|edge| 需超过 SIGMA_K × 中位数标准误(σ/√n)
+ABSTAIN_RATE_MAX = 0.5    # 采样中弃权过半 → 整体弃权（"答不答"本身就不稳定）
+METHOD = f"k{SAMPLES}-pooled"   # 写进台账，方法版本可追溯、新旧批次可分开统计
+
 # 纪律拒测（代码层硬规则，LLM 层再兜一道）：关键词 → 拒测理由
 REFUSE_RULES = [
     (("temperature", "°f", "°c", "heat index", "rain in", "snow in", "weather",
@@ -309,6 +328,77 @@ def coherence_report(rows: list) -> dict:
     return out
 
 
+def estimate(llm, c: dict, context: str = "", samples: int = SAMPLES) -> dict:
+    """对单个市场做 K 次独立盲估，返回中位数 + 离散度 + 弃权情况。
+
+    返回 {"ok": bool, "p": 中位数, "sigma": 标准差, "spread": 极差,
+          "samples": [...], "abstains": n, "domain": ..., "reason": ..., "why_no": ...}
+
+    弃权规则（只管"记不记"，不管"下不下注"）：
+      - 一个有效样本都没有；
+      - 采样中弃权过半：模型连"答不答得了"都不稳定。
+    离散度大**不**导致弃权——它照记，只是 σ 会挡住下注（见 rank）。
+    """
+    import statistics
+    from concurrent.futures import ThreadPoolExecutor
+    prompt = POLY_PROMPT.format(
+        question=c["question"], outcome_a=c["outcome_a"], outcome_b=c["outcome_b"],
+        end_date=c["end_date"], today=time.strftime("%Y-%m-%d"),
+        description=c["description"], structure=c.get("structure", ""),
+        context=context and f"近期相关信息：\n{context}")
+
+    n = max(1, samples)
+    # 并发采样：K 次之间彼此独立，串行等于把等待时间乘以 K。
+    # 推理模型单次就要十几秒，5 次串行能把一次扫描拖到十分钟以上。
+    # 与 swarm/funnel 同款做法；worker 数压在 5 以内避免触发限流。
+    if n > 1 and not getattr(llm, "mock", False):
+        with ThreadPoolExecutor(max_workers=min(n, 5)) as ex:
+            results = list(ex.map(lambda _i: safe_chat_json(llm, prompt, temperature=0.2),
+                                  range(n)))
+    else:
+        results = [safe_chat_json(llm, prompt, temperature=0.2) for _ in range(n)]
+
+    vals, abstains, errs, domain, reason, refuse = [], 0, 0, "other", "", ""
+    for data, err in results:
+        if err or not isinstance(data, dict):
+            errs += 1
+            continue
+        if not data.get("eligible", False):
+            abstains += 1
+            refuse = refuse or str(data.get("refuse_reason", ""))[:80]
+            continue
+        if data.get("probability") is None:
+            errs += 1
+            continue
+        vals.append(to_prob(data.get("probability")))
+        domain = str(data.get("domain", domain))[:16]
+        reason = reason or str(data.get("reason", ""))[:120]
+
+    n_ok = len(vals)
+    total = n_ok + abstains
+    if not vals:
+        return {"ok": False, "abstains": abstains, "errors": errs, "samples": [],
+                "why_no": refuse or "全部采样失败或弃权"}
+    if total and abstains / total > ABSTAIN_RATE_MAX:
+        return {"ok": False, "abstains": abstains, "errors": errs, "samples": vals,
+                "why_no": f"{abstains}/{total} 次弃权——模型连'答不答得了'都不稳定"}
+    sigma = statistics.pstdev(vals) if n_ok > 1 else 0.0
+    spread = (max(vals) - min(vals)) if n_ok > 1 else 0.0
+    se = sigma / (n_ok ** 0.5) if n_ok > 1 else 0.0   # 聚合值的不确定性，随采样数收窄
+    # 聚合用 oracle 的极化 log-odds 池化，而不是朴素中位数：
+    # 取中位数/均值会系统性把估计往 0.5 拉（实测锐度比值掉到 0.615 并触发欠自信
+    # 告警），而极化聚合正是为抵消这个回归效应设计的——本项目 oracle 引擎的既有
+    # 纪律（DECISIONS.md §2），系数保守取 1.25。dispersion 同时给出"是否可知"。
+    from .backends.oracle import pool
+    pooled = pool(vals)
+    return {"ok": True, "p": round(pooled["probability"], 4),
+            "median": round(statistics.median(vals), 4),   # 保留作对照
+            "dispersion": pooled["dispersion"], "agreement": pooled["agreement"],
+            "sigma": round(sigma, 4), "spread": round(spread, 4), "se": round(se, 4),
+            "samples": vals, "abstains": abstains, "errors": errs,
+            "domain": domain, "reason": reason}
+
+
 def sharpness(rows: list) -> dict:
     """锐度对比：mean|p-0.5|。模型显著低于市场 = 系统性欠自信（往 50% 收敛）。
 
@@ -383,7 +473,7 @@ def _save(entries: list):
 # ---------- rank / latest_batch / scan / resolve / stats ----------
 
 def rank(llm, top: int = 8, limit: int = 100, fetcher=None, search_fn=None,
-         exclude=None, verbose: bool = False) -> dict:
+         exclude=None, samples: int = SAMPLES, verbose: bool = False) -> dict:
     """抓取 + 盲估，返回多个市场行、**不落台账**。GUI「扫盲估」用它展示，
     也是 scan 落账前的共用步骤（scan 传 exclude 跳过已在台账的市场，省 LLM 调用）。
 
@@ -419,6 +509,10 @@ def rank(llm, top: int = 8, limit: int = 100, fetcher=None, search_fn=None,
     cands = build_structure(cands)
 
     rows = []
+    funnel = {"fetched": len(raw), "filtered": sum(dropped.values()),
+              "rule_refused": sum(refused.values()), "candidates": len(cands),
+              "asked": 0, "abstained": 0, "high_sigma": 0, "estimated": 0,
+              "drop_reasons": dropped, "refuse_reasons": refused, "abstain_detail": []}
     for c in cands[:top]:
         context = ""
         if search_fn is not None and not getattr(llm, "mock", False):
@@ -426,51 +520,89 @@ def rank(llm, top: int = 8, limit: int = 100, fetcher=None, search_fn=None,
                 context = search_fn(c["question"]) or ""
             except Exception:
                 context = ""  # 搜索是尽力而为（落地问题#9），失败不阻塞盲估
-        data, err = safe_chat_json(llm, POLY_PROMPT.format(
-            question=c["question"], outcome_a=c["outcome_a"], outcome_b=c["outcome_b"],
-            end_date=c["end_date"], today=time.strftime("%Y-%m-%d"),
-            description=c["description"], structure=c.get("structure", ""),
-            context=context and f"近期相关信息：\n{context}"),
-            temperature=0.2)
-        if err or not isinstance(data, dict):
+        funnel["asked"] += 1
+        est = estimate(llm, c, context=context, samples=samples)
+        if not est["ok"]:
+            why = est.get("why_no", "")
+            funnel["abstained"] += 1
+            funnel["abstain_detail"].append({"market": c["question"][:60], "why": why})
             if verbose:
-                print(f'  ✗ 跳过 {c["question"][:50]}｜LLM不可用：{err or "格式异常"}')
-            continue  # 盲估失败就跳过：兜底写 0.5 只会稀释实验
-        if not data.get("eligible", False):
-            if verbose:
-                print(f'  ⊘ LLM拒测 {c["question"][:50]}｜{str(data.get("refuse_reason", ""))[:60]}')
-            continue
-        if data.get("probability") is None:
-            continue
-        p_model = to_prob(data.get("probability"))
+                print(f'  ⊘ 弃权 {c["question"][:46]}｜{why}')
+            continue  # 整体弃权才不入账：强行取个值只会稀释实验
+        funnel["estimated"] += 1
+        p_model, sigma, se = est["p"], est["sigma"], est.get("se", 0.0)
         edge = round(p_model - c["p_market"], 4)
         side, q_s, f_raw = kelly(p_model, c["p_market"])
-        traded = abs(edge) >= EDGE_MIN
+        # 下注三重门槛（记录不受此限，上面已经记了）：
+        #   ① 固定门槛 EDGE_MIN——对照病毒帖的 8%；
+        #   ② 中位数自身的不确定性 SIGMA_K×σ/√n——偏差要显著于抽样噪声；
+        #   ③ 原始离散度 σ ≤ SIGMA_MAX——模型自己讲了几套不同的故事就别押。
+        need = max(EDGE_MIN, SIGMA_K * se)
+        unstable = sigma > SIGMA_MAX
+        if unstable:
+            funnel["high_sigma"] += 1
+        traded = (abs(edge) >= need) and not unstable
         rows.append({
             "code": c["mkt_id"], "name": c["question"],
             "outcome_a": c["outcome_a"], "outcome_b": c["outcome_b"],
             "url": f'https://polymarket.com/market/{c["slug"]}',
-            "domain": str(data.get("domain", "other"))[:16],
+            "domain": est.get("domain", "other"),
             "end_date": c["end_date"], "liquidity": c["liquidity"],
             "p_model": round(p_model, 4), "p_market": c["p_market"], "edge": edge,
+            "sigma": sigma, "spread": est.get("spread", 0.0), "se": se,
+            "median": est.get("median"), "dispersion": est.get("dispersion"),
+            "agreement": est.get("agreement", ""),
+            "samples": est.get("samples", []), "abstains": est.get("abstains", 0),
+            "edge_needed": round(need, 4), "unstable": unstable, "method": METHOD,
             "traded": traded, "side": side if traded else None,
             "entry_price": round(q_s, 4) if traded else None,
             "kelly_f": round(min(f_raw, KELLY_CAP), 4) if traded else None,
             "stake": round(BANKROLL * min(f_raw, KELLY_CAP), 2) if traded else None,
-            "reason": str(data.get("reason", ""))[:120],
+            "reason": est.get("reason", ""),
             "cluster": c.get("cluster", ""), "group_kind": c.get("group_kind", "solo"),
             "event_title": c.get("event_title", ""),
         })
         if verbose:
             mark = (f'▶ 纸面{("买A·" + rows[-1]["outcome_a"]) if side == "A" else ("买B·" + rows[-1]["outcome_b"])} '
-                    f'{rows[-1]["stake"]:.1f}u') if traded else "○ 仅记录"
-            print(f'  ✓ {c["question"][:46]}｜盲估{p_model:.0%} vs 盘价{c["p_market"]:.0%}（差{edge:+.0%}）{mark}')
+                    f'{rows[-1]["stake"]:.1f}u') if traded else (
+                f"○ 仅记录（σ={sigma:.0%}>上限，不下注）" if unstable
+                else f"○ 仅记录（需≥{need:.0%}）")
+            print(f'  ✓ {c["question"][:44]}｜盲估{p_model:.0%}(σ{sigma:.0%}) '
+                  f'vs 盘价{c["p_market"]:.0%}（差{edge:+.0%}）{mark}')
 
     apply_cluster_cap(rows, verbose=verbose)
-    diag = {"coherence": coherence_report(rows), "sharpness": sharpness(rows)}
+    diag = {"coherence": coherence_report(rows), "sharpness": sharpness(rows),
+            "funnel": funnel, "stability": stability(rows)}
     if verbose:
         _print_diagnostics(diag)
     return {"date": date, "stocks": rows, "diagnostics": diag}
+
+
+def stability(rows: list) -> dict:
+    """稳定性汇总：平均离散度、噪声吞掉了多少"信号"。
+
+    noise_blocked = 偏差超过固定门槛、却没超过自身噪声水平的条数——
+    这些正是旧版会当成 edge 下注、实则纯属抽样运气的那批。"""
+    have = [r for r in rows if r.get("sigma") is not None]
+    if not have:
+        return {}
+    sig = [r["sigma"] for r in have]
+    # 旧版（固定 8% 门槛、单次采样）会下注、新版拦住的那些——正是纯抽样运气那批
+    blocked = [r for r in have if abs(r["edge"]) >= EDGE_MIN and not r.get("traded")]
+    out = {"mean_sigma": round(sum(sig) / len(sig), 4),
+           "max_sigma": round(max(sig), 4),
+           "noise_blocked": len(blocked),
+           "unstable": sum(1 for r in have if r.get("unstable")),
+           "traded": sum(1 for r in have if r.get("traded"))}
+    if blocked:
+        out["noise_blocked_detail"] = [
+            {"market": r["name"][:48], "edge": r["edge"], "sigma": r["sigma"],
+             "why": "σ过大" if r.get("unstable") else f'需≥{r.get("edge_needed", 0):.0%}'}
+            for r in blocked]
+    if out["mean_sigma"] > EDGE_MIN:
+        out["warning"] = (f"平均离散度 {out['mean_sigma']:.0%} 已超过固定触发线 "
+                          f"{EDGE_MIN:.0%}——单次采样的'偏差'大部分是噪声")
+    return out
 
 
 def apply_cluster_cap(rows: list, verbose: bool = False) -> list:
@@ -500,7 +632,20 @@ def apply_cluster_cap(rows: list, verbose: bool = False) -> list:
 
 def _print_diagnostics(diag: dict):
     co, sh = diag.get("coherence", {}), diag.get("sharpness", {})
+    fn, stb = diag.get("funnel", {}), diag.get("stability", {})
     print("\n  —— 本批诊断（不需等结算就能算）——")
+    if fn:
+        print(f"  漏斗：拉取 {fn['fetched']} → 硬过滤 {fn['filtered']} → 纪律拒测 "
+              f"{fn['rule_refused']} → 候选 {fn['candidates']} → 实问 {fn['asked']} "
+              f"→ 模型弃权 {fn['abstained']} + 离散过大 {fn['high_sigma']} "
+              f"→ 入选 {fn['estimated']}")
+    if stb:
+        print(f"  稳定性：平均 σ {stb['mean_sigma']:.0%}（最大 {stb['max_sigma']:.0%}）　"
+              f"因噪声未下注 {stb['noise_blocked']} 条　实际下注 {stb['traded']} 条")
+        if stb.get("warning"):
+            print(f"  ⚠️ {stb['warning']}")
+        for d in stb.get("noise_blocked_detail", []):
+            print(f"    · 拦下 {d['market'][:44]}｜差{d['edge']:+.0%} 但 σ={d['sigma']:.0%}")
     if sh:
         print(f"  锐度：模型 {sh['model_sharpness']:.3f} vs 市场 {sh['market_sharpness']:.3f}"
               f"（比值 {sh.get('sharpness_ratio')}）　往50%收敛 {sh['pulled_to_half']}")
@@ -535,6 +680,8 @@ def latest_batch() -> dict:
         "traded": e.get("traded"), "side": e.get("side"),
         "entry_price": e.get("entry_price"), "kelly_f": e.get("kelly_f"),
         "stake": e.get("stake"), "reason": e.get("reason", ""),
+        "method": e.get("method", "single-sample"), "sigma": e.get("sigma"),
+        "spread": e.get("spread"), "edge_needed": e.get("edge_needed"),
         "cluster": e.get("cluster", ""), "group_kind": e.get("group_kind", "solo"),
         "capped_by_cluster": e.get("capped_by_cluster", False),
         "outcome": e.get("outcome"), "pnl": e.get("pnl"),
@@ -563,6 +710,10 @@ def scan(llm, top: int = 12, limit: int = 100, fetcher=None, search_fn=None,
             "traded": row["traded"], "side": row["side"],
             "entry_price": row["entry_price"], "kelly_f": row["kelly_f"], "stake": row["stake"],
             "reason": row["reason"],
+            # 方法版本与采样痕迹：让台账自解释，新旧批次可分开统计、互为对照
+            "method": row.get("method", METHOD), "sigma": row.get("sigma"),
+            "spread": row.get("spread"), "samples": row.get("samples", []),
+            "abstains": row.get("abstains", 0), "edge_needed": row.get("edge_needed"),
             "cluster": row.get("cluster", ""), "group_kind": row.get("group_kind", "solo"),
             "capped_by_cluster": row.get("capped_by_cluster", False),
             "stake_uncapped": row.get("stake_uncapped"),
@@ -645,6 +796,24 @@ def stats() -> dict:
     if all_rows:
         out["sharpness"] = sharpness(all_rows)
         out["coherence"] = coherence_report(all_rows)
+    # 按方法版本分组：k5-median 与早期 single-sample 不是同一个估计器，
+    # 混在一起算 Brier 等于把两个实验的结果搅在一块。
+    by_method = {}
+    for e in entries:
+        by_method.setdefault(e.get("method", "single-sample"), []).append(e)
+    out["by_method"] = {}
+    for meth, es in by_method.items():
+        d = [e for e in es if e["outcome"] in (0, 1)]
+        sigs = [e["sigma"] for e in es if e.get("sigma") is not None]
+        row = {"total": len(es), "resolved": len(d)}
+        if sigs:
+            row["mean_sigma"] = round(sum(sigs) / len(sigs), 4)
+        if d:
+            row["brier_model"] = round(
+                sum((e["p_model"] - e["outcome"]) ** 2 for e in d) / len(d), 4)
+            row["brier_market"] = round(
+                sum((e["p_market"] - e["outcome"]) ** 2 for e in d) / len(d), 4)
+        out["by_method"][meth] = row
     if not done:
         out["note"] = "尚无已结算条目；scan 后等市场到期跑 resolve（锐度/一致性已可看）"
         return out
