@@ -115,7 +115,7 @@ class handler(BaseHTTPRequestHandler):
 
         # Market-scan mode carries no seed (it lists many stocks, doesn't
         # evaluate one event), so only enforce seed for the normal path.
-        is_scan = (body.get("scan") or "") in ("zt", "funnel")
+        is_scan = (body.get("scan") or "") in ("zt", "funnel", "poly")
         seed = (body.get("seed") or "").strip()
         if not seed and not is_scan:
             self._send(400, {"error": "missing seed"})
@@ -130,24 +130,30 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Market-scan mode: no single-event prediction, but a ranked list
-        # of many stocks. Two flavours share this path:
+        # of many candidates. Three flavours share this path:
         #   zt     — today's limit-up-relay candidates (eastmoney push2ex
         #            pool + Sina K-lines), one LLM adjust per stock.
         #   funnel — a slow-money basket (eastmoney earnings pre-announce
         #            + Sina K-lines), one LLM pick over the shortlist.
+        #   poly   — Polymarket paper blind-estimates (Gamma public API),
+        #            one BLIND LLM probability per market (never sees the
+        #            price); read-only, no order placement of any kind.
         # All data is pure HTTP, no akshare. If the live fetch fails — e.g.
         # the finance endpoints block Vercel's overseas IPs — we degrade to
         # the most recent git-tracked ledger batch so the page always
         # renders something.
         scan_kind = body.get("scan") or ""
-        if scan_kind in ("zt", "funnel"):
+        if scan_kind in ("zt", "funnel", "poly"):
             from foresight.llm import LLM
 
+            default_top = {"zt": 8, "funnel": 12, "poly": 8}[scan_kind]
             try:
-                top = int(body.get("top") or (8 if scan_kind == "zt" else 12))
+                top = int(body.get("top") or default_top)
             except (TypeError, ValueError):
-                top = 8 if scan_kind == "zt" else 12
-            top = max(1, min(top, 30))
+                top = default_top
+            # poly runs one serial LLM call per market — cap harder so the
+            # scan stays inside the 60s function budget.
+            top = max(1, min(top, 10 if scan_kind == "poly" else 30))
 
             cfg = _llm_cfg_from_body(provider, api_key)
             mock = cfg.pop("mock", False)
@@ -155,6 +161,11 @@ class handler(BaseHTTPRequestHandler):
 
             if scan_kind == "zt":
                 from foresight import screener as mod
+                fetch = lambda: mod.rank(llm, top=top)  # noqa: E731
+            elif scan_kind == "poly":
+                from foresight import polymarket as mod
+                # No per-market web search here (that's for the local CLI):
+                # it would multiply latency past the function budget.
                 fetch = lambda: mod.rank(llm, top=top)  # noqa: E731
             else:
                 from foresight import funnel as mod

@@ -316,6 +316,11 @@ class LLM:
                  "description": "主角的脸被屏幕白光照亮", "audio": "对白：这是什么。",
                  "image_prompt": "close-up, tired face lit by white screen glow, reflection in eyes, film still"}]}, ensure_ascii=False)
 
+        if "盲估研究员" in prompt:
+            return _j.dumps({"eligible": True, "domain": "scenario", "probability": 0.5,
+                             "reason": "mock 盲估：无真实信息，贴近无知先验", "refuse_reason": None},
+                            ensure_ascii=False)
+
         if "量化分析助手" in prompt:
             return _j.dumps({"interpretation": "mock：短期超买但趋势向上，信号偏多。",
                              "up_probability_range": [0.5, 0.62],

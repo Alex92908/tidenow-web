@@ -14,6 +14,9 @@
     "lab:funnel:scan": ".venv/bin/python scripts/lab.py funnel scan",
     "lab:funnel:resolve": ".venv/bin/python scripts/lab.py funnel resolve",
     "lab:funnel:stats": ".venv/bin/python scripts/lab.py funnel stats",
+    "lab:poly:scan": ".venv/bin/python scripts/lab.py poly scan",
+    "lab:poly:resolve": ".venv/bin/python scripts/lab.py poly resolve",
+    "lab:poly:stats": ".venv/bin/python scripts/lab.py poly stats",
     "foresight:dev": "FORESIGHT_MOCK=1 .venv/bin/python scripts/foresight-dev.py",
     "foresight:dev:real": ".venv/bin/python scripts/foresight-dev.py",
     "dev:foresight": "FORESIGHT_PREDICT_URL=http://127.0.0.1:8787 next dev --port 3002"

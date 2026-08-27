@@ -19,9 +19,10 @@ interface PredictRequest {
    *  quant backend fetches real quotes (Sina daily K-line, no akshare). */
   symbol?: string
   /** Market-scan mode: ignore seed, return many candidates. "zt" =
-   *  limit-up relay pool; "funnel" = slow-money basket. Data via
-   *  eastmoney/Sina HTTP, no akshare. */
-  scan?: "zt" | "funnel"
+   *  limit-up relay pool; "funnel" = slow-money basket; "poly" =
+   *  Polymarket paper blind-estimates (read-only, no orders). Data via
+   *  eastmoney/Sina/Gamma HTTP, no akshare. */
+  scan?: "zt" | "funnel" | "poly"
   top?: number
   /** funnel candidate strategy: growth (default) / quality / wide. */
   mode?: "growth" | "quality" | "wide"
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Market-scan mode returns many candidates and carries no seed.
-  if (scan === "zt" || scan === "funnel") {
+  if (scan === "zt" || scan === "funnel" || scan === "poly") {
     const result = await scanMarket({ provider, apiKey }, { kind: scan, top, mode })
     if (!result) {
       return NextResponse.json(

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""ForeSight 股票实验 CLI（连板接力 zt / 慢钱漏斗 funnel）。
+"""ForeSight 实验 CLI（连板接力 zt / 慢钱漏斗 funnel / Polymarket 盲估 poly）。
 
-两个成对的可证伪实验，台账 git 追踪在 src/data/experiments/：
+三个可证伪实验，台账 git 追踪在 src/data/experiments/：
   - zt     ：连板接力（快钱）。预注册假设：概率可校准、盈亏为负。
   - funnel ：业绩预增漏斗（慢钱）。预注册假设：篮子小幅跑赢沪深300。
+  - poly   ：Polymarket 纸面盲估（不看盘价、只读不下单）。预注册假设：
+             模型 Brier 差于市场价、纸面凯利盈亏≤0。
 
 用法：
   pnpm lab:zt:scan          # 扫当日涨停池 → 打分 → 落台账
@@ -13,6 +15,10 @@
   pnpm lab:funnel:scan      # 业绩预增 → 过热过滤 → LLM 选篮 → 落台账
   pnpm lab:funnel:resolve   # 20 交易日后判定 vs 沪深300
   pnpm lab:funnel:stats     # 超额 alpha
+
+  pnpm lab:poly:scan        # 拉活跃市场 → 纪律拒测 → 盲估 → 落台账
+  pnpm lab:poly:resolve     # 市场结算后判定（UMA 口径，50-50 记作废）
+  pnpm lab:poly:stats       # 双 Brier（模型 vs 市场价）+ 纸面凯利盈亏
 
 或直接：
   .venv/bin/python scripts/lab.py zt scan [--top 10] [--date 20260717] [--mock]
@@ -82,8 +88,25 @@ def cmd_funnel(args) -> None:
         print(json.dumps(funnel.stats(), ensure_ascii=False, indent=2))
 
 
+def cmd_poly(args) -> None:
+    from foresight import polymarket
+
+    if args.action == "scan":
+        # 本地 CLI 不赶 60s 预算，真实跑注入联网搜索；mock 跑流程不联网。
+        search_fn = None
+        if not args.mock:
+            from foresight.search import search_for_seed
+            search_fn = search_for_seed
+        polymarket.scan(_llm(args.mock), top=args.top, search_fn=search_fn)
+    elif args.action == "resolve":
+        n = polymarket.resolve_pending()
+        print(f"已判定 {n} 条")
+    else:
+        print(json.dumps(polymarket.stats(), ensure_ascii=False, indent=2))
+
+
 def main() -> None:
-    p = argparse.ArgumentParser(description="ForeSight 股票实验（台账 git 追踪）")
+    p = argparse.ArgumentParser(description="ForeSight 实验（台账 git 追踪）")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     z = sub.add_parser("zt", help="连板接力实验（快钱）")
@@ -99,6 +122,12 @@ def main() -> None:
     f.add_argument("--date", default=None, help="YYYYMMDD，默认今天")
     f.add_argument("--mock", action="store_true")
     f.set_defaults(func=cmd_funnel)
+
+    m = sub.add_parser("poly", help="Polymarket 纸面盲估实验（只读不下单）")
+    m.add_argument("action", choices=["scan", "resolve", "stats"])
+    m.add_argument("--top", type=int, default=12)
+    m.add_argument("--mock", action="store_true")
+    m.set_defaults(func=cmd_poly)
 
     args = p.parse_args()
     args.func(args)

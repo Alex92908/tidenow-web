@@ -84,10 +84,13 @@ export async function getForesight(
   }
 }
 
-/** One stock in a market scan. Fields are a superset of both scan kinds:
+/** One row in a market scan. Fields are a superset of the scan kinds:
  *  zt (limit-up relay) uses height/price/prob/reason; funnel (slow-money
- *  basket) uses growth/chg60/tag/why. Resolved ledger rows add outcome/
- *  ret (zt) or ret/alpha (funnel). */
+ *  basket) uses growth/chg60/tag/why; poly (Polymarket paper blind
+ *  estimates) uses p_model/p_market/edge/traded — there code is the
+ *  market id and name is the market question. Resolved ledger rows add
+ *  outcome/ret (zt), ret/alpha (funnel) or outcome/pnl (poly, where
+ *  outcome may be the string "void" for 50-50 cancellations). */
 export interface ScanStock {
   code: string
   name: string
@@ -98,7 +101,7 @@ export interface ScanStock {
   industry?: string
   break_n?: number | null
   prob?: number | null
-  outcome?: number | null
+  outcome?: number | string | null
   // funnel fields
   growth?: number | null
   chg120?: number | null
@@ -110,11 +113,26 @@ export interface ScanStock {
   why?: string
   entry_price?: number | null
   alpha?: number | null
+  // poly fields (paper blind-estimate vs market price; read-only, no orders)
+  outcome_a?: string
+  outcome_b?: string
+  url?: string
+  domain?: string
+  end_date?: string
+  liquidity?: number | null
+  p_model?: number | null
+  p_market?: number | null
+  edge?: number | null
+  traded?: boolean
+  side?: "A" | "B" | null
+  kelly_f?: number | null
+  stake?: number | null
+  pnl?: number | null
   // shared (resolved)
   ret?: number | null
 }
 
-export type ScanKind = "zt" | "funnel"
+export type ScanKind = "zt" | "funnel" | "poly"
 
 export interface MarketScan {
   scan: ScanKind
@@ -130,10 +148,12 @@ export interface MarketScan {
 /**
  * Scan the market and return MANY candidates (not a single-event
  * prediction). kind "zt" = today's limit-up-relay pool; "funnel" = a
- * slow-money earnings-growth basket. Data is eastmoney + Sina over plain
- * HTTP (no akshare), scored with the caller's BYOK key. Returns null only
- * on total failure — the Python side already degrades to the git ledger,
- * so a non-null result may be `stale`.
+ * slow-money earnings-growth basket; "poly" = Polymarket paper blind
+ * estimates (Gamma public API — the LLM never sees the market price;
+ * read-only, never places orders). Data is plain HTTP (no akshare),
+ * scored with the caller's BYOK key. Returns null only on total
+ * failure — the Python side already degrades to the git ledger, so a
+ * non-null result may be `stale`.
  */
 export type FunnelMode = "growth" | "quality" | "wide"
 

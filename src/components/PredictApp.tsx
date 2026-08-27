@@ -13,7 +13,7 @@ interface PredictResult {
   markdown: string
 }
 
-type ScanKind = "zt" | "funnel"
+type ScanKind = "zt" | "funnel" | "poly"
 type FunnelMode = "growth" | "quality" | "wide"
 
 // Funnel candidate strategies — which slice of the earnings-growth pool
@@ -37,7 +37,7 @@ interface ScanStock {
   industry?: string
   break_n?: number | null
   prob?: number | null
-  outcome?: number | null
+  outcome?: number | string | null
   // funnel
   growth?: number | null
   chg120?: number | null
@@ -49,6 +49,19 @@ interface ScanStock {
   why?: string
   entry_price?: number | null
   alpha?: number | null
+  // poly（Polymarket 纸面盲估）：code=市场id、name=市场问题
+  outcome_a?: string
+  outcome_b?: string
+  url?: string
+  domain?: string
+  end_date?: string
+  p_model?: number | null
+  p_market?: number | null
+  edge?: number | null
+  traded?: boolean
+  side?: "A" | "B" | null
+  stake?: number | null
+  pnl?: number | null
   // shared (resolved)
   ret?: number | null
 }
@@ -80,6 +93,7 @@ const DOMAINS: { id: string; en: string; zh: string }[] = [
   { id: "election", en: "Elections", zh: "选举" },
   { id: "boxoffice", en: "Box office", zh: "影视票房" },
   { id: "market", en: "Stocks (A-share)", zh: "股票（A股）" },
+  { id: "poly", en: "Prediction markets", zh: "预测市场（Polymarket）" },
   { id: "nature", en: "Weather / nature", zh: "天气/自然" },
   { id: "metaphysics", en: "Metaphysics / fortune", zh: "玄学/命理" },
   { id: "industry", en: "Industry / career", zh: "行业/职业前瞻" },
@@ -191,6 +205,7 @@ export function PredictApp({ locale }: Props) {
   const isZh = locale === "zh"
   const t = (zh: string, en: string) => (isZh ? zh : en)
   const isMarket = domain === "market"
+  const isPoly = domain === "poly"
   const isLottery = domain === "lottery"
   const isIndustry = domain === "industry"
 
@@ -239,7 +254,11 @@ export function PredictApp({ locale }: Props) {
         body: JSON.stringify({
           ...key,
           scan: kind,
-          top: Math.max(1, Math.min(scanTop || 12, 30)),
+          // poly 每个市场一次串行 LLM 盲估，压到 ≤10 保住函数 60s 预算
+          top:
+            kind === "poly"
+              ? Math.max(1, Math.min(scanTop || 8, 10))
+              : Math.max(1, Math.min(scanTop || 12, 30)),
           ...(kind === "funnel" ? { mode: funnelMode } : {}),
         }),
       })
@@ -316,8 +335,8 @@ export function PredictApp({ locale }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Input — hidden in market-scan and lottery modes (no seed). */}
-      {!isMarket && !isLottery && (
+      {/* Input — hidden in market-scan / poly-scan / lottery modes (no seed). */}
+      {!isMarket && !isPoly && !isLottery && (
         <textarea
           value={seed}
           onChange={(e) => setSeed(e.target.value)}
@@ -348,6 +367,15 @@ export function PredictApp({ locale }: Props) {
           {t("：当日涨停池(二板及以上),给「明日再涨停」概率。", " — today's limit-up pool (2nd board+), 'limit-up again tomorrow' probability. ")}
           <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("🐢 漏斗(慢钱)", "🐢 Funnel (slow)")}</span>
           {t("：业绩预增+卖铲子位置的观察篮,持有 20 日对比沪深300。", " — an earnings-growth 'sell-shovels' basket, held 20 days vs CSI 300.")}
+        </p>
+      )}
+
+      {isPoly && (
+        <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+          {t(
+            "对 Polymarket 活跃二元市场做纸面盲估：AI 全程看不到盘价,独立给出概率,再与市场价对比。|盲估−盘价|≥8% 时记一笔虚拟凯利仓(单笔上限6%)——只记账,绝不下单。这是校准实验,预注册假设:市场价比模型准。短期天气/币价阈值/纯随机类会按纪律直接拒测。",
+            "Paper blind-estimates on active Polymarket binaries: the AI never sees the market price, gives its own probability, then we compare. When |estimate − price| ≥ 8% a virtual Kelly position (6% cap) is logged — ledger only, never an order. It's a calibration experiment; the pre-registered hypothesis is that the market price wins. Short-term weather, crypto price thresholds and pure randomness are refused on principle."
+          )}
         </p>
       )}
 
@@ -433,6 +461,29 @@ export function PredictApp({ locale }: Props) {
               ))}
             </span>
           </>
+        ) : isPoly ? (
+          <>
+            <button
+              type="button"
+              onClick={() => handleScan("poly")}
+              disabled={loading}
+              className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t("🎲 扫盲估", "🎲 Blind scan")}
+            </button>
+            <label className="inline-flex items-center gap-1 text-[11px] text-gray-400 dark:text-zinc-500">
+              {t("数量", "Count")}
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={scanTop}
+                onChange={(e) => setScanTop(Number(e.target.value))}
+                disabled={loading}
+                className="w-14 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 px-1.5 py-1 text-xs text-gray-700 dark:text-zinc-300 tabular-nums focus:outline-none focus:ring-1 focus:ring-sky-400 disabled:opacity-40"
+              />
+            </label>
+          </>
         ) : isLottery ? (
           LOTTERIES.map((g) => (
             <button
@@ -458,7 +509,9 @@ export function PredictApp({ locale }: Props) {
           <span className="text-[11px] text-gray-400 dark:text-zinc-600">
             {isMarket
               ? t("扫描 + 逐只打分,约 15-40 秒", "Scanning + scoring, ~15-40s")
-              : t("情景推演可能需要 20-40 秒", "Scenario reasoning takes 20-40s")}
+              : isPoly
+                ? t("拉取市场 + 逐个盲估,约 15-40 秒", "Fetching markets + blind estimates, ~15-40s")
+                : t("情景推演可能需要 20-40 秒", "Scenario reasoning takes 20-40s")}
           </span>
         )}
       </div>
@@ -518,16 +571,21 @@ export function PredictApp({ locale }: Props) {
       {/* Market scan — a ranked table of many candidates (zt or funnel) */}
       {scan && (() => {
         const isFunnel = scan.scan === "funnel"
+        const isPolyScan = scan.scan === "poly"
         const accent = isFunnel
           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-          : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+          : isPolyScan
+            ? "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
+            : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
         return (
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${accent}`}>
               {isFunnel
                 ? `🐢 ${t("慢钱漏斗观察篮", "Slow-money basket")}`
-                : `🔥 ${t("涨停接力候选", "Limit-up relay candidates")}`}
+                : isPolyScan
+                  ? `🎲 ${t("Polymarket 纸面盲估", "Polymarket paper blind-estimates")}`
+                  : `🔥 ${t("涨停接力候选", "Limit-up relay candidates")}`}
               {scan.date ? ` · ${scan.date}` : ""}
               {isFunnel && scan.period ? t(`（业绩期 ${scan.period}）`, ` (${scan.period})`) : ""}
             </span>
@@ -542,14 +600,18 @@ export function PredictApp({ locale }: Props) {
             <p className="text-sm text-gray-500 dark:text-zinc-400">
               {isFunnel
                 ? t("暂无满足条件的预增标的（或非交易日）。", "No qualifying earnings-growth names (or not a trading day).")
-                : t("今日涨停池暂无二板及以上标的（或非交易日）。", "No 2nd-board+ stocks in today's pool (or not a trading day).")}
+                : isPolyScan
+                  ? t("暂无通过过滤与拒测线的活跃市场。", "No active markets pass the filters and refusal rules.")
+                  : t("今日涨停池暂无二板及以上标的（或非交易日）。", "No 2nd-board+ stocks in today's pool (or not a trading day).")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-left text-[11px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
-                    <th className="py-1.5 pr-2 font-medium">{t("名称", "Name")}</th>
+                    <th className="py-1.5 pr-2 font-medium">
+                      {isPolyScan ? t("市场", "Market") : t("名称", "Name")}
+                    </th>
                     {isFunnel ? (
                       <>
                         <th className="py-1.5 px-2 font-medium tabular-nums">{t("净利预增", "Profit growth")}</th>
@@ -559,6 +621,13 @@ export function PredictApp({ locale }: Props) {
                         <th className="py-1.5 px-2 font-medium tabular-nums">{t("15日", "15d")}</th>
                         <th className="py-1.5 px-2 font-medium tabular-nums">{t("7日", "7d")}</th>
                         <th className="py-1.5 px-2 font-medium">{t("标签", "Tag")}</th>
+                      </>
+                    ) : isPolyScan ? (
+                      <>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("盘价A", "Price A")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("盲估A", "Blind est.")}</th>
+                        <th className="py-1.5 px-2 font-medium tabular-nums">{t("差", "Edge")}</th>
+                        <th className="py-1.5 px-2 font-medium">{t("纸面动作", "Paper action")}</th>
                       </>
                     ) : (
                       <>
@@ -579,11 +648,34 @@ export function PredictApp({ locale }: Props) {
                         className="border-b border-gray-50 dark:border-white/[0.03] last:border-0 align-top"
                       >
                         <td className="py-2 pr-2">
-                          <span className="font-medium text-gray-800 dark:text-zinc-200">{s.name}</span>
-                          <span className="ml-1 text-[11px] text-gray-400 dark:text-zinc-600 tabular-nums">{s.code}</span>
-                          {s.industry ? (
-                            <span className="block text-[11px] text-gray-400 dark:text-zinc-600">{s.industry}</span>
-                          ) : null}
+                          {isPolyScan ? (
+                            <>
+                              {s.url ? (
+                                <a
+                                  href={s.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-gray-800 dark:text-zinc-200 hover:text-sky-600 dark:hover:text-sky-400 hover:underline"
+                                >
+                                  {s.name}
+                                </a>
+                              ) : (
+                                <span className="font-medium text-gray-800 dark:text-zinc-200">{s.name}</span>
+                              )}
+                              <span className="block text-[11px] text-gray-400 dark:text-zinc-600">
+                                {s.end_date ? `${t("到期", "ends")} ${s.end_date}` : ""}
+                                {s.domain ? ` · ${s.domain}` : ""}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-medium text-gray-800 dark:text-zinc-200">{s.name}</span>
+                              <span className="ml-1 text-[11px] text-gray-400 dark:text-zinc-600 tabular-nums">{s.code}</span>
+                              {s.industry ? (
+                                <span className="block text-[11px] text-gray-400 dark:text-zinc-600">{s.industry}</span>
+                              ) : null}
+                            </>
+                          )}
                         </td>
                         {isFunnel ? (
                           <>
@@ -609,6 +701,45 @@ export function PredictApp({ locale }: Props) {
                               {s.alpha != null && (
                                 <span className={`block text-[11px] ${s.alpha > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
                                   {t("超额", "α")} {(s.alpha * 100).toFixed(1)}%
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        ) : isPolyScan ? (
+                          <>
+                            <td className="py-2 px-2 whitespace-nowrap tabular-nums text-gray-600 dark:text-zinc-400">
+                              {s.p_market != null ? `${Math.round(s.p_market * 100)}%` : "—"}
+                            </td>
+                            <td className="py-2 px-2 whitespace-nowrap tabular-nums font-semibold text-gray-900 dark:text-zinc-100">
+                              {s.p_model != null ? `${Math.round(s.p_model * 100)}%` : "—"}
+                            </td>
+                            <td
+                              className={`py-2 px-2 whitespace-nowrap tabular-nums font-medium ${
+                                s.traded
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-gray-400 dark:text-zinc-600"
+                              }`}
+                            >
+                              {s.edge != null ? `${s.edge > 0 ? "+" : ""}${Math.round(s.edge * 100)}%` : "—"}
+                            </td>
+                            <td className="py-2 px-2 text-[12px] text-gray-600 dark:text-zinc-300 max-w-[10rem]">
+                              {s.traded
+                                ? `${t("买", "Buy")} ${(s.side === "A" ? s.outcome_a : s.outcome_b) ?? s.side}${s.stake != null ? ` · ${s.stake}u` : ""}`
+                                : t("仅记录", "log only")}
+                              {s.outcome != null && (
+                                <span
+                                  className={`block text-[11px] ${
+                                    s.pnl != null && s.pnl > 0
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-gray-400 dark:text-zinc-600"
+                                  }`}
+                                >
+                                  {s.outcome === "void"
+                                    ? t("50-50作废", "voided 50-50")
+                                    : s.outcome === 1
+                                      ? `→ ${s.outcome_a ?? "A"} ✓`
+                                      : `→ ${s.outcome_b ?? "B"} ✓`}
+                                  {s.pnl != null ? ` ${s.pnl > 0 ? "+" : ""}${s.pnl}u` : ""}
                                 </span>
                               )}
                             </td>
@@ -661,7 +792,12 @@ export function PredictApp({ locale }: Props) {
                   "篮子=业绩预增中挑「政策主线+卖铲子位置」、剔除已爆炒(60日>80%)的观察组,等权持有 20 个交易日对比沪深300。业绩预告全市场可见,非私有信息——赚的只能是「耐心+纪律」的钱。预注册假设:小幅跑赢基准。仅供参考,非投资建议。",
                   "The basket picks 'policy-mainline + sell-shovels' names from earnings-growth candidates, drops the over-heated (60d >80%), and holds equal-weight 20 trading days vs CSI 300. Earnings pre-announcements are public, not private info — the only edge is patience + discipline. Pre-registered hypothesis: mild outperformance. Reference only, not investment advice."
                 )
-              : t(
+              : isPolyScan
+                ? t(
+                    "盲估=AI 不看盘价独立给概率;差=盲估−盘价。|差|≥8% 记一笔虚拟凯利仓(上限6%、本金100u、不复利)——只记账,绝不下单。结算后对比双 Brier(模型 vs 市场价);预注册假设:市场价更准、纸面盈亏≤0。纸面成交不含点差/滑点/费用,是乐观上界。非投注建议。",
+                    "Blind = the AI prices each market without seeing it; edge = estimate − price. |edge| ≥ 8% logs a virtual Kelly position (6% cap, 100u bankroll, no compounding) — ledger only, never an order. After resolution we compare double Brier (model vs market price); pre-registered hypothesis: the market wins and paper P&L ≤ 0. Paper fills ignore spread/slippage/fees — an optimistic upper bound. Not betting advice."
+                  )
+                : t(
                   "概率=历史基率经 LLM 微调后的「明日再涨停」校准值，不等于「该买」。涨停接力长期胜负需台账验证——预注册假设为盈亏偏负。仅供参考，非投资建议。",
                   "Probability is a calibrated 'limit-up again tomorrow' estimate (base rate + LLM nudge), not a buy signal. Whether limit-up relay pays needs ledger validation — the pre-registered hypothesis is net-negative P&L. Reference only, not investment advice."
                 )}
