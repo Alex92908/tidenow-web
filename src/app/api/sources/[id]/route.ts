@@ -2,6 +2,7 @@ import { ProxyAgent, setGlobalDispatcher } from "undici"
 import { sources, type SourceId } from "@/sources"
 import { getCached, setCached, getStale } from "@/lib/cache"
 import type { NextRequest } from "next/server"
+import type { NewsItem } from "@/lib/types"
 
 // Server-only: respect system proxy (HTTP_PROXY / HTTPS_PROXY) like Python's trust_env=True
 const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
@@ -22,6 +23,26 @@ const CORS_HEADERS = {
 function withCors(res: Response): Response {
   for (const [k, v] of Object.entries(CORS_HEADERS)) res.headers.set(k, v)
   return res
+}
+
+/**
+ * 净化上游条目：丢弃没有可用标题的条目。
+ *
+ * 为什么放在这个统一出口而不是各个适配器里：70 个源中有 30 个直接透传
+ * 上游的 title 字段，任何一个上游临时不给这个字段，前端 item.title.toLowerCase()
+ * 就会在 useMemo 里抛错、整页白屏——实测腾讯源返回过只有 id/url/image 的条目。
+ * 逐个适配器加防御既漏又难维护；所有源都流经这里，在这里堵一次覆盖全部。
+ *
+ * 只丢没标题的：那种条目对用户本来就没有意义，留着也只是一行空白。
+ */
+function sanitize(items: unknown): NewsItem[] {
+  if (!Array.isArray(items)) return []
+  return items.filter(
+    (it): it is NewsItem =>
+      !!it && typeof it === "object" &&
+      typeof (it as NewsItem).title === "string" &&
+      (it as NewsItem).title.trim().length > 0
+  )
 }
 
 export function OPTIONS() {
@@ -48,7 +69,7 @@ export async function GET(
   }
 
   try {
-    const items = await source.fetch()
+    const items = sanitize(await source.fetch())
     if (items.length > 0) setCached(id, items)
     return withCors(Response.json({ items, updatedAt: Date.now(), cached: false }))
   } catch (e) {

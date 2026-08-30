@@ -101,7 +101,11 @@ export function TopicPicker({
       const kw = keyword.trim().toLowerCase()
       // Keyword filter never hides pinned items — the user needs to keep
       // seeing what they picked even while searching for something else.
-      return out.filter(({ item, pinned }) => pinned || item.title.toLowerCase().includes(kw))
+      return out.filter(
+        ({ item, pinned }) =>
+          // 同 TideBoard：不假设上游一定给 title
+          pinned || (typeof item.title === "string" && item.title.toLowerCase().includes(kw))
+      )
     }
     return out
   }, [sources, sourceFilter, showAll, keyword, selected])

@@ -403,6 +403,10 @@ export function TideBoard({
     for (const id of SOURCE_IDS) {
       const items = state[id]?.items ?? []
       for (const item of items) {
+        // 别假设上游一定给 title：腾讯源实测返回过只有 id/url/image 的条目，
+        // 直接 .toLowerCase() 会让整个 useMemo 抛错、整页白屏。
+        // 源头已过滤，这里再兜一道——一个源的脏数据不该能打挂整个页面。
+        if (typeof item.title !== "string" || !item.title) continue
         if (!passesMute(item.title)) continue
         if (item.title.toLowerCase().includes(q)) {
           results.push({ item, sourceId: id })
