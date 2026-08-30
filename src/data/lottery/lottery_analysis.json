@@ -178,6 +178,7 @@
     "positions": [
      {
       "pos": 1,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -352,6 +353,7 @@
      },
      {
       "pos": 2,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -526,6 +528,7 @@
      },
      {
       "pos": 3,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -1117,6 +1120,7 @@
     "positions": [
      {
       "pos": 1,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -1291,6 +1295,7 @@
      },
      {
       "pos": 2,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -1465,6 +1470,9 @@
      },
      {
       "pos": 3,
+      "never_picked": [
+       3
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -2108,6 +2116,9 @@
     "positions": [
      {
       "pos": 1,
+      "never_picked": [
+       6
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -2282,6 +2293,9 @@
      },
      {
       "pos": 2,
+      "never_picked": [
+       3
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -2456,6 +2470,9 @@
      },
      {
       "pos": 3,
+      "never_picked": [
+       3
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -2630,6 +2647,9 @@
      },
      {
       "pos": 4,
+      "never_picked": [
+       3
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -2804,6 +2824,9 @@
      },
      {
       "pos": 5,
+      "never_picked": [
+       8
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -3567,6 +3590,9 @@
     "positions": [
      {
       "pos": 1,
+      "never_picked": [
+       6
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -3741,6 +3767,7 @@
      },
      {
       "pos": 2,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -3915,6 +3942,9 @@
      },
      {
       "pos": 3,
+      "never_picked": [
+       4
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -4089,6 +4119,10 @@
      },
      {
       "pos": 4,
+      "never_picked": [
+       5,
+       8
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -4263,6 +4297,7 @@
      },
      {
       "pos": 5,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -4437,6 +4472,7 @@
      },
      {
       "pos": 6,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -4611,6 +4647,7 @@
      },
      {
       "pos": 7,
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -5194,6 +5231,12 @@
      "zmax": 35,
      "drawn": 5,
      "pick": 9,
+     "never_picked": [
+      5,
+      6,
+      11,
+      20
+     ],
      "baseline": 1.28571,
      "bonferroni": 0.00313,
      "uniformity": {
@@ -5646,6 +5689,9 @@
      "zmax": 12,
      "drawn": 2,
      "pick": 3,
+     "never_picked": [
+      4
+     ],
      "baseline": 0.5,
      "bonferroni": 0.00313,
      "uniformity": {
@@ -6409,6 +6455,9 @@
      "zmax": 33,
      "drawn": 6,
      "pick": 10,
+     "never_picked": [
+      13
+     ],
      "baseline": 1.81818,
      "bonferroni": 0.00313,
      "uniformity": {
@@ -6877,6 +6926,10 @@
      "zmax": 16,
      "drawn": 1,
      "pick": 4,
+     "never_picked": [
+      9,
+      12
+     ],
      "baseline": 0.25,
      "bonferroni": 0.00313,
      "uniformity": {
@@ -7656,6 +7709,9 @@
      "zmax": 30,
      "drawn": 7,
      "pick": 12,
+     "never_picked": [
+      1
+     ],
      "baseline": 2.8,
      "bonferroni": 0.00313,
      "uniformity": {

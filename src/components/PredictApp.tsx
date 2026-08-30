@@ -88,6 +88,8 @@ interface DltMethod {
   next_pick: number[]
 }
 interface SetZone {
+  /** 所有方法都没推荐的号码——用来暴露方法的盲区，不是另一种选号依据 */
+  never_picked?: number[]
   zmax: number
   drawn: number
   pick: number
@@ -135,6 +137,7 @@ interface LotteryGame {
     n_tests: number
     positions: {
       pos: number
+      never_picked?: number[]
       methods: {
         name: string
         mean_hits: number
@@ -306,7 +309,7 @@ export function PredictApp({ locale }: Props) {
     setDltLoading(true)
     try {
       // v= 是响应结构版本，结构变了就换 URL，绕开浏览器的长缓存
-      const res = await fetch("/api/lottery?v=2")
+      const res = await fetch("/api/lottery?v=3")
       if (res.ok) {
         const j = (await res.json()) as LotteryAnalysis
         // 只接受当前格式：旧缓存/半成品导出一律当作没数据，
@@ -527,7 +530,7 @@ export function PredictApp({ locale }: Props) {
                 这是 API 路由的文件下载，不是页面跳转：<Link> 会走客户端路由，
                 拿不到 Content-Disposition，下载会失效。 */}
             <a
-              href={`/api/lottery?game=${dltGame}&format=csv&v=2`}
+              href={`/api/lottery?game=${dltGame}&format=csv&v=3`}
               download={`${dltGame}_history.csv`}
               className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
             >
@@ -724,6 +727,29 @@ export function PredictApp({ locale }: Props) {
                         </div>
                       </div>
                     ))}
+                    {zones.some(([, z]) => (z.never_picked?.length ?? 0) > 0) && (
+                      <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-2.5 space-y-1">
+                        {zones.map(([zname, z]) =>
+                          (z.never_picked?.length ?? 0) > 0 ? (
+                            <div key={zname} className="text-[11px] text-gray-600 dark:text-zinc-300">
+                              <span className="font-medium">{zname}</span>
+                              {t("：全部 ", " — none of the ")}
+                              {z.methods.length}
+                              {t(" 个方法都没推荐的号码 → ", " methods picked: ")}
+                              <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                                {z.never_picked!.map((n) => String(n).padStart(2, "0")).join(" ")}
+                              </span>
+                            </div>
+                          ) : null
+                        )}
+                        <p className="text-[10px] text-gray-500 dark:text-zinc-500 leading-relaxed pt-0.5">
+                          {t(
+                            "列出它们不是因为「不会开」——恰恰相反：2026-08-30 双色球开出 13 号，而 16 个方法无一推荐它，同期六个方法平均只命中 1.33 个红球（随机期望 1.82）。这一栏是让方法的盲区可见，不是另一种选号依据。",
+                            "These are not predictions of absence — the opposite: on 2026-08-30 the SSQ draw included 13, which none of the 16 methods picked, while the six shown methods averaged 1.33 red-ball hits against a random expectation of 1.82. This row exposes the methods' blind spot; it is not another basis for picking."
+                          )}
+                        </p>
+                      </div>
+                    )}
                     <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
                       {t(
                         "两套零假设缺一不可：行置换不改变各号码总频次，对频率类方法无鉴别力；均匀重采样才检验号码级偏差。表中「推荐」是各方法的机械输出，在 p 值证明有信号之前，它和随机选号没有区别。",
