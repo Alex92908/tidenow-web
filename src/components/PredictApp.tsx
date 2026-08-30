@@ -125,6 +125,26 @@ interface LotteryGame {
     span_mean: number
     组选?: Record<string, number>
   }
+  backtest?: {
+    train: number
+    oos: number
+    pick: number
+    baseline: number
+    bonferroni: number
+    significant: number
+    n_tests: number
+    positions: {
+      pos: number
+      methods: {
+        name: string
+        mean_hits: number
+        vs_base: number
+        p_uniform: number
+        significant: boolean
+        next_pick: number[]
+      }[]
+    }[]
+  }
 }
 interface LotteryAnalysis {
   meta: { ran_at: string; n_perm: number; seeds: number; source: string; games: string[] }
@@ -585,6 +605,58 @@ export function PredictApp({ locale }: Props) {
                             </tbody>
                           </table>
                         </div>
+                      )}
+                      {g.backtest && (
+                        <>
+                          <div className="text-[11px] text-gray-500 dark:text-zinc-400 pt-1">
+                            {t(
+                              `逐位回测：每一位就是一个「10选1」的小游戏，同样走 walk-forward（训练${g.backtest.train}期／样本外${g.backtest.oos}期）+ 排列检验。每位推${g.backtest.pick}个数字，随机基准 ${g.backtest.baseline}。通过 Bonferroni(${g.backtest.bonferroni.toFixed(4)}) 的：${g.backtest.significant}/${g.backtest.n_tests}`,
+                              `Per-position backtest: each position is a "1 of 10" game, run through the same walk-forward (${g.backtest.train} train / ${g.backtest.oos} OOS) plus permutation tests. ${g.backtest.pick} digits per position, random baseline ${g.backtest.baseline}. Passing Bonferroni(${g.backtest.bonferroni.toFixed(4)}): ${g.backtest.significant}/${g.backtest.n_tests}`
+                            )}
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="text-left text-[10px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
+                                  <th className="py-1 pr-2 font-medium">{t("位", "Pos")}</th>
+                                  <th className="py-1 px-2 font-medium">{t("方法", "Method")}</th>
+                                  <th className="py-1 px-2 font-medium tabular-nums">{t("命中率", "Hit rate")}</th>
+                                  <th className="py-1 px-2 font-medium tabular-nums">{t("vs随机", "vs random")}</th>
+                                  <th className="py-1 px-2 font-medium tabular-nums">p</th>
+                                  <th className="py-1 pl-2 font-medium">{t("预估数字", "Picks")}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {g.backtest.positions.flatMap((pos) =>
+                                  pos.methods
+                                    .filter((m) => ["freq_hot", "omit_max", "fuse_equal", "random"].includes(m.name))
+                                    .map((m) => (
+                                      <tr key={`${pos.pos}-${m.name}`} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
+                                        <td className="py-1 pr-2 text-gray-600 dark:text-zinc-400">{pos.pos}</td>
+                                        <td className="py-1 px-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
+                                        <td className="py-1 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
+                                        <td className={`py-1 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
+                                          {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
+                                        </td>
+                                        <td className={`py-1 px-2 tabular-nums ${m.significant ? "text-rose-500" : "text-gray-400 dark:text-zinc-600"}`}>
+                                          {m.p_uniform.toFixed(3)}
+                                        </td>
+                                        <td className="py-1 pl-2 tabular-nums text-gray-500 dark:text-zinc-500">
+                                          {m.next_pick.join(" ")}
+                                        </td>
+                                      </tr>
+                                    ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed">
+                            {t(
+                              "「预估数字」是各方法的机械输出，旁边的 p 值就是它的成色——注意随机对照组(random)也会给出一组数字，且表现与其它方法无异。这正是重点：在 p 值证明有信号之前，任何一组预估都和随便写三个数一样。",
+                              "The picks are mechanical outputs; the p-value beside them is their worth. Note the random control also produces picks and performs no differently — which is the point: absent a significant p-value, any set of picks is as good as three digits written at random."
+                            )}
+                          </p>
+                        </>
                       )}
                       <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
                         {t(
