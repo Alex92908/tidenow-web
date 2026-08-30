@@ -74,7 +74,8 @@ interface MarketScan {
   stale?: boolean
 }
 
-// 大乐透回测结果（来自 /api/lottery，预计算后 git 追踪；不在请求时计算）
+// 彩票统计分析（来自 /api/lottery，预计算后 git 追踪；不在请求时计算）。
+// 两类结构：选号型（set，从K个号选n个）与数字型（digit，每位独立0-9）。
 interface DltMethod {
   name: string
   mean_hits: number
@@ -85,23 +86,50 @@ interface DltMethod {
   p_uniform: number
   significant: boolean
   next_pick: number[]
-  eras: Record<string, number>
 }
-interface DltZone {
+interface SetZone {
+  zmax: number
+  drawn: number
+  pick: number
   baseline: number
-  uniformity: Record<string, { chi2: number; df: number; n: number }>
+  bonferroni: number
+  significant: number
+  uniformity: Record<string, { chi2: number; df: number; n: number; p: number }>
   methods: DltMethod[]
 }
-interface DltAnalysis {
-  meta: {
-    n: number; train: number; oos: number; first_date: string; last_date: string
-    n_perm: number; bonferroni: number; n_methods: number; source: string
+interface LotteryGame {
+  id: string
+  name: string
+  kind: "set" | "digit"
+  n: number
+  first_date: string
+  last_date: string
+  recent: { 期号: string; 日期: string; nums: number[] }[]
+  // set
+  train?: number
+  oos?: number
+  n_methods?: number
+  zones?: Record<string, SetZone>
+  // digit
+  digits?: number
+  p?: {
+    uniformity: number
+    per_position: number[]
+    independence_min: number | null
+    serial_min: number
+    sum_vs_theory: number
   }
-  roi: { mean: number; std: number; per_seed: number[] }
-  front: DltZone
-  back: DltZone
-  recent: { 期号: string; 日期: string; front: number[]; back: number[] }[]
-  verdict: { front_significant: number; back_significant: number; note: string }
+  forms?: {
+    sum_mean: number
+    sum_theory_mean: number
+    span_mean: number
+    组选?: Record<string, number>
+  }
+}
+interface LotteryAnalysis {
+  meta: { ran_at: string; n_perm: number; seeds: number; source: string; games: string[] }
+  games: Record<string, LotteryGame>
+  verdict: string
 }
 
 interface Props {
@@ -231,7 +259,8 @@ export function PredictApp({ locale }: Props) {
   const [funnelMode, setFunnelMode] = useState<FunnelMode>("growth")
   const [scanTop, setScanTop] = useState(12)
   const [lottery, setLottery] = useState<LotteryPick | null>(null)
-  const [dlt, setDlt] = useState<DltAnalysis | null>(null)
+  const [dlt, setDlt] = useState<LotteryAnalysis | null>(null)
+  const [dltGame, setDltGame] = useState("dlt")
   const [dltLoading, setDltLoading] = useState(false)
 
   const isZh = locale === "zh"
@@ -247,7 +276,7 @@ export function PredictApp({ locale }: Props) {
     setDltLoading(true)
     try {
       const res = await fetch("/api/lottery")
-      if (res.ok) setDlt((await res.json()) as DltAnalysis)
+      if (res.ok) setDlt((await res.json()) as LotteryAnalysis)
     } catch {
       /* 静默失败：这是附加信息，不该阻断机选主流程 */
     } finally {
@@ -444,23 +473,23 @@ export function PredictApp({ locale }: Props) {
       )}
 
 
-      {/* 大乐透统计分析：预计算的回测结论 + 原始数据下载。
+      {/* 彩票统计分析：7 个彩种的预计算结论 + 原始数据下载。
           放在机选下面而不是上面——机选是这一页的功能，分析是它的注脚。 */}
       {isLottery && (
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
-              📊 {t("大乐透历史数据与回测", "Grand Lotto data & backtest")}
+              📊 {t("历史数据与统计检验", "History & statistical tests")}
             </span>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages --
                 这是 API 路由的文件下载，不是页面跳转：<Link> 会走客户端路由，
                 拿不到 Content-Disposition，下载会失效。 */}
             <a
-              href="/api/lottery?format=csv"
-              download="dlt_history.csv"
+              href={`/api/lottery?game=${dltGame}&format=csv`}
+              download={`${dltGame}_history.csv`}
               className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
             >
-              {t("⬇ 下载全部历史开奖 CSV", "⬇ Download full history CSV")}
+              {t("⬇ 下载该彩种全量历史 CSV", "⬇ Download full history CSV")}
             </a>
           </div>
 
@@ -470,63 +499,150 @@ export function PredictApp({ locale }: Props) {
 
           {dlt && (
             <>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
-                {t(
-                  `${dlt.meta.n} 期数据（${dlt.meta.first_date} → ${dlt.meta.last_date}），前 ${dlt.meta.train} 期训练、${dlt.meta.oos} 期样本外，每期只用该期之前的数据预测。对 ${dlt.meta.n_methods} 个选号方法各做 ${dlt.meta.n_perm} 次排列检验。`,
-                  `${dlt.meta.n} draws (${dlt.meta.first_date} → ${dlt.meta.last_date}); first ${dlt.meta.train} for training, ${dlt.meta.oos} out-of-sample, each prediction using only prior data. ${dlt.meta.n_methods} methods, ${dlt.meta.n_perm} permutations each.`
-                )}
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                {[
-                  { k: t("前区显著方法", "Front significant"), v: `${dlt.verdict.front_significant} / ${dlt.meta.n_methods}` },
-                  { k: t("后区显著方法", "Back significant"), v: `${dlt.verdict.back_significant} / ${dlt.meta.n_methods}` },
-                  { k: t("纸面 ROI", "Paper ROI"), v: `${(dlt.roi.mean * 100).toFixed(1)}%` },
-                  { k: t("一等奖概率", "Jackpot odds"), v: "1/21,425,712" },
-                ].map((x) => (
-                  <div key={x.k} className="rounded-lg bg-gray-50 dark:bg-white/[0.04] p-2">
-                    <div className="text-[10px] text-gray-400 dark:text-zinc-600">{x.k}</div>
-                    <div className="text-sm font-semibold tabular-nums text-gray-800 dark:text-zinc-200">{x.v}</div>
-                  </div>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.values(dlt.games).map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setDltGame(g.id)}
+                    className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                      dltGame === g.id
+                        ? "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 ring-1 ring-sky-400/50"
+                        : "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
+                    }`}
+                  >
+                    {g.name}
+                  </button>
                 ))}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="text-left text-[10px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
-                      <th className="py-1.5 pr-2 font-medium">{t("方法（前区）", "Method (front)")}</th>
-                      <th className="py-1.5 px-2 font-medium tabular-nums">{t("OOS均值", "OOS mean")}</th>
-                      <th className="py-1.5 px-2 font-medium tabular-nums">{t("vs随机", "vs random")}</th>
-                      <th className="py-1.5 px-2 font-medium tabular-nums">p</th>
-                      <th className="py-1.5 pl-2 font-medium">{t("该法推荐9码", "Its 9 picks")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dlt.front.methods.slice(0, 8).map((m) => (
-                      <tr key={m.name} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
-                        <td className="py-1.5 pr-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
-                        <td className="py-1.5 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
-                        <td className={`py-1.5 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
-                          {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
-                        </td>
-                        <td className={`py-1.5 px-2 tabular-nums ${m.significant ? "text-rose-500" : "text-gray-400 dark:text-zinc-600"}`}>
-                          {m.p_uniform.toFixed(3)}
-                        </td>
-                        <td className="py-1.5 pl-2 tabular-nums text-gray-500 dark:text-zinc-500">
-                          {m.next_pick.map((n) => String(n).padStart(2, "0")).join(" ")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {(() => {
+                const g = dlt.games[dltGame]
+                if (!g) return null
+                const meta = (
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+                    {g.n} {t("期", "draws")}（{g.first_date} → {g.last_date}）
+                    {g.kind === "set"
+                      ? t(
+                          `，前 ${g.train} 期训练、${g.oos} 期样本外，每期只用该期之前的数据预测；${g.n_methods} 个方法各做 ${dlt.meta.n_perm} 次排列检验（两套零假设）。`,
+                          `; first ${g.train} for training, ${g.oos} out-of-sample; ${g.n_methods} methods × ${dlt.meta.n_perm} permutations under two null hypotheses.`
+                        )
+                      : t(
+                          `。数字型游戏：每位独立 0-9、可重复、看顺序——「选N码」在这里没有意义，正确的检验是各位是否均匀、期与期之间有无记忆。`,
+                          `. Digit game: each position is an independent uniform 0-9, so the right test is per-position uniformity and serial memory.`
+                        )}
+                  </p>
+                )
 
-              <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
-                {t(
-                  `随机基准 ${dlt.front.baseline.toFixed(3)}（选9码时的超几何期望）。p 值经 Bonferroni 校正阈值 ${dlt.meta.bonferroni.toFixed(4)}——${dlt.verdict.note} 表中「推荐」是各方法的机械输出，在 p 值证明有信号之前，它和随机选号没有区别。`,
-                  `Random baseline ${dlt.front.baseline.toFixed(3)} (hypergeometric expectation for 9 picks). Bonferroni threshold ${dlt.meta.bonferroni.toFixed(4)}. Picks shown are mechanical outputs; absent a significant p-value they are indistinguishable from random.`
-                )}
+                if (g.kind === "digit" && g.p) {
+                  const tests: [string, number][] = [
+                    [t("各位数字均匀性", "Per-position uniformity"), g.p.uniformity],
+                    [t("期间记忆性（最小p）", "Serial memory (min p)"), g.p.serial_min],
+                    [t("和值 vs 组合数学理论", "Sum vs combinatorial theory"), g.p.sum_vs_theory],
+                  ]
+                  if (g.p.independence_min != null)
+                    tests.splice(2, 0, [t("位间独立性（最小p）", "Positional independence"), g.p.independence_min])
+                  return (
+                    <>
+                      {meta}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                        {tests.map(([k, v]) => (
+                          <div key={k} className="rounded-lg bg-gray-50 dark:bg-white/[0.04] p-2">
+                            <div className="text-[10px] text-gray-400 dark:text-zinc-600">{k}</div>
+                            <div className={`text-sm font-semibold tabular-nums ${v < 0.01 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+                              p = {v.toFixed(3)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {g.forms?.组选 && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="text-left text-[10px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
+                                <th className="py-1.5 pr-2 font-medium">{t("形态", "Pattern")}</th>
+                                <th className="py-1.5 px-2 font-medium tabular-nums">{t("实测", "Observed")}</th>
+                                <th className="py-1.5 px-2 font-medium tabular-nums">{t("组合数学理论", "Theory")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {["组三", "组六", "豹子"].map((k) => (
+                                <tr key={k} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
+                                  <td className="py-1.5 pr-2 text-gray-700 dark:text-zinc-300">{k}</td>
+                                  <td className="py-1.5 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{g.forms?.组选?.[k]}</td>
+                                  <td className="py-1.5 px-2 tabular-nums text-gray-500 dark:text-zinc-500">{g.forms?.组选?.[`${k}理论`]}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
+                        {t(
+                          "组三/组六的比例由组合数学决定（3位数中恰好两位相同的排列占27%），不是「规律」。实测与理论吻合，恰恰说明摇奖是公平的。",
+                          "The 组三/组六 split is fixed by combinatorics (27% of 3-digit strings have exactly two equal digits) — not a pattern. Matching theory is evidence the draw is fair."
+                        )}
+                      </p>
+                    </>
+                  )
+                }
+
+                const zones = Object.entries(g.zones ?? {})
+                return (
+                  <>
+                    {meta}
+                    {zones.map(([zname, z]) => (
+                      <div key={zname} className="space-y-1.5">
+                        <div className="text-[11px] text-gray-500 dark:text-zinc-400">
+                          <span className="font-medium text-gray-700 dark:text-zinc-300">{zname}</span>
+                          {` ${z.zmax}选${z.drawn}`}
+                          {t(`，推荐${z.pick}码　随机基准 ${z.baseline.toFixed(3)}　通过 Bonferroni(${z.bonferroni.toFixed(4)}) 的方法 ${z.significant}/${z.methods.length}`,
+                             ` — ${z.pick} picks; random baseline ${z.baseline.toFixed(3)}; ${z.significant}/${z.methods.length} pass Bonferroni ${z.bonferroni.toFixed(4)}`)}
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="text-left text-[10px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
+                                <th className="py-1 pr-2 font-medium">{t("方法", "Method")}</th>
+                                <th className="py-1 px-2 font-medium tabular-nums">{t("OOS均值", "OOS mean")}</th>
+                                <th className="py-1 px-2 font-medium tabular-nums">{t("vs随机", "vs random")}</th>
+                                <th className="py-1 px-2 font-medium tabular-nums">p</th>
+                                <th className="py-1 pl-2 font-medium">{t("该法推荐", "Its picks")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {z.methods.slice(0, 6).map((m) => (
+                                <tr key={m.name} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
+                                  <td className="py-1 pr-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
+                                  <td className="py-1 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
+                                  <td className={`py-1 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
+                                    {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
+                                  </td>
+                                  <td className={`py-1 px-2 tabular-nums ${m.significant ? "text-rose-500" : "text-gray-400 dark:text-zinc-600"}`}>
+                                    {m.p_uniform.toFixed(3)}
+                                  </td>
+                                  <td className="py-1 pl-2 tabular-nums text-gray-500 dark:text-zinc-500">
+                                    {m.next_pick.map((n) => String(n).padStart(2, "0")).join(" ")}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
+                      {t(
+                        "两套零假设缺一不可：行置换不改变各号码总频次，对频率类方法无鉴别力；均匀重采样才检验号码级偏差。表中「推荐」是各方法的机械输出，在 p 值证明有信号之前，它和随机选号没有区别。",
+                        "Both nulls are required: row permutation preserves per-number totals and cannot discriminate frequency methods; uniform resampling tests number-level bias. Picks shown are mechanical outputs — absent a significant p-value they are indistinguishable from random."
+                      )}
+                    </p>
+                  </>
+                )
+              })()}
+
+              <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed">
+                {dlt.verdict}
               </p>
             </>
           )}
