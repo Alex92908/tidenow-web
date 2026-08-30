@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { getAISettings } from "@/lib/ai-settings"
@@ -263,6 +263,17 @@ interface LotteryPick {
   groups: { name: string; numbers: number[] }[]
 }
 
+/** 每个号被多少个方法推荐，票高者在前。
+ *  与 neverPicked 同源同算法——都从当前渲染的 methods 现推，
+ *  保证页面上的数字永远能被手工核对。 */
+function consensus(z: SetZone): { n: number; votes: number }[] {
+  const cnt = new Map<number, number>()
+  for (const m of z.methods) for (const n of m.next_pick) cnt.set(n, (cnt.get(n) ?? 0) + 1)
+  return [...cnt.entries()]
+    .map(([n, votes]) => ({ n, votes }))
+    .sort((a, b) => b.votes - a.votes || a.n - b.n)
+}
+
 /** 某区里所有方法都没推荐的号码。
  *  刻意从传入的 methods 现算，而不是用后端导出的字段——
  *  展示什么就用什么算，保证页面上的数字永远能被手工核对。 */
@@ -320,7 +331,7 @@ export function PredictApp({ locale }: Props) {
     setDltLoading(true)
     try {
       // v= 是响应结构版本，结构变了就换 URL，绕开浏览器的长缓存
-      const res = await fetch("/api/lottery?v=3")
+      const res = await fetch("/api/lottery?v=4")
       if (res.ok) {
         const j = (await res.json()) as LotteryAnalysis
         // 只接受当前格式：旧缓存/半成品导出一律当作没数据，
@@ -541,7 +552,7 @@ export function PredictApp({ locale }: Props) {
                 这是 API 路由的文件下载，不是页面跳转：<Link> 会走客户端路由，
                 拿不到 Content-Disposition，下载会失效。 */}
             <a
-              href={`/api/lottery?game=${dltGame}&format=csv&v=3`}
+              href={`/api/lottery?game=${dltGame}&format=csv&v=4`}
               download={`${dltGame}_history.csv`}
               className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
             >
@@ -748,6 +759,32 @@ export function PredictApp({ locale }: Props) {
                         改成从 z.methods 现算，就不可能再和眼前看到的对不上。 */}
                     {zones.some(([, z]) => neverPicked(z).length > 0) && (
                       <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-2.5 space-y-1">
+                        {zones.map(([zname, z]) => {
+                          const top = consensus(z).filter((c) => c.votes >= z.methods.length / 2)
+                          return top.length > 0 ? (
+                            <div key={`c-${zname}`} className="text-[11px] text-gray-600 dark:text-zinc-300">
+                              <span className="font-medium">{zname}</span>
+                              {t("：被过半方法推荐 → ", " — picked by over half the methods: ")}
+                              <span className="tabular-nums">
+                                {/* 每项后面跟一个真实空格：margin 只影响视觉，
+                                    innerText / 复制粘贴时数字会粘成 "01 (10)16 (9)" */}
+                                {/* 用 Fragment 让空格成为外层的真实文本节点：
+                                    放进 inline-block 里会被折叠，复制出来数字会粘连 */}
+                                {top.map((c, i) => (
+                                  <Fragment key={c.n}>
+                                    {i > 0 ? "  " : ""}
+                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                      {String(c.n).padStart(2, "0")}
+                                    </span>
+                                    <span className="text-gray-400 dark:text-zinc-600">
+                                      {"\u00A0"}({c.votes})
+                                    </span>
+                                  </Fragment>
+                                ))}
+                              </span>
+                            </div>
+                          ) : null
+                        })}
                         {zones.map(([zname, z]) =>
                           neverPicked(z).length > 0 ? (
                             <div key={zname} className="text-[11px] text-gray-600 dark:text-zinc-300">
@@ -763,7 +800,7 @@ export function PredictApp({ locale }: Props) {
                         )}
                         <p className="text-[10px] text-gray-500 dark:text-zinc-500 leading-relaxed pt-0.5">
                           {t(
-                            "列出它们不是因为「不会开」——恰恰相反：2026-08-30 双色球开出 13 号，而 16 个方法无一推荐它，同期六个方法平均只命中 1.33 个红球（随机期望 1.82）。这一栏是让方法的盲区可见，不是另一种选号依据。",
+                            "括号里是推荐它的方法数。⚠️ 高票不等于强证据：这些方法高度相关——「热号 / 贝叶斯平滑 / 偏离均匀程度」三者在数学上就是同一个东西（OOS均值都是 1.864、p 都是 0.015），12 个方法推荐同一个号不是 12 份独立证据。而下面「无人推荐」的号也不是「不会开」：2026-08-30 双色球开出 13 号，恰恰无一方法推荐它，同期六个方法平均只命中 1.33 个红球（随机期望 1.82）。两栏都只是让方法的行为可见，都不构成选号依据。",
                             "These are not predictions of absence — the opposite: on 2026-08-30 the SSQ draw included 13, which none of the 16 methods picked, while the six shown methods averaged 1.33 red-ball hits against a random expectation of 1.82. This row exposes the methods' blind spot; it is not another basis for picking."
                           )}
                         </p>

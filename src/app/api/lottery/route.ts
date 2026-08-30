@@ -16,7 +16,7 @@ export const revalidate = 3600
 // 客户端把它带进 URL，浏览器会当成另一个资源，
 // 旧的 1 小时缓存立刻失效。否则格式演进期间用户会拿着旧结构崩在页面上
 // （这一条是实测踩出来的，不是预防性设计）。
-export const SHAPE_VERSION = 3
+export const SHAPE_VERSION = 4
 
 const DIR = path.join(process.cwd(), "src", "data", "lottery")
 // 白名单：文件名直接来自查询参数，必须限定取值，否则是路径穿越漏洞
