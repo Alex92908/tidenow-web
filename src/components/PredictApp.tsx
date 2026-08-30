@@ -263,6 +263,17 @@ interface LotteryPick {
   groups: { name: string; numbers: number[] }[]
 }
 
+/** 某区里所有方法都没推荐的号码。
+ *  刻意从传入的 methods 现算，而不是用后端导出的字段——
+ *  展示什么就用什么算，保证页面上的数字永远能被手工核对。 */
+function neverPicked(z: SetZone): number[] {
+  const picked = new Set<number>()
+  for (const m of z.methods) for (const n of m.next_pick) picked.add(n)
+  const out: number[] = []
+  for (let i = 1; i <= z.zmax; i++) if (!picked.has(i)) out.push(i)
+  return out
+}
+
 function pickLottery(game: Lottery, isZh: boolean): LotteryPick {
   const groups = game.groups.map((g) => {
     let numbers: number[]
@@ -702,7 +713,11 @@ export function PredictApp({ locale }: Props) {
                               </tr>
                             </thead>
                             <tbody>
-                              {z.methods.slice(0, 6).map((m) => (
+                              {/* 不截断：盲区那一栏按全部方法计算，只显示前 6 个的话
+                                  用户手数会得到不同答案却无从核对（实测被指出过）。
+                                  而且被截掉的里面就有 random 对照组——那一行恰恰
+                                  最该被看到：它同样会给出一组号，表现却与其它方法无异。 */}
+                              {z.methods.map((m) => (
                                 <tr key={m.name} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
                                   <td className="py-1 pr-2">
                                     <span className="font-medium text-gray-700 dark:text-zinc-300">
@@ -727,17 +742,21 @@ export function PredictApp({ locale }: Props) {
                         </div>
                       </div>
                     ))}
-                    {zones.some(([, z]) => (z.never_picked?.length ?? 0) > 0) && (
+                    {/* 盲区从**当前渲染的行**推导，而不是读导出字段。
+                        原因：曾经表格截断到 6 行、盲区却按全部 16 个方法算，
+                        用户手数得到 4/13/20、页面写 13，两个都对却无从核对。
+                        改成从 z.methods 现算，就不可能再和眼前看到的对不上。 */}
+                    {zones.some(([, z]) => neverPicked(z).length > 0) && (
                       <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-2.5 space-y-1">
                         {zones.map(([zname, z]) =>
-                          (z.never_picked?.length ?? 0) > 0 ? (
+                          neverPicked(z).length > 0 ? (
                             <div key={zname} className="text-[11px] text-gray-600 dark:text-zinc-300">
                               <span className="font-medium">{zname}</span>
-                              {t("：全部 ", " — none of the ")}
+                              {t("：上表全部 ", " — none of the ")}
                               {z.methods.length}
-                              {t(" 个方法都没推荐的号码 → ", " methods picked: ")}
+                              {t(" 个方法都没推荐 → ", " methods above picked: ")}
                               <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">
-                                {z.never_picked!.map((n) => String(n).padStart(2, "0")).join(" ")}
+                                {neverPicked(z).map((n) => String(n).padStart(2, "0")).join(" ")}
                               </span>
                             </div>
                           ) : null
