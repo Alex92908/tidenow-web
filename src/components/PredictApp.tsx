@@ -207,8 +207,16 @@ const LOTTERIES: Lottery[] = [
     groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 3 }],
   },
   {
+    id: "pl3", zh: "排列3", en: "Pailie 3", rtp: "≈50%",
+    groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 3 }],
+  },
+  {
     id: "pl5", zh: "排列5", en: "Pailie 5", rtp: "≈50%",
     groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 5 }],
+  },
+  {
+    id: "qxc", zh: "七星彩", en: "Seven Star", rtp: "≈50%",
+    groups: [{ name: { zh: "号码", en: "Digits" }, kind: "digits", count: 7 }],
   },
 ]
 
@@ -275,8 +283,16 @@ export function PredictApp({ locale }: Props) {
     if (dlt || dltLoading) return
     setDltLoading(true)
     try {
-      const res = await fetch("/api/lottery")
-      if (res.ok) setDlt((await res.json()) as LotteryAnalysis)
+      // v= 是响应结构版本，结构变了就换 URL，绕开浏览器的长缓存
+      const res = await fetch("/api/lottery?v=2")
+      if (res.ok) {
+        const j = (await res.json()) as LotteryAnalysis
+        // 只接受当前格式：旧缓存/半成品导出一律当作没数据，
+        // 免得格式演进期间前端整页崩掉。
+        if (j && typeof j === "object" && j.games && typeof j.verdict === "string") {
+          setDlt(j)
+        }
+      }
     } catch {
       /* 静默失败：这是附加信息，不该阻断机选主流程 */
     } finally {
@@ -289,6 +305,9 @@ export function PredictApp({ locale }: Props) {
     setResult(null)
     setScan(null)
     setLottery(pickLottery(game, isZh))
+    // 机选与分析共用同一个彩种：选了哪种就出哪种，不该让用户在两处各选一次
+    setDltGame(game.id)
+    void loadDlt()
   }
 
   // Read the BYOK key, surfacing the same errors for both flows.
@@ -479,13 +498,14 @@ export function PredictApp({ locale }: Props) {
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
-              📊 {t("历史数据与统计检验", "History & statistical tests")}
+              📊 {dlt?.games?.[dltGame]?.name ?? ""}
+              {t(" 历史数据与统计检验", " — history & statistical tests")}
             </span>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages --
                 这是 API 路由的文件下载，不是页面跳转：<Link> 会走客户端路由，
                 拿不到 Content-Disposition，下载会失效。 */}
             <a
-              href={`/api/lottery?game=${dltGame}&format=csv`}
+              href={`/api/lottery?game=${dltGame}&format=csv&v=2`}
               download={`${dltGame}_history.csv`}
               className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
             >
@@ -496,28 +516,17 @@ export function PredictApp({ locale }: Props) {
           {dltLoading && (
             <p className="text-xs text-gray-400 dark:text-zinc-600">{t("加载中…", "Loading…")}</p>
           )}
+          {!dlt && !dltLoading && (
+            <p className="text-xs text-gray-400 dark:text-zinc-600">
+              {t("点上方任一彩种，机选与该彩种的统计检验一起出。",
+                 "Pick any game above — the quick-pick and that game's statistical tests come together.")}
+            </p>
+          )}
 
           {dlt && (
             <>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.values(dlt.games).map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => setDltGame(g.id)}
-                    className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                      dltGame === g.id
-                        ? "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 ring-1 ring-sky-400/50"
-                        : "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
-                    }`}
-                  >
-                    {g.name}
-                  </button>
-                ))}
-              </div>
-
               {(() => {
-                const g = dlt.games[dltGame]
+                const g = dlt.games?.[dltGame]
                 if (!g) return null
                 const meta = (
                   <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
@@ -641,9 +650,11 @@ export function PredictApp({ locale }: Props) {
                 )
               })()}
 
-              <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed">
-                {dlt.verdict}
-              </p>
+              {typeof dlt.verdict === "string" && (
+                <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed">
+                  {dlt.verdict}
+                </p>
+              )}
             </>
           )}
         </div>
