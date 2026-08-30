@@ -388,6 +388,7 @@ export function PredictApp({ locale }: Props) {
     setLoading(true)
     setResult(null)
     setScan(null)
+    setLottery(null)
     try {
       const res = await fetch("/api/foresight", {
         method: "POST",
@@ -442,6 +443,7 @@ export function PredictApp({ locale }: Props) {
     setLoading(true)
     setResult(null)
     setScan(null)
+    setLottery(null)
     try {
       const res = await fetch("/api/foresight", {
         method: "POST",
@@ -831,7 +833,16 @@ export function PredictApp({ locale }: Props) {
         <select
           value={domain}
           onChange={(e) => {
+            // 切换领域必须清掉上一个模式的输出。
+            // 原来三个入口（预测/扫描/机选）各自清 result 和 scan，却没人清
+            // lottery——于是选了股票，双色球的机选卡片还赖在页面上。
+            // 与其让每个入口互相记得清对方，不如在切换处统一重置：
+            // 换了模式，屏幕上就不该留着上一个模式的结果。
             setDomain(e.target.value)
+            setResult(null)
+            setScan(null)
+            setLottery(null)
+            setError(null)
             if (e.target.value === "lottery") void loadDlt()
           }}
           className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 px-2.5 py-1.5 text-xs text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-sky-400"
