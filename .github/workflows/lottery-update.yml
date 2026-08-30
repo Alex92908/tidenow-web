@@ -1,0 +1,81 @@
+name: 彩票数据每日更新
+
+# 与 foresight 仓库各抓各的，不做跨仓库推送——
+# 那需要长期有效的 PAT 存成 secret。多一次 HTTP 请求换掉一个要人管理的凭据，划算。
+#
+# 已实测：500.com 从 GitHub 美国跑板机可达（HTTP 200，含开奖表）。
+on:
+  schedule:
+    # 22:35 北京时间 = 14:35 UTC，比 foresight 那份晚 5 分钟错开
+    - cron: "35 14 * * *"
+  workflow_dispatch:
+
+# 默认 GITHUB_TOKEN 自 2023 起是只读，写回仓库必须显式声明
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -q requests
+
+      - name: 抓取开奖数据并刷新展示用 JSON
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, "lib")
+          from foresight import lottery as L
+
+          info = L.update_all()
+          errs = [f"{k}: {v['error']}" for k, v in info.items() if "error" in v]
+          added = sum(v.get("added", 0) for v in info.values() if "error" not in v)
+          print(f"新增合计 {added} 期" + ("；失败 " + "; ".join(errs) if errs else ""))
+          if errs:
+              raise SystemExit(1)
+
+          # 统计结论（p 值等）不在这里重算——那要跑一两小时，且几期新数据
+          # 不会改变结果。这里只刷新 JSON 里给页面展示的最近开奖列表，
+          # 让网站的"最新一期"跟得上。
+          path = os.path.join("src", "data", "lottery", "lottery_analysis.json")
+          if os.path.exists(path):
+              with open(path, encoding="utf-8") as f:
+                  data = json.load(f)
+              for gid, g in data.get("games", {}).items():
+                  rows = L.load_csv(gid)
+                  if not rows:
+                      continue
+                  keys = [k for k in L.fields(gid)[2:] if k not in ("和值", "跨度")]
+                  g["recent"] = [{"期号": r["期号"], "日期": r["日期"],
+                                  "nums": [r[k] for k in keys]}
+                                 for r in rows[-30:][::-1]]
+                  g["n"] = len(rows)
+                  g["last"] = rows[-1]["期号"]
+                  g["last_date"] = rows[-1]["日期"]
+              with open(path, "w", encoding="utf-8") as f:
+                  json.dump(data, f, ensure_ascii=False, indent=1)
+              print("已刷新 lottery_analysis.json 的最近开奖列表")
+          PY
+
+      - name: 提交变更
+        run: |
+          # 只提交彩票数据路径，无变化时不产生空提交
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- src/data/lottery
+          if git diff --cached --quiet; then
+            echo "无新数据，跳过提交"
+          else
+            git commit -m "data(lottery): 自动更新开奖数据
+
+          由 GitHub Actions 定时任务生成。更新历史开奖 CSV 与展示用的最近开奖列表；
+          p 值等统计结论需在 foresight 仓库跑 scripts/lottery_run.py 重算。"
+            git push
+          fi
