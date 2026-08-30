@@ -31,18 +31,20 @@
    "dlt",
    "ssq",
    "qlc"
-  ]
+  ],
+  "picks_refreshed_at": "2026-08-30 23:46",
+  "stats_ran_at": "2026-08-30 19:17"
  },
  "games": {
   "fc3d": {
    "id": "fc3d",
    "name": "福彩3D",
    "kind": "digit",
-   "n": 7738,
+   "n": 7739,
    "first": "2004001",
-   "last": "2026231",
+   "last": "2026232",
    "first_date": "2004-10-18",
-   "last_date": "2026-08-29",
+   "last_date": "2026-08-30",
    "digits": 3,
    "p": {
     "uniformity": 0.2313,
@@ -215,8 +217,8 @@
         "significant": false,
         "next_pick": [
          4,
-         6,
-         1
+         1,
+         2
         ]
        },
        {
@@ -227,9 +229,9 @@
         "p_rows": 0.3573,
         "significant": false,
         "next_pick": [
+         6,
          7,
-         0,
-         8
+         0
         ]
        },
        {
@@ -241,8 +243,8 @@
         "significant": false,
         "next_pick": [
          8,
-         9,
-         3
+         3,
+         5
         ]
        },
        {
@@ -292,7 +294,7 @@
         "p_rows": 0.1277,
         "significant": false,
         "next_pick": [
-         2,
+         6,
          3,
          0
         ]
@@ -306,8 +308,8 @@
         "significant": false,
         "next_pick": [
          4,
-         6,
-         1
+         1,
+         2
         ]
        },
        {
@@ -331,9 +333,9 @@
         "p_rows": 0.3393,
         "significant": false,
         "next_pick": [
-         1,
+         0,
          9,
-         0
+         1
         ]
        },
        {
@@ -346,7 +348,7 @@
         "next_pick": [
          8,
          3,
-         2
+         6
         ]
        }
       ]
@@ -402,9 +404,9 @@
         "p_rows": 0.4571,
         "significant": false,
         "next_pick": [
+         5,
          3,
-         6,
-         2
+         6
         ]
        },
        {
@@ -415,8 +417,8 @@
         "p_rows": 0.497,
         "significant": false,
         "next_pick": [
-         8,
          3,
+         5,
          7
         ]
        },
@@ -442,8 +444,8 @@
         "significant": false,
         "next_pick": [
          2,
-         8,
-         3
+         5,
+         8
         ]
        },
        {
@@ -467,9 +469,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
+         4,
          1,
-         3,
-         0
+         6
         ]
        },
        {
@@ -506,9 +508,9 @@
         "p_rows": 0.7964,
         "significant": false,
         "next_pick": [
-         1,
+         0,
          9,
-         0
+         1
         ]
        },
        {
@@ -521,7 +523,7 @@
         "next_pick": [
          8,
          6,
-         3
+         4
         ]
        }
       ]
@@ -577,9 +579,9 @@
         "p_rows": 0.1816,
         "significant": false,
         "next_pick": [
+         8,
          3,
-         6,
-         8
+         6
         ]
        },
        {
@@ -617,8 +619,8 @@
         "significant": false,
         "next_pick": [
          2,
-         5,
-         8
+         8,
+         5
         ]
        },
        {
@@ -642,9 +644,9 @@
         "p_rows": 0.4152,
         "significant": false,
         "next_pick": [
-         5,
-         4,
-         2
+         0,
+         1,
+         8
         ]
        },
        {
@@ -681,9 +683,9 @@
         "p_rows": 0.2236,
         "significant": false,
         "next_pick": [
-         1,
+         0,
          9,
-         0
+         1
         ]
        },
        {
@@ -694,9 +696,9 @@
         "p_rows": 0.7545,
         "significant": false,
         "next_pick": [
-         5,
          8,
-         2
+         2,
+         5
         ]
        }
       ]
@@ -980,11 +982,11 @@
    "id": "pl3",
    "name": "排列3",
    "kind": "digit",
-   "n": 7706,
+   "n": 7707,
    "first": "04001",
-   "last": "26231",
+   "last": "26232",
    "first_date": "2004-11-14",
-   "last_date": "2026-08-29",
+   "last_date": "2026-08-30",
    "digits": 3,
    "p": {
     "uniformity": 0.5314,
@@ -1169,9 +1171,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         8,
          1,
-         9,
-         2
+         9
         ]
        },
        {
@@ -1183,8 +1185,8 @@
         "significant": false,
         "next_pick": [
          9,
-         0,
-         8
+         8,
+         0
         ]
        },
        {
@@ -1209,8 +1211,8 @@
         "significant": false,
         "next_pick": [
          9,
-         2,
-         1
+         8,
+         2
         ]
        },
        {
@@ -1234,9 +1236,9 @@
         "p_rows": 0.4092,
         "significant": false,
         "next_pick": [
-         2,
-         8,
-         9
+         5,
+         6,
+         4
         ]
        },
        {
@@ -1273,9 +1275,9 @@
         "p_rows": 0.8762,
         "significant": false,
         "next_pick": [
+         1,
          6,
-         2,
-         8
+         2
         ]
        },
        {
@@ -1344,9 +1346,9 @@
         "p_rows": 0.5709,
         "significant": false,
         "next_pick": [
+         0,
          8,
-         4,
-         6
+         4
         ]
        },
        {
@@ -1358,8 +1360,8 @@
         "significant": false,
         "next_pick": [
          1,
-         6,
-         7
+         0,
+         6
         ]
        },
        {
@@ -1409,9 +1411,9 @@
         "p_rows": 0.8822,
         "significant": false,
         "next_pick": [
-         1,
          9,
-         7
+         4,
+         2
         ]
        },
        {
@@ -1448,9 +1450,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
+         1,
          6,
-         2,
-         8
+         2
         ]
        },
        {
@@ -1461,9 +1463,9 @@
         "p_rows": 0.984,
         "significant": false,
         "next_pick": [
-         1,
          8,
-         9
+         9,
+         1
         ]
        }
       ]
@@ -1521,9 +1523,9 @@
         "p_rows": 0.7764,
         "significant": false,
         "next_pick": [
+         2,
          7,
-         6,
-         0
+         6
         ]
        },
        {
@@ -1534,9 +1536,9 @@
         "p_rows": 0.5968,
         "significant": false,
         "next_pick": [
+         2,
          9,
-         1,
-         2
+         6
         ]
        },
        {
@@ -1548,8 +1550,8 @@
         "significant": false,
         "next_pick": [
          5,
-         6,
-         9
+         2,
+         6
         ]
        },
        {
@@ -1560,9 +1562,9 @@
         "p_rows": 0.2635,
         "significant": false,
         "next_pick": [
+         2,
          6,
-         9,
-         2
+         9
         ]
        },
        {
@@ -1586,9 +1588,9 @@
         "p_rows": 0.1577,
         "significant": false,
         "next_pick": [
-         6,
          9,
-         4
+         1,
+         8
         ]
        },
        {
@@ -1625,9 +1627,9 @@
         "p_rows": 0.1876,
         "significant": false,
         "next_pick": [
+         1,
          6,
-         2,
-         8
+         2
         ]
        },
        {
@@ -1924,11 +1926,11 @@
    "id": "pl5",
    "name": "排列5",
    "kind": "digit",
-   "n": 7704,
+   "n": 7705,
    "first": "04001",
-   "last": "26231",
+   "last": "26232",
    "first_date": "2004-11-14",
-   "last_date": "2026-08-29",
+   "last_date": "2026-08-30",
    "digits": 5,
    "p": {
     "uniformity": 0.6358,
@@ -2116,9 +2118,7 @@
     "positions": [
      {
       "pos": 1,
-      "never_picked": [
-       6
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -2167,9 +2167,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         8,
          1,
-         9,
-         2
+         9
         ]
        },
        {
@@ -2181,8 +2181,8 @@
         "significant": false,
         "next_pick": [
          9,
-         0,
-         8
+         8,
+         0
         ]
        },
        {
@@ -2207,8 +2207,8 @@
         "significant": false,
         "next_pick": [
          9,
-         2,
-         1
+         8,
+         2
         ]
        },
        {
@@ -2232,9 +2232,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
-         2,
-         8,
-         9
+         5,
+         6,
+         4
         ]
        },
        {
@@ -2271,9 +2271,9 @@
         "p_rows": 0.3293,
         "significant": false,
         "next_pick": [
-         5,
          9,
-         4
+         5,
+         6
         ]
        },
        {
@@ -2344,9 +2344,9 @@
         "p_rows": 0.5389,
         "significant": false,
         "next_pick": [
+         0,
          8,
-         4,
-         6
+         4
         ]
        },
        {
@@ -2358,8 +2358,8 @@
         "significant": false,
         "next_pick": [
          1,
-         6,
-         7
+         0,
+         6
         ]
        },
        {
@@ -2409,9 +2409,9 @@
         "p_rows": 0.9002,
         "significant": false,
         "next_pick": [
-         1,
          9,
-         7
+         4,
+         2
         ]
        },
        {
@@ -2448,9 +2448,9 @@
         "p_rows": 0.6727,
         "significant": false,
         "next_pick": [
-         5,
          9,
-         4
+         5,
+         6
         ]
        },
        {
@@ -2461,9 +2461,9 @@
         "p_rows": 0.998,
         "significant": false,
         "next_pick": [
-         1,
          8,
-         9
+         9,
+         1
         ]
        }
       ]
@@ -2521,9 +2521,9 @@
         "p_rows": 0.8004,
         "significant": false,
         "next_pick": [
+         2,
          7,
-         6,
-         0
+         6
         ]
        },
        {
@@ -2534,9 +2534,9 @@
         "p_rows": 0.5828,
         "significant": false,
         "next_pick": [
+         2,
          9,
-         1,
-         2
+         6
         ]
        },
        {
@@ -2548,8 +2548,8 @@
         "significant": false,
         "next_pick": [
          5,
-         6,
-         9
+         2,
+         6
         ]
        },
        {
@@ -2560,9 +2560,9 @@
         "p_rows": 0.2794,
         "significant": false,
         "next_pick": [
+         2,
          6,
-         9,
-         2
+         9
         ]
        },
        {
@@ -2587,8 +2587,8 @@
         "significant": false,
         "next_pick": [
          9,
-         4,
-         6
+         1,
+         8
         ]
        },
        {
@@ -2625,9 +2625,9 @@
         "p_rows": 0.0319,
         "significant": false,
         "next_pick": [
-         5,
          9,
-         4
+         5,
+         6
         ]
        },
        {
@@ -2647,9 +2647,7 @@
      },
      {
       "pos": 4,
-      "never_picked": [
-       3
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -2698,9 +2696,9 @@
         "p_rows": 0.7186,
         "significant": false,
         "next_pick": [
+         3,
          9,
-         8,
-         5
+         8
         ]
        },
        {
@@ -2711,9 +2709,9 @@
         "p_rows": 0.6766,
         "significant": false,
         "next_pick": [
-         7,
          4,
-         6
+         6,
+         7
         ]
        },
        {
@@ -2739,7 +2737,7 @@
         "next_pick": [
          7,
          9,
-         6
+         3
         ]
        },
        {
@@ -2763,9 +2761,9 @@
         "p_rows": 0.7705,
         "significant": false,
         "next_pick": [
-         2,
-         4,
-         7
+         0,
+         1,
+         4
         ]
        },
        {
@@ -2778,7 +2776,7 @@
         "next_pick": [
          0,
          1,
-         7
+         4
         ]
        },
        {
@@ -2802,9 +2800,9 @@
         "p_rows": 0.493,
         "significant": false,
         "next_pick": [
-         5,
          9,
-         4
+         5,
+         6
         ]
        },
        {
@@ -2817,7 +2815,7 @@
         "next_pick": [
          4,
          7,
-         9
+         0
         ]
        }
       ]
@@ -2875,8 +2873,8 @@
         "p_rows": 0.9022,
         "significant": false,
         "next_pick": [
-         9,
          3,
+         9,
          4
         ]
        },
@@ -2888,8 +2886,8 @@
         "p_rows": 0.3713,
         "significant": false,
         "next_pick": [
-         0,
          3,
+         0,
          5
         ]
        },
@@ -2914,9 +2912,9 @@
         "p_rows": 0.3752,
         "significant": false,
         "next_pick": [
+         3,
          9,
-         5,
-         0
+         5
         ]
        },
        {
@@ -2940,9 +2938,9 @@
         "p_rows": 0.7645,
         "significant": false,
         "next_pick": [
-         5,
-         4,
-         7
+         2,
+         9,
+         3
         ]
        },
        {
@@ -2979,9 +2977,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
-         5,
          9,
-         4
+         5,
+         6
         ]
        },
        {
@@ -2992,9 +2990,9 @@
         "p_rows": 0.5888,
         "significant": false,
         "next_pick": [
-         5,
          3,
-         9
+         9,
+         5
         ]
        }
       ]

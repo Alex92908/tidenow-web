@@ -64,6 +64,14 @@ jobs:
               print("已刷新 lottery_analysis.json 的最近开奖列表")
           PY
 
+      - name: 刷新推荐号码与盲区
+        run: |
+          # 推荐号码每期都变但毫秒级；p 值要 1-2 小时且基本不变。
+          # 两者成本差三个数量级，所以拆开——这里只刷推荐。
+          pip install -q numpy
+          python scripts/lottery_refresh_picks.py || \
+            echo "（尚无分析 JSON，跳过）"
+
       - name: 提交变更
         run: |
           # 只提交彩票数据路径，无变化时不产生空提交
