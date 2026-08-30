@@ -74,6 +74,36 @@ interface MarketScan {
   stale?: boolean
 }
 
+// 大乐透回测结果（来自 /api/lottery，预计算后 git 追踪；不在请求时计算）
+interface DltMethod {
+  name: string
+  mean_hits: number
+  vs_base: number
+  hit2: number
+  hit3: number
+  p_rows: number
+  p_uniform: number
+  significant: boolean
+  next_pick: number[]
+  eras: Record<string, number>
+}
+interface DltZone {
+  baseline: number
+  uniformity: Record<string, { chi2: number; df: number; n: number }>
+  methods: DltMethod[]
+}
+interface DltAnalysis {
+  meta: {
+    n: number; train: number; oos: number; first_date: string; last_date: string
+    n_perm: number; bonferroni: number; n_methods: number; source: string
+  }
+  roi: { mean: number; std: number; per_seed: number[] }
+  front: DltZone
+  back: DltZone
+  recent: { 期号: string; 日期: string; front: number[]; back: number[] }[]
+  verdict: { front_significant: number; back_significant: number; note: string }
+}
+
 interface Props {
   locale: "en" | "zh"
 }
@@ -201,6 +231,8 @@ export function PredictApp({ locale }: Props) {
   const [funnelMode, setFunnelMode] = useState<FunnelMode>("growth")
   const [scanTop, setScanTop] = useState(12)
   const [lottery, setLottery] = useState<LotteryPick | null>(null)
+  const [dlt, setDlt] = useState<DltAnalysis | null>(null)
+  const [dltLoading, setDltLoading] = useState(false)
 
   const isZh = locale === "zh"
   const t = (zh: string, en: string) => (isZh ? zh : en)
@@ -208,6 +240,20 @@ export function PredictApp({ locale }: Props) {
   const isPoly = domain === "poly"
   const isLottery = domain === "lottery"
   const isIndustry = domain === "industry"
+
+  // 大乐透回测数据按需加载：只有切到彩票域才拉，避免拖慢首屏
+  async function loadDlt() {
+    if (dlt || dltLoading) return
+    setDltLoading(true)
+    try {
+      const res = await fetch("/api/lottery")
+      if (res.ok) setDlt((await res.json()) as DltAnalysis)
+    } catch {
+      /* 静默失败：这是附加信息，不该阻断机选主流程 */
+    } finally {
+      setDltLoading(false)
+    }
+  }
 
   function handleLottery(game: Lottery) {
     setError(null)
@@ -397,11 +443,104 @@ export function PredictApp({ locale }: Props) {
         </p>
       )}
 
+
+      {/* 大乐透统计分析：预计算的回测结论 + 原始数据下载。
+          放在机选下面而不是上面——机选是这一页的功能，分析是它的注脚。 */}
+      {isLottery && (
+        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
+              📊 {t("大乐透历史数据与回测", "Grand Lotto data & backtest")}
+            </span>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages --
+                这是 API 路由的文件下载，不是页面跳转：<Link> 会走客户端路由，
+                拿不到 Content-Disposition，下载会失效。 */}
+            <a
+              href="/api/lottery?format=csv"
+              download="dlt_history.csv"
+              className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              {t("⬇ 下载全部历史开奖 CSV", "⬇ Download full history CSV")}
+            </a>
+          </div>
+
+          {dltLoading && (
+            <p className="text-xs text-gray-400 dark:text-zinc-600">{t("加载中…", "Loading…")}</p>
+          )}
+
+          {dlt && (
+            <>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+                {t(
+                  `${dlt.meta.n} 期数据（${dlt.meta.first_date} → ${dlt.meta.last_date}），前 ${dlt.meta.train} 期训练、${dlt.meta.oos} 期样本外，每期只用该期之前的数据预测。对 ${dlt.meta.n_methods} 个选号方法各做 ${dlt.meta.n_perm} 次排列检验。`,
+                  `${dlt.meta.n} draws (${dlt.meta.first_date} → ${dlt.meta.last_date}); first ${dlt.meta.train} for training, ${dlt.meta.oos} out-of-sample, each prediction using only prior data. ${dlt.meta.n_methods} methods, ${dlt.meta.n_perm} permutations each.`
+                )}
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                {[
+                  { k: t("前区显著方法", "Front significant"), v: `${dlt.verdict.front_significant} / ${dlt.meta.n_methods}` },
+                  { k: t("后区显著方法", "Back significant"), v: `${dlt.verdict.back_significant} / ${dlt.meta.n_methods}` },
+                  { k: t("纸面 ROI", "Paper ROI"), v: `${(dlt.roi.mean * 100).toFixed(1)}%` },
+                  { k: t("一等奖概率", "Jackpot odds"), v: "1/21,425,712" },
+                ].map((x) => (
+                  <div key={x.k} className="rounded-lg bg-gray-50 dark:bg-white/[0.04] p-2">
+                    <div className="text-[10px] text-gray-400 dark:text-zinc-600">{x.k}</div>
+                    <div className="text-sm font-semibold tabular-nums text-gray-800 dark:text-zinc-200">{x.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="text-left text-[10px] text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-white/[0.06]">
+                      <th className="py-1.5 pr-2 font-medium">{t("方法（前区）", "Method (front)")}</th>
+                      <th className="py-1.5 px-2 font-medium tabular-nums">{t("OOS均值", "OOS mean")}</th>
+                      <th className="py-1.5 px-2 font-medium tabular-nums">{t("vs随机", "vs random")}</th>
+                      <th className="py-1.5 px-2 font-medium tabular-nums">p</th>
+                      <th className="py-1.5 pl-2 font-medium">{t("该法推荐9码", "Its 9 picks")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dlt.front.methods.slice(0, 8).map((m) => (
+                      <tr key={m.name} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
+                        <td className="py-1.5 pr-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
+                        <td className="py-1.5 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
+                        <td className={`py-1.5 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
+                          {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
+                        </td>
+                        <td className={`py-1.5 px-2 tabular-nums ${m.significant ? "text-rose-500" : "text-gray-400 dark:text-zinc-600"}`}>
+                          {m.p_uniform.toFixed(3)}
+                        </td>
+                        <td className="py-1.5 pl-2 tabular-nums text-gray-500 dark:text-zinc-500">
+                          {m.next_pick.map((n) => String(n).padStart(2, "0")).join(" ")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-[11px] text-gray-400 dark:text-zinc-600 leading-relaxed border-t border-gray-100 dark:border-white/[0.04] pt-2">
+                {t(
+                  `随机基准 ${dlt.front.baseline.toFixed(3)}（选9码时的超几何期望）。p 值经 Bonferroni 校正阈值 ${dlt.meta.bonferroni.toFixed(4)}——${dlt.verdict.note} 表中「推荐」是各方法的机械输出，在 p 值证明有信号之前，它和随机选号没有区别。`,
+                  `Random baseline ${dlt.front.baseline.toFixed(3)} (hypergeometric expectation for 9 picks). Bonferroni threshold ${dlt.meta.bonferroni.toFixed(4)}. Picks shown are mechanical outputs; absent a significant p-value they are indistinguishable from random.`
+                )}
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Domain picker + action button(s) */}
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={domain}
-          onChange={(e) => setDomain(e.target.value)}
+          onChange={(e) => {
+            setDomain(e.target.value)
+            if (e.target.value === "lottery") void loadDlt()
+          }}
           className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900/60 px-2.5 py-1.5 text-xs text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-sky-400"
         >
           {DOMAINS.map((d) => (
