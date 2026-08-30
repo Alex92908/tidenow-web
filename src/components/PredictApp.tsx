@@ -147,6 +147,8 @@ interface LotteryGame {
   }
 }
 interface LotteryAnalysis {
+  /** 方法英文标识符 → 中文说明。中文是给人看的，英文是跨端对照用的代码标识。 */
+  method_labels?: Record<string, string>
   meta: { ran_at: string; n_perm: number; seeds: number; source: string; games: string[] }
   games: Record<string, LotteryGame>
   verdict: string
@@ -633,7 +635,12 @@ export function PredictApp({ locale }: Props) {
                                     .map((m) => (
                                       <tr key={`${pos.pos}-${m.name}`} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
                                         <td className="py-1 pr-2 text-gray-600 dark:text-zinc-400">{pos.pos}</td>
-                                        <td className="py-1 px-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
+                                        <td className="py-1 px-2">
+                                          <span className="font-medium text-gray-700 dark:text-zinc-300">
+                                            {dlt.method_labels?.[m.name] ?? m.name}
+                                          </span>
+                                          <span className="block text-[10px] text-gray-400 dark:text-zinc-600">{m.name}</span>
+                                        </td>
                                         <td className="py-1 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
                                         <td className={`py-1 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
                                           {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
@@ -694,7 +701,12 @@ export function PredictApp({ locale }: Props) {
                             <tbody>
                               {z.methods.slice(0, 6).map((m) => (
                                 <tr key={m.name} className="border-b border-gray-50 dark:border-white/[0.03] last:border-0">
-                                  <td className="py-1 pr-2 font-medium text-gray-700 dark:text-zinc-300">{m.name}</td>
+                                  <td className="py-1 pr-2">
+                                    <span className="font-medium text-gray-700 dark:text-zinc-300">
+                                      {dlt.method_labels?.[m.name] ?? m.name}
+                                    </span>
+                                    <span className="block text-[10px] text-gray-400 dark:text-zinc-600">{m.name}</span>
+                                  </td>
                                   <td className="py-1 px-2 tabular-nums text-gray-600 dark:text-zinc-400">{m.mean_hits.toFixed(3)}</td>
                                   <td className={`py-1 px-2 tabular-nums ${m.vs_base > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-zinc-600"}`}>
                                     {m.vs_base > 0 ? "+" : ""}{m.vs_base.toFixed(3)}
