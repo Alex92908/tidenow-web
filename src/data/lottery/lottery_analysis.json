@@ -32,7 +32,7 @@
    "ssq",
    "qlc"
   ],
-  "picks_refreshed_at": "2026-09-21 19:41",
+  "picks_refreshed_at": "2026-09-22 18:14",
   "stats_ran_at": "2026-08-30 19:17"
  },
  "games": {
@@ -40,11 +40,11 @@
    "id": "fc3d",
    "name": "福彩3D",
    "kind": "digit",
-   "n": 7761,
+   "n": 7762,
    "first": "2004001",
-   "last": "2026254",
+   "last": "2026255",
    "first_date": "2004-10-18",
-   "last_date": "2026-09-21",
+   "last_date": "2026-09-22",
    "digits": 3,
    "p": {
     "uniformity": 0.2313,
@@ -180,9 +180,7 @@
     "positions": [
      {
       "pos": 1,
-      "never_picked": [
-       2
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -231,9 +229,9 @@
         "p_rows": 0.3573,
         "significant": false,
         "next_pick": [
+         6,
          8,
-         0,
-         7
+         0
         ]
        },
        {
@@ -245,8 +243,8 @@
         "significant": false,
         "next_pick": [
          0,
-         8,
-         6
+         6,
+         8
         ]
        },
        {
@@ -270,9 +268,9 @@
         "p_rows": 0.4351,
         "significant": false,
         "next_pick": [
+         6,
          8,
-         0,
-         9
+         0
         ]
        },
        {
@@ -296,8 +294,8 @@
         "p_rows": 0.1277,
         "significant": false,
         "next_pick": [
-         7,
-         5,
+         6,
+         3,
          0
         ]
        },
@@ -335,9 +333,9 @@
         "p_rows": 0.3393,
         "significant": false,
         "next_pick": [
-         8,
-         1,
-         7
+         2,
+         7,
+         6
         ]
        },
        {
@@ -348,8 +346,8 @@
         "p_rows": 0.6687,
         "significant": false,
         "next_pick": [
-         8,
          6,
+         8,
          9
         ]
        }
@@ -357,9 +355,7 @@
      },
      {
       "pos": 2,
-      "never_picked": [
-       0
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -408,9 +404,9 @@
         "p_rows": 0.4571,
         "significant": false,
         "next_pick": [
+         9,
          5,
-         3,
-         9
+         3
         ]
        },
        {
@@ -448,8 +444,8 @@
         "significant": false,
         "next_pick": [
          5,
-         8,
-         7
+         9,
+         8
         ]
        },
        {
@@ -473,9 +469,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
-         4,
          1,
-         6
+         0,
+         4
         ]
        },
        {
@@ -512,9 +508,9 @@
         "p_rows": 0.7964,
         "significant": false,
         "next_pick": [
-         8,
-         1,
-         7
+         2,
+         7,
+         6
         ]
        },
        {
@@ -525,9 +521,9 @@
         "p_rows": 0.9361,
         "significant": false,
         "next_pick": [
-         4,
          8,
-         5
+         0,
+         4
         ]
        }
       ]
@@ -583,9 +579,9 @@
         "p_rows": 0.1816,
         "significant": false,
         "next_pick": [
+         9,
          0,
-         4,
-         2
+         4
         ]
        },
        {
@@ -648,9 +644,9 @@
         "p_rows": 0.4152,
         "significant": false,
         "next_pick": [
-         7,
          0,
-         9
+         9,
+         7
         ]
        },
        {
@@ -687,9 +683,9 @@
         "p_rows": 0.2236,
         "significant": false,
         "next_pick": [
-         8,
-         1,
-         7
+         2,
+         7,
+         6
         ]
        },
        {
@@ -700,9 +696,9 @@
         "p_rows": 0.7545,
         "significant": false,
         "next_pick": [
-         9,
          8,
-         5
+         9,
+         2
         ]
        }
       ]
@@ -710,6 +706,15 @@
     ]
    },
    "recent": [
+    {
+     "期号": "2026255",
+     "日期": "2026-09-22",
+     "nums": [
+      6,
+      9,
+      9
+     ]
+    },
     {
      "期号": "2026254",
      "日期": "2026-09-21",
@@ -970,15 +975,6 @@
       5,
       1
      ]
-    },
-    {
-     "期号": "2026225",
-     "日期": "2026-08-23",
-     "nums": [
-      5,
-      5,
-      5
-     ]
     }
    ]
   },
@@ -986,11 +982,11 @@
    "id": "pl3",
    "name": "排列3",
    "kind": "digit",
-   "n": 7729,
+   "n": 7730,
    "first": "04001",
-   "last": "26254",
+   "last": "26255",
    "first_date": "2004-11-14",
-   "last_date": "2026-09-21",
+   "last_date": "2026-09-22",
    "digits": 3,
    "p": {
     "uniformity": 0.5314,
@@ -1126,7 +1122,9 @@
     "positions": [
      {
       "pos": 1,
-      "never_picked": [],
+      "never_picked": [
+       6
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -1162,9 +1160,9 @@
         "p_rows": 0.7166,
         "significant": false,
         "next_pick": [
-         7,
          3,
-         4
+         4,
+         5
         ]
        },
        {
@@ -1175,9 +1173,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         7,
          0,
-         8,
-         1
+         8
         ]
        },
        {
@@ -1240,9 +1238,9 @@
         "p_rows": 0.4092,
         "significant": false,
         "next_pick": [
-         3,
+         8,
          1,
-         8
+         4
         ]
        },
        {
@@ -1253,9 +1251,9 @@
         "p_rows": 0.8064,
         "significant": false,
         "next_pick": [
-         7,
          3,
-         4
+         4,
+         5
         ]
        },
        {
@@ -1279,9 +1277,9 @@
         "p_rows": 0.8762,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -1294,7 +1292,7 @@
         "next_pick": [
          8,
          9,
-         1
+         4
         ]
        }
       ]
@@ -1363,8 +1361,8 @@
         "p_rows": 0.5848,
         "significant": false,
         "next_pick": [
-         7,
          6,
+         7,
          8
         ]
        },
@@ -1389,8 +1387,8 @@
         "p_rows": 0.9102,
         "significant": false,
         "next_pick": [
-         7,
          6,
+         7,
          8
         ]
        },
@@ -1454,9 +1452,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -1467,16 +1465,18 @@
         "p_rows": 0.984,
         "significant": false,
         "next_pick": [
-         8,
          7,
-         9
+         8,
+         6
         ]
        }
       ]
      },
      {
       "pos": 3,
-      "never_picked": [],
+      "never_picked": [
+       2
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -1513,8 +1513,8 @@
         "significant": false,
         "next_pick": [
          8,
-         4,
-         1
+         1,
+         6
         ]
        },
        {
@@ -1525,9 +1525,9 @@
         "p_rows": 0.7764,
         "significant": false,
         "next_pick": [
+         4,
          9,
-         3,
-         0
+         3
         ]
        },
        {
@@ -1540,7 +1540,7 @@
         "next_pick": [
          0,
          1,
-         6
+         3
         ]
        },
        {
@@ -1590,9 +1590,9 @@
         "p_rows": 0.1577,
         "significant": false,
         "next_pick": [
-         3,
-         4,
-         2
+         9,
+         6,
+         4
         ]
        },
        {
@@ -1604,8 +1604,8 @@
         "significant": false,
         "next_pick": [
          8,
-         4,
-         1
+         1,
+         6
         ]
        },
        {
@@ -1629,9 +1629,9 @@
         "p_rows": 0.1876,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -1642,9 +1642,9 @@
         "p_rows": 0.2255,
         "significant": false,
         "next_pick": [
-         1,
          9,
-         4
+         1,
+         6
         ]
        }
       ]
@@ -1652,6 +1652,15 @@
     ]
    },
    "recent": [
+    {
+     "期号": "26255",
+     "日期": "2026-09-22",
+     "nums": [
+      7,
+      6,
+      4
+     ]
+    },
     {
      "期号": "26254",
      "日期": "2026-09-21",
@@ -1912,15 +1921,6 @@
       0,
       1
      ]
-    },
-    {
-     "期号": "26225",
-     "日期": "2026-08-23",
-     "nums": [
-      1,
-      1,
-      6
-     ]
     }
    ]
   },
@@ -1928,11 +1928,11 @@
    "id": "pl5",
    "name": "排列5",
    "kind": "digit",
-   "n": 7727,
+   "n": 7728,
    "first": "04001",
-   "last": "26254",
+   "last": "26255",
    "first_date": "2004-11-14",
-   "last_date": "2026-09-21",
+   "last_date": "2026-09-22",
    "digits": 5,
    "p": {
     "uniformity": 0.6358,
@@ -2158,9 +2158,9 @@
         "p_rows": 0.7285,
         "significant": false,
         "next_pick": [
-         7,
          3,
-         4
+         4,
+         5
         ]
        },
        {
@@ -2171,9 +2171,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         7,
          0,
-         8,
-         1
+         8
         ]
        },
        {
@@ -2236,9 +2236,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
-         3,
          1,
-         8
+         8,
+         4
         ]
        },
        {
@@ -2249,9 +2249,9 @@
         "p_rows": 0.8603,
         "significant": false,
         "next_pick": [
-         7,
          3,
-         4
+         4,
+         5
         ]
        },
        {
@@ -2275,9 +2275,9 @@
         "p_rows": 0.3293,
         "significant": false,
         "next_pick": [
-         9,
          1,
-         4
+         8,
+         3
         ]
        },
        {
@@ -2290,7 +2290,7 @@
         "next_pick": [
          8,
          9,
-         1
+         4
         ]
        }
       ]
@@ -2359,8 +2359,8 @@
         "p_rows": 0.5429,
         "significant": false,
         "next_pick": [
-         7,
          6,
+         7,
          8
         ]
        },
@@ -2385,8 +2385,8 @@
         "p_rows": 0.8922,
         "significant": false,
         "next_pick": [
-         7,
          6,
+         7,
          8
         ]
        },
@@ -2450,9 +2450,9 @@
         "p_rows": 0.6727,
         "significant": false,
         "next_pick": [
-         9,
          1,
-         4
+         8,
+         3
         ]
        },
        {
@@ -2465,7 +2465,7 @@
         "next_pick": [
          8,
          7,
-         9
+         6
         ]
        }
       ]
@@ -2511,8 +2511,8 @@
         "significant": false,
         "next_pick": [
          8,
-         4,
-         1
+         1,
+         6
         ]
        },
        {
@@ -2523,9 +2523,9 @@
         "p_rows": 0.8004,
         "significant": false,
         "next_pick": [
+         4,
          9,
-         3,
-         0
+         3
         ]
        },
        {
@@ -2538,7 +2538,7 @@
         "next_pick": [
          0,
          1,
-         6
+         3
         ]
        },
        {
@@ -2588,9 +2588,9 @@
         "p_rows": 0.2016,
         "significant": false,
         "next_pick": [
-         3,
          4,
-         1
+         9,
+         6
         ]
        },
        {
@@ -2602,8 +2602,8 @@
         "significant": false,
         "next_pick": [
          8,
-         4,
-         1
+         1,
+         6
         ]
        },
        {
@@ -2627,9 +2627,9 @@
         "p_rows": 0.0319,
         "significant": false,
         "next_pick": [
-         9,
          1,
-         4
+         8,
+         3
         ]
        },
        {
@@ -2640,18 +2640,16 @@
         "p_rows": 0.3613,
         "significant": false,
         "next_pick": [
-         1,
          9,
-         4
+         1,
+         6
         ]
        }
       ]
      },
      {
       "pos": 4,
-      "never_picked": [
-       8
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -2700,9 +2698,9 @@
         "p_rows": 0.7186,
         "significant": false,
         "next_pick": [
+         2,
          4,
-         5,
-         9
+         5
         ]
        },
        {
@@ -2740,8 +2738,8 @@
         "significant": false,
         "next_pick": [
          4,
-         7,
-         5
+         2,
+         7
         ]
        },
        {
@@ -2765,9 +2763,9 @@
         "p_rows": 0.7705,
         "significant": false,
         "next_pick": [
-         9,
-         2,
-         4
+         3,
+         4,
+         9
         ]
        },
        {
@@ -2804,9 +2802,9 @@
         "p_rows": 0.493,
         "significant": false,
         "next_pick": [
-         9,
          1,
-         4
+         8,
+         3
         ]
        },
        {
@@ -2819,7 +2817,7 @@
         "next_pick": [
          4,
          9,
-         2
+         8
         ]
        }
       ]
@@ -2827,8 +2825,7 @@
      {
       "pos": 5,
       "never_picked": [
-       6,
-       8
+       6
       ],
       "methods": [
        {
@@ -2878,9 +2875,9 @@
         "p_rows": 0.9022,
         "significant": false,
         "next_pick": [
+         5,
          0,
-         1,
-         2
+         1
         ]
        },
        {
@@ -2943,9 +2940,9 @@
         "p_rows": 0.7645,
         "significant": false,
         "next_pick": [
-         3,
          2,
-         0
+         3,
+         4
         ]
        },
        {
@@ -2982,9 +2979,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
-         9,
          1,
-         4
+         8,
+         3
         ]
        },
        {
@@ -2997,7 +2994,7 @@
         "next_pick": [
          3,
          2,
-         5
+         9
         ]
        }
       ]
@@ -3005,6 +3002,17 @@
     ]
    },
    "recent": [
+    {
+     "期号": "26255",
+     "日期": "2026-09-22",
+     "nums": [
+      7,
+      6,
+      4,
+      2,
+      5
+     ]
+    },
     {
      "期号": "26254",
      "日期": "2026-09-21",
@@ -3322,17 +3330,6 @@
       1,
       6,
       9
-     ]
-    },
-    {
-     "期号": "26225",
-     "日期": "2026-08-23",
-     "nums": [
-      1,
-      1,
-      6,
-      3,
-      5
      ]
     }
    ]
@@ -6616,11 +6613,11 @@
    "id": "ssq",
    "name": "双色球",
    "kind": "set",
-   "n": 3506,
+   "n": 3507,
    "first": "03001",
-   "last": "26109",
+   "last": "26110",
    "first_date": "2003-02-23",
-   "last_date": "2026-09-20",
+   "last_date": "2026-09-22",
    "train": 874,
    "oos": 2622,
    "zones": {
@@ -6628,7 +6625,9 @@
      "zmax": 33,
      "drawn": 6,
      "pick": 10,
-     "never_picked": [],
+     "never_picked": [
+      20
+     ],
      "consensus": [
       {
        "n": 1,
@@ -6862,12 +6861,12 @@
         7,
         8,
         10,
-        16,
         18,
         21,
         23,
-        29,
-        32
+        25,
+        27,
+        29
        ]
       },
       {
@@ -6885,16 +6884,16 @@
        ],
        "significant": false,
        "next_pick": [
+        2,
+        5,
         9,
-        11,
         12,
-        14,
         15,
-        20,
+        16,
+        19,
         26,
-        28,
         30,
-        33
+        32
        ]
       },
       {
@@ -6915,10 +6914,10 @@
         4,
         5,
         6,
-        11,
         13,
         14,
         15,
+        16,
         24,
         25,
         30
@@ -6973,8 +6972,8 @@
         11,
         13,
         14,
+        16,
         24,
-        25,
         30
        ]
       },
@@ -7021,14 +7020,14 @@
        "significant": false,
        "next_pick": [
         1,
-        2,
         3,
-        6,
+        7,
+        10,
         14,
         17,
+        18,
         22,
         26,
-        27,
         32
        ]
       },
@@ -7055,8 +7054,8 @@
         21,
         23,
         25,
-        29,
-        32
+        27,
+        29
        ]
       },
       {
@@ -7101,15 +7100,15 @@
        ],
        "significant": false,
        "next_pick": [
-        3,
-        5,
+        1,
+        6,
         7,
-        10,
-        11,
-        12,
-        13,
-        19,
-        20,
+        9,
+        14,
+        15,
+        17,
+        24,
+        27,
         32
        ]
       },
@@ -7129,7 +7128,6 @@
        "significant": false,
        "next_pick": [
         1,
-        2,
         4,
         6,
         13,
@@ -7137,6 +7135,7 @@
         18,
         22,
         24,
+        25,
         30
        ]
       },
@@ -7160,9 +7159,9 @@
         6,
         7,
         14,
+        16,
         18,
         22,
-        25,
         26,
         32
        ]
@@ -7210,14 +7209,14 @@
        "significant": false,
        "next_pick": [
         1,
-        2,
         4,
         6,
         13,
         14,
         18,
         22,
-        24,
+        25,
+        26,
         30
        ]
       }
@@ -7228,7 +7227,6 @@
      "drawn": 1,
      "pick": 4,
      "never_picked": [
-      7,
       9
      ],
      "consensus": [
@@ -7462,7 +7460,7 @@
        "next_pick": [
         3,
         4,
-        5,
+        14,
         16
        ]
       },
@@ -7503,9 +7501,9 @@
        "significant": false,
        "next_pick": [
         1,
+        3,
         6,
-        8,
-        10
+        7
        ]
       },
       {
@@ -7567,8 +7565,8 @@
        "next_pick": [
         4,
         6,
-        10,
-        16
+        12,
+        13
        ]
       },
       {
@@ -7587,7 +7585,7 @@
        "significant": false,
        "next_pick": [
         1,
-        4,
+        5,
         15,
         16
        ]
@@ -7608,8 +7606,8 @@
        "significant": false,
        "next_pick": [
         1,
+        4,
         5,
-        15,
         16
        ]
       },
@@ -7629,8 +7627,8 @@
        "significant": false,
        "next_pick": [
         1,
+        3,
         4,
-        5,
         16
        ]
       },
@@ -7650,7 +7648,7 @@
        "significant": false,
        "next_pick": [
         1,
-        4,
+        5,
         15,
         16
        ]
@@ -7660,6 +7658,19 @@
    },
    "n_methods": 16,
    "recent": [
+    {
+     "期号": "26110",
+     "日期": "2026-09-22",
+     "nums": [
+      2,
+      5,
+      16,
+      19,
+      26,
+      32,
+      14
+     ]
+    },
     {
      "期号": "26109",
      "日期": "2026-09-20",
@@ -8035,19 +8046,6 @@
       24,
       27,
       12
-     ]
-    },
-    {
-     "期号": "26080",
-     "日期": "2026-07-14",
-     "nums": [
-      4,
-      5,
-      11,
-      19,
-      27,
-      32,
-      1
      ]
     }
    ]
