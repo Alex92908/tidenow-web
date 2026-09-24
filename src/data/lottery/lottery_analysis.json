@@ -32,7 +32,7 @@
    "ssq",
    "qlc"
   ],
-  "picks_refreshed_at": "2026-09-23 18:36",
+  "picks_refreshed_at": "2026-09-24 18:39",
   "stats_ran_at": "2026-08-30 19:17"
  },
  "games": {
@@ -40,11 +40,11 @@
    "id": "fc3d",
    "name": "福彩3D",
    "kind": "digit",
-   "n": 7763,
+   "n": 7764,
    "first": "2004001",
-   "last": "2026256",
+   "last": "2026257",
    "first_date": "2004-10-18",
-   "last_date": "2026-09-23",
+   "last_date": "2026-09-24",
    "digits": 3,
    "p": {
     "uniformity": 0.2313,
@@ -180,9 +180,7 @@
     "positions": [
      {
       "pos": 1,
-      "never_picked": [
-       2
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -218,9 +216,9 @@
         "p_rows": 0.3573,
         "significant": false,
         "next_pick": [
-         4,
          1,
-         3
+         3,
+         2
         ]
        },
        {
@@ -231,9 +229,9 @@
         "p_rows": 0.3573,
         "significant": false,
         "next_pick": [
+         4,
          0,
-         6,
-         8
+         6
         ]
        },
        {
@@ -296,9 +294,9 @@
         "p_rows": 0.1277,
         "significant": false,
         "next_pick": [
-         4,
-         0,
-         9
+         1,
+         9,
+         4
         ]
        },
        {
@@ -309,9 +307,9 @@
         "p_rows": 0.3593,
         "significant": false,
         "next_pick": [
-         4,
          1,
-         3
+         3,
+         2
         ]
        },
        {
@@ -335,9 +333,9 @@
         "p_rows": 0.3393,
         "significant": false,
         "next_pick": [
-         4,
-         3,
-         5
+         9,
+         1,
+         8
         ]
        },
        {
@@ -348,8 +346,8 @@
         "p_rows": 0.6687,
         "significant": false,
         "next_pick": [
-         8,
          6,
+         8,
          9
         ]
        }
@@ -357,9 +355,7 @@
      },
      {
       "pos": 2,
-      "never_picked": [
-       0
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -408,9 +404,9 @@
         "p_rows": 0.4571,
         "significant": false,
         "next_pick": [
+         8,
          5,
-         9,
-         3
+         9
         ]
        },
        {
@@ -423,7 +419,7 @@
         "next_pick": [
          5,
          9,
-         7
+         8
         ]
        },
        {
@@ -434,8 +430,8 @@
         "p_rows": 0.8084,
         "significant": false,
         "next_pick": [
-         2,
          3,
+         2,
          5
         ]
        },
@@ -448,8 +444,8 @@
         "significant": false,
         "next_pick": [
          5,
-         9,
-         8
+         8,
+         9
         ]
        },
        {
@@ -473,9 +469,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
-         4,
-         1,
-         6
+         7,
+         0,
+         9
         ]
        },
        {
@@ -512,9 +508,9 @@
         "p_rows": 0.7964,
         "significant": false,
         "next_pick": [
-         4,
-         3,
-         5
+         9,
+         1,
+         8
         ]
        },
        {
@@ -525,9 +521,9 @@
         "p_rows": 0.9361,
         "significant": false,
         "next_pick": [
-         4,
-         5,
-         9
+         9,
+         0,
+         5
         ]
        }
       ]
@@ -583,9 +579,9 @@
         "p_rows": 0.1816,
         "significant": false,
         "next_pick": [
+         6,
          1,
-         9,
-         0
+         9
         ]
        },
        {
@@ -648,9 +644,9 @@
         "p_rows": 0.4152,
         "significant": false,
         "next_pick": [
-         9,
-         8,
-         0
+         0,
+         5,
+         3
         ]
        },
        {
@@ -687,9 +683,9 @@
         "p_rows": 0.2236,
         "significant": false,
         "next_pick": [
-         4,
-         3,
-         5
+         9,
+         1,
+         8
         ]
        },
        {
@@ -702,7 +698,7 @@
         "next_pick": [
          8,
          9,
-         2
+         5
         ]
        }
       ]
@@ -710,6 +706,15 @@
     ]
    },
    "recent": [
+    {
+     "期号": "2026257",
+     "日期": "2026-09-24",
+     "nums": [
+      4,
+      8,
+      6
+     ]
+    },
     {
      "期号": "2026256",
      "日期": "2026-09-23",
@@ -970,15 +975,6 @@
       9,
       9
      ]
-    },
-    {
-     "期号": "2026227",
-     "日期": "2026-08-25",
-     "nums": [
-      5,
-      2,
-      2
-     ]
     }
    ]
   },
@@ -986,11 +982,11 @@
    "id": "pl3",
    "name": "排列3",
    "kind": "digit",
-   "n": 7731,
+   "n": 7732,
    "first": "04001",
-   "last": "26256",
+   "last": "26257",
    "first_date": "2004-11-14",
-   "last_date": "2026-09-23",
+   "last_date": "2026-09-24",
    "digits": 3,
    "p": {
     "uniformity": 0.5314,
@@ -1163,8 +1159,8 @@
         "significant": false,
         "next_pick": [
          3,
-         4,
-         5
+         5,
+         9
         ]
        },
        {
@@ -1175,9 +1171,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         4,
          6,
-         7,
-         0
+         7
         ]
        },
        {
@@ -1203,7 +1199,7 @@
         "next_pick": [
          0,
          1,
-         8
+         9
         ]
        },
        {
@@ -1240,9 +1236,9 @@
         "p_rows": 0.4092,
         "significant": false,
         "next_pick": [
-         4,
-         3,
-         9
+         2,
+         5,
+         4
         ]
        },
        {
@@ -1253,9 +1249,9 @@
         "p_rows": 0.8064,
         "significant": false,
         "next_pick": [
-         4,
          3,
-         5
+         5,
+         9
         ]
        },
        {
@@ -1279,9 +1275,9 @@
         "p_rows": 0.8762,
         "significant": false,
         "next_pick": [
-         1,
          7,
-         9
+         6,
+         0
         ]
        },
        {
@@ -1293,15 +1289,17 @@
         "significant": false,
         "next_pick": [
          9,
-         8,
-         4
+         2,
+         8
         ]
        }
       ]
      },
      {
       "pos": 2,
-      "never_picked": [],
+      "never_picked": [
+       8
+      ],
       "methods": [
        {
         "name": "freq_hot",
@@ -1365,7 +1363,7 @@
         "next_pick": [
          6,
          7,
-         8
+         9
         ]
        },
        {
@@ -1389,8 +1387,8 @@
         "p_rows": 0.9102,
         "significant": false,
         "next_pick": [
-         6,
          9,
+         6,
          7
         ]
        },
@@ -1454,9 +1452,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
-         1,
          7,
-         9
+         6,
+         0
         ]
        },
        {
@@ -1467,18 +1465,16 @@
         "p_rows": 0.984,
         "significant": false,
         "next_pick": [
-         6,
+         9,
          7,
-         9
+         6
         ]
        }
       ]
      },
      {
       "pos": 3,
-      "never_picked": [
-       2
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -1527,9 +1523,9 @@
         "p_rows": 0.7764,
         "significant": false,
         "next_pick": [
+         3,
          0,
-         4,
-         9
+         4
         ]
        },
        {
@@ -1541,8 +1537,8 @@
         "significant": false,
         "next_pick": [
          0,
-         1,
-         3
+         3,
+         1
         ]
        },
        {
@@ -1554,7 +1550,7 @@
         "significant": false,
         "next_pick": [
          9,
-         0,
+         2,
          6
         ]
        },
@@ -1567,8 +1563,8 @@
         "significant": false,
         "next_pick": [
          0,
-         9,
-         5
+         3,
+         9
         ]
        },
        {
@@ -1593,8 +1589,8 @@
         "significant": false,
         "next_pick": [
          4,
-         3,
-         8
+         1,
+         6
         ]
        },
        {
@@ -1631,9 +1627,9 @@
         "p_rows": 0.1876,
         "significant": false,
         "next_pick": [
-         1,
          7,
-         9
+         6,
+         0
         ]
        },
        {
@@ -1645,8 +1641,8 @@
         "significant": false,
         "next_pick": [
          9,
-         6,
-         4
+         1,
+         6
         ]
        }
       ]
@@ -1654,6 +1650,15 @@
     ]
    },
    "recent": [
+    {
+     "期号": "26257",
+     "日期": "2026-09-24",
+     "nums": [
+      4,
+      9,
+      3
+     ]
+    },
     {
      "期号": "26256",
      "日期": "2026-09-23",
@@ -1914,15 +1919,6 @@
       6,
       0
      ]
-    },
-    {
-     "期号": "26227",
-     "日期": "2026-08-25",
-     "nums": [
-      4,
-      3,
-      1
-     ]
     }
    ]
   },
@@ -1930,11 +1926,11 @@
    "id": "pl5",
    "name": "排列5",
    "kind": "digit",
-   "n": 7729,
+   "n": 7730,
    "first": "04001",
-   "last": "26256",
+   "last": "26257",
    "first_date": "2004-11-14",
-   "last_date": "2026-09-23",
+   "last_date": "2026-09-24",
    "digits": 5,
    "p": {
     "uniformity": 0.6358,
@@ -2159,8 +2155,8 @@
         "significant": false,
         "next_pick": [
          3,
-         4,
-         5
+         5,
+         9
         ]
        },
        {
@@ -2171,9 +2167,9 @@
         "p_rows": 0.7246,
         "significant": false,
         "next_pick": [
+         4,
          6,
-         7,
-         0
+         7
         ]
        },
        {
@@ -2199,7 +2195,7 @@
         "next_pick": [
          0,
          1,
-         8
+         9
         ]
        },
        {
@@ -2236,9 +2232,9 @@
         "p_rows": 0.3992,
         "significant": false,
         "next_pick": [
-         4,
-         3,
-         9
+         2,
+         5,
+         4
         ]
        },
        {
@@ -2250,8 +2246,8 @@
         "significant": false,
         "next_pick": [
          3,
-         4,
-         5
+         5,
+         9
         ]
        },
        {
@@ -2275,9 +2271,9 @@
         "p_rows": 0.3293,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -2289,8 +2285,8 @@
         "significant": false,
         "next_pick": [
          9,
-         8,
-         4
+         2,
+         8
         ]
        }
       ]
@@ -2361,7 +2357,7 @@
         "next_pick": [
          6,
          7,
-         8
+         9
         ]
        },
        {
@@ -2385,8 +2381,8 @@
         "p_rows": 0.8922,
         "significant": false,
         "next_pick": [
-         6,
          9,
+         6,
          7
         ]
        },
@@ -2450,9 +2446,9 @@
         "p_rows": 0.6727,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -2463,9 +2459,9 @@
         "p_rows": 0.998,
         "significant": false,
         "next_pick": [
-         6,
+         9,
          7,
-         9
+         6
         ]
        }
       ]
@@ -2521,9 +2517,9 @@
         "p_rows": 0.8004,
         "significant": false,
         "next_pick": [
+         3,
          0,
-         4,
-         9
+         4
         ]
        },
        {
@@ -2535,8 +2531,8 @@
         "significant": false,
         "next_pick": [
          0,
-         1,
-         3
+         3,
+         1
         ]
        },
        {
@@ -2548,7 +2544,7 @@
         "significant": false,
         "next_pick": [
          9,
-         0,
+         2,
          6
         ]
        },
@@ -2561,8 +2557,8 @@
         "significant": false,
         "next_pick": [
          0,
-         9,
-         5
+         3,
+         9
         ]
        },
        {
@@ -2587,8 +2583,8 @@
         "significant": false,
         "next_pick": [
          4,
-         3,
-         8
+         1,
+         6
         ]
        },
        {
@@ -2625,9 +2621,9 @@
         "p_rows": 0.0319,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -2647,9 +2643,7 @@
      },
      {
       "pos": 4,
-      "never_picked": [
-       8
-      ],
+      "never_picked": [],
       "methods": [
        {
         "name": "freq_hot",
@@ -2686,8 +2680,8 @@
         "significant": false,
         "next_pick": [
          1,
-         3,
-         0
+         0,
+         6
         ]
        },
        {
@@ -2698,9 +2692,9 @@
         "p_rows": 0.7186,
         "significant": false,
         "next_pick": [
+         3,
          4,
-         2,
-         5
+         2
         ]
        },
        {
@@ -2763,8 +2757,8 @@
         "p_rows": 0.7705,
         "significant": false,
         "next_pick": [
-         9,
-         2,
+         0,
+         1,
          4
         ]
        },
@@ -2777,8 +2771,8 @@
         "significant": false,
         "next_pick": [
          1,
-         3,
-         0
+         0,
+         6
         ]
        },
        {
@@ -2802,9 +2796,9 @@
         "p_rows": 0.493,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -2817,7 +2811,7 @@
         "next_pick": [
          4,
          2,
-         9
+         8
         ]
        }
       ]
@@ -2825,7 +2819,7 @@
      {
       "pos": 5,
       "never_picked": [
-       8
+       6
       ],
       "methods": [
        {
@@ -2875,9 +2869,9 @@
         "p_rows": 0.9022,
         "significant": false,
         "next_pick": [
+         0,
          3,
-         5,
-         0
+         5
         ]
        },
        {
@@ -2890,7 +2884,7 @@
         "next_pick": [
          3,
          1,
-         5
+         0
         ]
        },
        {
@@ -2901,8 +2895,8 @@
         "p_rows": 0.0659,
         "significant": false,
         "next_pick": [
-         3,
          0,
+         3,
          1
         ]
        },
@@ -2940,9 +2934,9 @@
         "p_rows": 0.7645,
         "significant": false,
         "next_pick": [
+         3,
          2,
-         9,
-         3
+         0
         ]
        },
        {
@@ -2979,9 +2973,9 @@
         "p_rows": 0.8862,
         "significant": false,
         "next_pick": [
-         2,
-         0,
-         6
+         7,
+         8,
+         9
         ]
        },
        {
@@ -2994,7 +2988,7 @@
         "next_pick": [
          3,
          2,
-         9
+         5
         ]
        }
       ]
@@ -3002,6 +2996,17 @@
     ]
    },
    "recent": [
+    {
+     "期号": "26257",
+     "日期": "2026-09-24",
+     "nums": [
+      4,
+      9,
+      3,
+      3,
+      0
+     ]
+    },
     {
      "期号": "26256",
      "日期": "2026-09-23",
@@ -3318,17 +3323,6 @@
       6,
       0,
       2,
-      5
-     ]
-    },
-    {
-     "期号": "26227",
-     "日期": "2026-08-25",
-     "nums": [
-      4,
-      3,
-      1,
-      9,
       5
      ]
     }
@@ -6614,11 +6608,11 @@
    "id": "ssq",
    "name": "双色球",
    "kind": "set",
-   "n": 3507,
+   "n": 3508,
    "first": "03001",
-   "last": "26110",
+   "last": "26111",
    "first_date": "2003-02-23",
-   "last_date": "2026-09-22",
+   "last_date": "2026-09-24",
    "train": 874,
    "oos": 2622,
    "zones": {
@@ -6627,7 +6621,7 @@
      "drawn": 6,
      "pick": 10,
      "never_picked": [
-      20
+      12
      ],
      "consensus": [
       {
@@ -6859,7 +6853,7 @@
        "significant": false,
        "next_pick": [
         3,
-        7,
+        4,
         8,
         10,
         18,
@@ -6887,13 +6881,13 @@
        "next_pick": [
         2,
         5,
-        9,
-        12,
-        15,
+        6,
+        7,
+        14,
         16,
         19,
-        26,
-        30,
+        22,
+        31,
         32
        ]
       },
@@ -6917,8 +6911,8 @@
         6,
         13,
         14,
-        15,
         16,
+        22,
         24,
         25,
         30
@@ -6969,11 +6963,11 @@
         4,
         5,
         6,
-        9,
         11,
         13,
         14,
         16,
+        22,
         24,
         30
        ]
@@ -7020,16 +7014,16 @@
        ],
        "significant": false,
        "next_pick": [
-        1,
-        3,
-        7,
-        10,
+        2,
+        6,
+        8,
+        9,
         14,
-        17,
-        18,
+        20,
         22,
         26,
-        32
+        27,
+        30
        ]
       },
       {
@@ -7048,7 +7042,7 @@
        "significant": false,
        "next_pick": [
         3,
-        7,
+        4,
         8,
         10,
         18,
@@ -7101,16 +7095,16 @@
        ],
        "significant": false,
        "next_pick": [
-        1,
-        6,
+        3,
         7,
-        9,
         14,
         15,
+        16,
         17,
-        24,
-        27,
-        32
+        18,
+        22,
+        26,
+        28
        ]
       },
       {
@@ -7129,14 +7123,14 @@
        "significant": false,
        "next_pick": [
         1,
+        2,
         4,
         6,
         13,
         14,
         18,
         22,
-        24,
-        25,
+        26,
         30
        ]
       },
@@ -7155,16 +7149,16 @@
        ],
        "significant": false,
        "next_pick": [
-        1,
         2,
+        4,
         6,
-        7,
         14,
         16,
         18,
         22,
-        26,
-        32
+        24,
+        25,
+        26
        ]
       },
       {
@@ -7189,8 +7183,8 @@
         14,
         18,
         22,
-        24,
         25,
+        26,
         30
        ]
       },
@@ -7210,13 +7204,13 @@
        "significant": false,
        "next_pick": [
         1,
+        2,
         4,
         6,
         13,
         14,
         18,
         22,
-        25,
         26,
         30
        ]
@@ -7227,9 +7221,7 @@
      "zmax": 16,
      "drawn": 1,
      "pick": 4,
-     "never_picked": [
-      9
-     ],
+     "never_picked": [],
      "consensus": [
       {
        "n": 1,
@@ -7375,7 +7367,7 @@
        ],
        "significant": false,
        "next_pick": [
-        5,
+        1,
         10,
         11,
         13
@@ -7396,7 +7388,7 @@
        ],
        "significant": false,
        "next_pick": [
-        4,
+        5,
         6,
         14,
         16
@@ -7461,8 +7453,8 @@
        "next_pick": [
         3,
         4,
-        14,
-        16
+        5,
+        14
        ]
       },
       {
@@ -7502,9 +7494,9 @@
        "significant": false,
        "next_pick": [
         1,
-        3,
-        6,
-        7
+        4,
+        9,
+        15
        ]
       },
       {
@@ -7522,7 +7514,7 @@
        ],
        "significant": false,
        "next_pick": [
-        5,
+        1,
         10,
         11,
         13
@@ -7564,10 +7556,10 @@
        ],
        "significant": false,
        "next_pick": [
+        2,
         4,
-        6,
-        12,
-        13
+        7,
+        15
        ]
       },
       {
@@ -7586,9 +7578,9 @@
        "significant": false,
        "next_pick": [
         1,
+        4,
         5,
-        15,
-        16
+        15
        ]
       },
       {
@@ -7607,8 +7599,8 @@
        "significant": false,
        "next_pick": [
         1,
-        4,
         5,
+        15,
         16
        ]
       },
@@ -7628,9 +7620,9 @@
        "significant": false,
        "next_pick": [
         1,
-        3,
         4,
-        16
+        5,
+        15
        ]
       },
       {
@@ -7649,9 +7641,9 @@
        "significant": false,
        "next_pick": [
         1,
+        4,
         5,
-        15,
-        16
+        15
        ]
       }
      ]
@@ -7659,6 +7651,19 @@
    },
    "n_methods": 16,
    "recent": [
+    {
+     "期号": "26111",
+     "日期": "2026-09-24",
+     "nums": [
+      6,
+      7,
+      14,
+      22,
+      31,
+      32,
+      5
+     ]
+    },
     {
      "期号": "26110",
      "日期": "2026-09-22",
@@ -8034,19 +8039,6 @@
       21,
       28,
       4
-     ]
-    },
-    {
-     "期号": "26081",
-     "日期": "2026-07-16",
-     "nums": [
-      6,
-      10,
-      12,
-      15,
-      24,
-      27,
-      12
      ]
     }
    ]
