@@ -106,10 +106,14 @@ export function SiteNav({ locale }: { locale: string }) {
           {isHome && (
             <>
               <FontSizeControl />
-              <AISettingsButton locale={locale} />
               <FilterSettingsButton locale={locale} />
             </>
           )}
+          {/* AI key setting is always visible: the key is needed on every
+              page (summaries on the board + source pages, generate /
+              rewrite on /compose), and the "set one in ✦ above" hint
+              points at it from pages where it used to be hidden. */}
+          <AISettingsButton locale={locale} />
           <ThemeToggle />
           <LocaleSwitch />
         </div>

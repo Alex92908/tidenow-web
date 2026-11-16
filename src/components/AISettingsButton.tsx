@@ -18,13 +18,18 @@ export function AISettingsButton({ locale }: { locale: string }) {
         onClick={() => setOpen(true)}
         title={locale === "zh" ? "AI 摘要设置" : "AI Summary Settings"}
         className={[
-          "w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all",
+          "relative w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all",
           hasKey
             ? "text-sky-500 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10"
             : "text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5",
         ].join(" ")}
       >
         ✦
+        {/* Amber dot while no key is set — the button is tiny and easy to
+            miss; the dot signals "needs setup" at a glance. */}
+        {!hasKey && (
+          <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-amber-400 ring-2 ring-white dark:ring-[#0a0a0f]" />
+        )}
       </button>
       {open && <AISettingsModal locale={locale} onClose={() => setOpen(false)} />}
     </>
