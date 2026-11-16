@@ -20,6 +20,7 @@ import { DraftEditor } from "@/components/compose/DraftEditor"
 import { DraftList } from "@/components/compose/DraftList"
 import { ExportButtons } from "@/components/compose/ExportButtons"
 import { PublishButton, PublishToSiteButton } from "@/components/compose/PublishButton"
+import { DistributePanel } from "@/components/compose/DistributePanel"
 
 interface Props {
   locale: "en" | "zh"
@@ -407,11 +408,12 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const canSave = useMemo(() => markdown.trim().length > 0 || materials.length > 0, [markdown, materials])
 
   return (
-    // Desktop: 3-column grid with a single-viewport fixed height so each
-    // column scrolls independently. Mobile: stack vertically and let the
-    // page itself scroll — fixing the height to 100vh-7rem stuffed the
-    // three sections into ~33% of the viewport each and the chip pane,
-    // topic list, editor, and bottom action row all visually overlapped.
+    <>
+    {/* Desktop: 3-column grid with a single-viewport fixed height so each
+        column scrolls independently. Mobile: stack vertically and let the
+        page itself scroll — fixing the height to 100vh-7rem stuffed the
+        three sections into ~33% of the viewport each and the chip pane,
+        topic list, editor, and bottom action row all visually overlapped. */}
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_220px] gap-4 lg:h-[calc(100vh-7rem)]">
       {/* LEFT: topic picker + style + generate. On mobile this becomes
           one of three stacked sections, so give the topic-picker box a
@@ -621,6 +623,14 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         />
       </div>
     </div>
+
+    {/* Distribute: multi-platform 图文 + video, driven by the current
+        draft. Full-width below the grid so the platform cards get room;
+        the editor grid above is untouched (Phase 3 owns the redesign). */}
+    <div className="mt-4">
+      <DistributePanel markdown={markdown} outputLocale={outputLocale} uiLocale={locale} />
+    </div>
+    </>
   )
 }
 
