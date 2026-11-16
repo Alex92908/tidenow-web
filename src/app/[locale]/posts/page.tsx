@@ -132,11 +132,11 @@ export default async function PostsIndexPage({
                   <img src={p.cover} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                 ) : (
                   <div className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(p.slug)}`}>
-                    <div className="absolute -right-6 -top-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
-                    <div className="absolute -left-4 bottom-0 h-24 w-24 rounded-full bg-black/15 blur-xl" />
+                    <div className="absolute -right-6 -top-10 h-32 w-32 rounded-full bg-white/[0.07] blur-2xl" />
+                    <div className="absolute -left-4 bottom-0 h-24 w-24 rounded-full bg-black/10 blur-xl" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent" />
                 {p.tags && p.tags.length > 0 && (
                   <span className="absolute left-4 top-4 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur">
                     {p.tags[0]}

@@ -17,9 +17,6 @@
       "memory": 1024,
       "maxDuration": 60,
       "includeFiles": "lib/foresight/**"
-    },
-    "api/cron/daily-digest": {
-      "maxDuration": 60
     }
   }
 }
