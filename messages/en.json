@@ -22,6 +22,7 @@
     "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n",
     "changelog": "Changelog",
     "posts": "Posts",
+    "daily": "Daily digest",
     "write": "Write",
     "predict": "Predict",
     "about": "About",
@@ -119,7 +120,19 @@
     "title": "Compose",
     "subtitle": "Pick trending items → AI draft → edit → export",
     "publishHint": "🚀 Publish sends your article live on TideNow in one click — first time, paste a GitHub token in the Publish dialog (stored only in your browser).",
-    "distributeUnlock": "Write a draft to unlock distribution to X · Weibo · Zhihu · 小红书 · Bilibili · YouTube · 抖音 · TikTok"
+    "distributeUnlock": "Write a draft to unlock distribution to X · Weibo · Zhihu · 小红书 · Bilibili · YouTube · 抖音 · TikTok",
+    "videoOpenCutTitle": "Edit in OpenCut (free)",
+    "videoOpenCutStep1": "Download the .webm video and the .srt subtitles from this panel.",
+    "videoOpenCutStep2": "Open opencut.app in your browser — free, no account needed.",
+    "videoOpenCutStep3": "Import the .webm file as the video track.",
+    "videoOpenCutStep4": "Import the .srt file as a captions track.",
+    "videoOpenCutStep5": "Add narration audio as an audio track (see the note under the script), then export as MP4.",
+    "videoOpenCutOpen": "Open in OpenCut (free)",
+    "videoOpenCutNote": "OpenCut is a free, open-source editor in early beta — good for basic edits, no watermark. For a more polished editor, CapCut / 剪映 is still the safer pick.",
+    "videoPreviewNarration": "Preview narration",
+    "videoPreviewStop": "Stop",
+    "videoPreviewUnsupported": "Your browser doesn't support speech preview (speechSynthesis). Try Chrome / Edge on desktop.",
+    "videoAudioFileNote": "Preview only reads the narration aloud — it can't save an audio file. To get an .mp3 for OpenCut, paste the script into any free TTS tool (e.g. Edge's read-aloud, or a free online TTS) and import the audio file."
   },
   "posts": {
     "title": "Posts",
@@ -129,6 +142,10 @@
     "share": "Share this post",
     "copied": "Copied!",
     "authorBio": "TideNow editor — weekly takes on what the trends actually mean.",
-    "moreFrom": "More from TideNow →"
+    "moreFrom": "More from TideNow →",
+    "dailyArchive": "Daily digest archive",
+    "dailyArchiveTitle": "Daily digest archive",
+    "dailyArchiveSubtitle": "Every day's hot-topics roundup, newest first.",
+    "dailyArchiveEmpty": "No daily digests yet — the first one lands the morning after this is set up."
   }
 }

@@ -3,13 +3,18 @@
 // subtitles + narration script.
 //
 // The video is SILENT — the narration is provided as script + SRT for
-// the user to add in CapCut / 剪映. No server-side rendering, no new
-// secrets. If MediaRecorder is unavailable the download button is
-// disabled with a note instead of failing silently.
+// the user to add in CapCut / 剪映, or in the free open-source editor
+// OpenCut (see the OpenCut card below the slideshow controls: import
+// the .webm + .srt there). A 🔊 preview button reads the script aloud
+// via the browser's built-in speechSynthesis (listen-only — it cannot
+// save an audio file). No server-side rendering, no new secrets. If
+// MediaRecorder is unavailable the download button is disabled with a
+// note instead of failing silently.
 
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import type { Scene } from "@/lib/distribute"
 import {
   buildNarrationScript,
@@ -41,6 +46,7 @@ function fmtClock(sec: number): string {
 }
 
 export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
+  const tVideo = useTranslations("compose")
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -55,6 +61,8 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
   const [copied, setCopied] = useState<"script" | null>(null)
   const [srtReady, setSrtReady] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const [speaking, setSpeaking] = useState(false)
+  const [previewNote, setPreviewNote] = useState<string | null>(null)
 
   const durations = scenes.map((s) => sceneDurationSec(s, locale))
   const total = totalDurationSec(scenes, locale)
@@ -115,7 +123,7 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aspect, title, scenes])
 
-  // Unmount cleanup: stop recorder + rAF + revoke blob URL.
+  // Unmount cleanup: stop recorder + rAF + speech + revoke blob URL.
   useEffect(() => {
     return () => {
       stopLoop()
@@ -124,6 +132,13 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
           recorderRef.current.stop()
         } catch {
           /* already stopped */
+        }
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel()
+        } catch {
+          /* ignore */
         }
       }
       if (videoUrl) URL.revokeObjectURL(videoUrl)
@@ -249,6 +264,37 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
     setTimeout(() => setCopied(null), 1500)
   }
 
+  // Read the narration script aloud with the browser's built-in
+  // speechSynthesis (free, no key, no download). Listen-only: the
+  // spoken audio cannot be captured or saved — see the note under the
+  // script for how to get an .mp3 file. Voice is matched to the script
+  // language when one exists, otherwise the browser default is used.
+  function handlePreviewNarration() {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      setPreviewNote(tVideo("videoPreviewUnsupported"))
+      return
+    }
+    const synth = window.speechSynthesis
+    if (speaking) {
+      synth.cancel()
+      setSpeaking(false)
+      return
+    }
+    setPreviewNote(null)
+    const utterance = new SpeechSynthesisUtterance(buildNarrationScript(scenes))
+    utterance.lang = locale === "zh" ? "zh-CN" : "en-US"
+    const prefix = locale === "zh" ? "zh" : "en"
+    const voice = synth
+      .getVoices()
+      .find((v) => v.lang?.toLowerCase().startsWith(prefix))
+    if (voice) utterance.voice = voice
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    synth.cancel()
+    synth.speak(utterance)
+    setSpeaking(true)
+  }
+
   const over60 = total > 60
   const script = buildNarrationScript(scenes)
 
@@ -313,6 +359,15 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
           <div className="flex items-center gap-1.5">
             <button
               type="button"
+              onClick={handlePreviewNarration}
+              className="px-2 py-1 text-[11px] rounded-md border border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 transition-colors"
+            >
+              {speaking
+                ? `⏹ ${tVideo("videoPreviewStop")}`
+                : `🔊 ${tVideo("videoPreviewNarration")}`}
+            </button>
+            <button
+              type="button"
               onClick={copyScript}
               className="px-2 py-1 text-[11px] rounded-md border border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 transition-colors"
             >
@@ -339,6 +394,12 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
             ? "视频本身是静音的——把脚本交给 TTS / 剪映配音，.srt 字幕可直接导入剪映 / CapCut。"
             : "The video is silent — feed the script to a TTS voice or CapCut / 剪映, and import the .srt subtitles there."}
         </p>
+        <p className="mt-1 text-[11px] text-gray-400 dark:text-zinc-500 leading-snug">
+          {tVideo("videoAudioFileNote")}
+        </p>
+        {previewNote && (
+          <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 leading-snug">{previewNote}</p>
+        )}
       </div>
 
       {/* Slideshow preview + export */}
@@ -437,6 +498,29 @@ export function VideoKit({ title, hook, scenes, postUrl, locale }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Edit in OpenCut (free) — import the .webm + .srt from this panel */}
+      <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] px-3 py-3">
+        <h4 className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
+          🎬 {tVideo("videoOpenCutTitle")}
+        </h4>
+        <ol className="mt-2 flex flex-col gap-1 text-xs leading-relaxed text-gray-600 dark:text-zinc-400 list-decimal list-inside">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <li key={n}>{tVideo(`videoOpenCutStep${n}`)}</li>
+          ))}
+        </ol>
+        <a
+          href="https://opencut.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-sky-500 hover:bg-sky-600 text-white font-medium transition-colors"
+        >
+          🎬 {tVideo("videoOpenCutOpen")} ↗
+        </a>
+        <p className="mt-2 text-[11px] text-gray-400 dark:text-zinc-500 leading-snug">
+          {tVideo("videoOpenCutNote")}
+        </p>
       </div>
 
       {/* Per-platform posting hints */}

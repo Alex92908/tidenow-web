@@ -22,6 +22,7 @@
     "feedbackBody": "你好，\n\n关于 TideNow（www.tide-now.com）的反馈：\n\n",
     "changelog": "更新日志",
     "posts": "文章",
+    "daily": "往期日报",
     "write": "写文章",
     "predict": "预测",
     "about": "关于",
@@ -119,7 +120,19 @@
     "title": "写文章",
     "subtitle": "选热点 → AI 生成草稿 → 编辑 → 导出",
     "publishHint": "🚀 发布：一键把文章发到 TideNow 上线——首次使用时在发布弹窗里粘贴 GitHub token（只存在你的浏览器里）。",
-    "distributeUnlock": "写一篇草稿，即可解锁分发到 X · 微博 · 知乎 · 小红书 · Bilibili · YouTube · 抖音 · TikTok"
+    "distributeUnlock": "写一篇草稿，即可解锁分发到 X · 微博 · 知乎 · 小红书 · Bilibili · YouTube · 抖音 · TikTok",
+    "videoOpenCutTitle": "在 OpenCut 里编辑（免费）",
+    "videoOpenCutStep1": "先在本面板下载 .webm 视频和 .srt 字幕。",
+    "videoOpenCutStep2": "在浏览器打开 opencut.app——免费，不用注册。",
+    "videoOpenCutStep3": "把 .webm 文件导入为视频轨道。",
+    "videoOpenCutStep4": "把 .srt 文件导入为字幕轨道。",
+    "videoOpenCutStep5": "把旁白音频作为音轨加上（见脚本下方的说明），然后导出 MP4。",
+    "videoOpenCutOpen": "在 OpenCut 里打开（免费）",
+    "videoOpenCutNote": "OpenCut 是免费开源的早期测试版编辑器，适合基础剪辑、无水印；想要更成熟顺手的，剪映 / CapCut 仍是更稳的选择。",
+    "videoPreviewNarration": "试听旁白",
+    "videoPreviewStop": "停止",
+    "videoPreviewUnsupported": "当前浏览器不支持语音试听（speechSynthesis），建议用 Chrome / Edge 桌面版。",
+    "videoAudioFileNote": "试听只是朗读旁白，不能保存成音频文件。想要 .mp3 导入 OpenCut：把脚本粘贴到任意免费配音工具（比如 Edge 浏览器的朗读、或免费在线 TTS），导出音频后再导入。"
   },
   "posts": {
     "title": "文章",
@@ -129,6 +142,10 @@
     "share": "分享这篇文章",
     "copied": "已复制！",
     "authorBio": "TideNow 主笔，每周写一篇跨源热点的成因与趋势。",
-    "moreFrom": "更多 TideNow 文章 →"
+    "moreFrom": "更多 TideNow 文章 →",
+    "dailyArchive": "往期日报",
+    "dailyArchiveTitle": "往期日报",
+    "dailyArchiveSubtitle": "每天的热点日报，最新在前。",
+    "dailyArchiveEmpty": "还没有日报——设置好后，第二天早上就会有第一篇。"
   }
 }
