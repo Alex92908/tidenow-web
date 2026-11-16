@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { getTranslations } from "next-intl/server"
 import { ComposeApp } from "@/components/ComposeApp"
 import { getStale } from "@/lib/cache"
@@ -67,23 +66,16 @@ export default async function ComposePage({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0f]">
-      {/* Header — minimal, just back link + title */}
-      <header className="sticky top-0 z-20 border-b border-gray-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#0a0a0f]/80 backdrop-blur-xl">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link
-            href={locale === "zh" ? "/zh" : "/"}
-            className="text-xs text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors"
-          >
-            ← TideNow
-          </Link>
-          <h1 className="text-sm font-semibold text-gray-700 dark:text-zinc-300 truncate">
-            ✍️ {tCompose("title")}
-          </h1>
-          <p className="hidden md:block text-xs text-gray-400 dark:text-zinc-500 truncate ml-auto">
-            {tCompose("subtitle")}
-          </p>
-        </div>
-      </header>
+      {/* Page title row — the persistent SiteNav in layout.tsx is the
+          sticky bar now; this is just the page heading. */}
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 pt-5 pb-1 flex items-baseline gap-3 flex-wrap">
+        <h1 className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+          ✍️ {tCompose("title")}
+        </h1>
+        <p className="hidden md:block text-xs text-gray-400 dark:text-zinc-500">
+          {tCompose("subtitle")}
+        </p>
+      </div>
 
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
         <ComposeApp locale={locale === "zh" ? "zh" : "en"} initialData={initialData} sourceNames={sourceNames} />

@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { useAISummary } from "@/lib/use-ai-summary"
+import { getAISettings } from "@/lib/ai-settings"
 import { useTranslations } from "next-intl"
 import { motion, type Variants } from "framer-motion"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
+import { sourceMeta } from "@/sources/metadata"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
 
@@ -85,12 +88,31 @@ export function SourceCard({
           Row 2: drag handle / share / refresh / pin / hide, right-aligned. */}
       <div className="flex flex-col gap-1.5 px-4 py-3 border-b border-gray-100 dark:border-white/5">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg leading-none shrink-0">{meta.icon}</span>
-            <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate">
-              {sourceName}
-            </span>
-          </div>
+          {/* Source name links to its per-source page — but only for
+              built-in sources (custom RSS feeds have no /source/{id}
+              page, so they keep the plain-text header). */}
+          {sourceMeta[meta.id] ? (
+            <a
+              href={locale === "zh" ? `/zh/source/${meta.id}` : `/source/${meta.id}`}
+              title={locale === "zh" ? "查看来源页" : "View source page"}
+              className="group flex items-center gap-2 min-w-0"
+            >
+              <span className="text-lg leading-none shrink-0">{meta.icon}</span>
+              <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate group-hover:underline underline-offset-2 decoration-sky-500">
+                {sourceName}
+              </span>
+              <span aria-hidden className="text-xs text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                →
+              </span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg leading-none shrink-0">{meta.icon}</span>
+              <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate">
+                {sourceName}
+              </span>
+            </div>
+          )}
           {updatedAt > 0 && (
             <span
               className="text-[11px] text-gray-400 dark:text-zinc-600 shrink-0 whitespace-nowrap"
@@ -236,7 +258,20 @@ function NewsItemRow({
   locale: string
 }) {
   const isTop3 = rank <= 3
-  const { summary, loading: summaryLoading, hoverProps } = useAISummary(item.title, locale)
+  const { summary, loading: summaryLoading, hoverProps, trigger } = useAISummary(item.title, locale)
+  // No AI key configured? The click shows a one-time hint instead of
+  // silently doing nothing — a dead button teaches users the feature
+  // doesn't exist.
+  const [noKey, setNoKey] = useState(false)
+  function handleAiClick() {
+    if (summary || summaryLoading) return
+    if (!getAISettings()) {
+      setNoKey(true)
+      setTimeout(() => setNoKey(false), 4000)
+      return
+    }
+    trigger()
+  }
 
   return (
     <div
@@ -296,8 +331,27 @@ function NewsItemRow({
           {item.extra && !summary && (
             <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 leading-snug select-text">{item.extra}</p>
           )}
+          {noKey && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 leading-snug">
+              {locale === "zh" ? "AI 解读需要先设置 key：点顶部 ✦ 设置" : "AI summaries need a key — set one in ✦ above"}
+            </p>
+          )}
         </div>
       </a>
+      {/* Visible AI affordance — hover alone never taught users summaries
+          exist. Click fires the same summary immediately; hidden once the
+          summary is showing. */}
+      {!summary && (
+        <button
+          type="button"
+          onClick={handleAiClick}
+          disabled={summaryLoading}
+          title={locale === "zh" ? "AI 解读这条标题" : "AI summary for this headline"}
+          className="shrink-0 self-start mt-0.5 px-1.5 py-0.5 rounded-md border border-sky-200 dark:border-sky-500/30 text-[10px] font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-colors disabled:opacity-60"
+        >
+          {summaryLoading ? "✦ …" : "✦ AI"}
+        </button>
+      )}
       <ShareButton item={item} />
     </div>
   )

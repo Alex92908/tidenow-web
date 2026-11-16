@@ -171,6 +171,28 @@ export function TideBoard({
     }
   }, [])
 
+  // First-visit hint strip — visible until dismissed; the flag persists
+  // in localStorage so returning users never see it again. Starts
+  // visible on both server and first client render (no hydration
+  // mismatch); the effect hides it on mount when the flag is set.
+  const [hintVisible, setHintVisible] = useState(true)
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (localStorage.getItem("tidenow-hint-dismissed") === "1") setHintVisible(false)
+    } catch {
+      // ignore
+    }
+  }, [])
+  const dismissHint = useCallback(() => {
+    setHintVisible(false)
+    try {
+      localStorage.setItem("tidenow-hint-dismissed", "1")
+    } catch {
+      // ignore
+    }
+  }, [])
+
   // User-pinned source ids (favorites tab). Independent of hide/order.
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -503,6 +525,9 @@ export function TideBoard({
             <p className="mt-1 text-[13px] text-gray-500 dark:text-zinc-400 leading-snug">
               {tSite("heroTagline")}
             </p>
+            <p className="mt-1 text-[13px] font-medium text-gray-700 dark:text-zinc-200 leading-snug">
+              {tSite("heroValueProp")}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-zinc-300 shrink-0">
             {freshestAt > 0 ? (
@@ -527,9 +552,33 @@ export function TideBoard({
             >
               {tSite("heroReadTakes")}
             </a>
+            <a
+              href={locale === "zh" ? "/zh/compose" : "/compose"}
+              className="px-3 py-1.5 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold shadow-sm transition-colors"
+            >
+              {tSite("heroWriteTake")}
+            </a>
           </div>
         </div>
       </motion.div>
+
+      {/* First-visit hint strip — one line on what you can do here.
+          Dismissible; the dismissal persists in localStorage. */}
+      {hintVisible && (
+        <div className="flex items-center gap-2 rounded-xl border border-sky-200/70 dark:border-sky-500/20 bg-sky-50/70 dark:bg-sky-500/[0.07] px-3.5 py-2 text-[13px] text-sky-800 dark:text-sky-200/90 leading-snug">
+          <span aria-hidden>💡</span>
+          <p className="flex-1 min-w-0">{tSite("hintStrip")}</p>
+          <button
+            type="button"
+            onClick={dismissHint}
+            title={tSite("hintDismiss")}
+            aria-label={tSite("hintDismiss")}
+            className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-sky-500/70 hover:text-sky-700 dark:hover:text-sky-200 hover:bg-sky-500/10 transition-colors text-xs leading-none"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Tab bar / Search bar */}
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">

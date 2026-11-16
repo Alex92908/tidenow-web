@@ -6,7 +6,15 @@
     "heroLive": "{loaded} of {total} sources live",
     "heroUpdated": "updated {time}",
     "heroLoading": "Loading sources…",
-    "heroReadTakes": "Read our takes →"
+    "heroReadTakes": "Read our takes →",
+    "heroValueProp": "Read every hot list, write an AI take, publish it, and share it to 8 platforms.",
+    "heroWriteTake": "✍️ Write a take",
+    "navTrending": "Trending",
+    "navTakes": "Takes",
+    "navWrite": "Write",
+    "navPredict": "Predict",
+    "hintStrip": "Drag cards to reorder · Pin your favorites · Hover any headline for an AI summary · ✍️ Write a take and publish it",
+    "hintDismiss": "Dismiss"
   },
   "footer": {
     "feedback": "Feedback",
@@ -14,6 +22,8 @@
     "feedbackBody": "Hi,\n\nMy feedback about TideNow (www.tide-now.com):\n\n",
     "changelog": "Changelog",
     "posts": "Posts",
+    "write": "Write",
+    "predict": "Predict",
     "about": "About",
     "privacy": "Privacy",
     "contact": "Contact"
@@ -107,7 +117,9 @@
   },
   "compose": {
     "title": "Compose",
-    "subtitle": "Pick trending items → AI draft → edit → export"
+    "subtitle": "Pick trending items → AI draft → edit → export",
+    "publishHint": "🚀 Publish sends your article live on TideNow in one click — first time, paste a GitHub token in the Publish dialog (stored only in your browser).",
+    "distributeUnlock": "Write a draft to unlock distribution to X · Weibo · Zhihu · 小红书 · Bilibili · YouTube · 抖音 · TikTok"
   },
   "posts": {
     "title": "Posts",

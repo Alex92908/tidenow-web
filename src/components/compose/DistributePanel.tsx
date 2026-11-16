@@ -16,6 +16,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import {
   buildScenes,
   cpLen,
@@ -226,8 +227,22 @@ const PLATFORM_META: Record<
   xhs: { name: "小红书", icon: "📕", cover: { w: 1080, h: 1080 } },
 }
 
+// All 8 distribution targets, shown as greyed-out previews while there
+// is no draft yet (text platforms + video platforms).
+const PREVIEW_PLATFORMS: { icon: string; name: string }[] = [
+  { icon: "𝕏", name: "X / Twitter" },
+  { icon: "👁️", name: "Weibo 微博" },
+  { icon: "知", name: "Zhihu 知乎" },
+  { icon: "📕", name: "小红书" },
+  { icon: "📺", name: "Bilibili" },
+  { icon: "▶️", name: "YouTube" },
+  { icon: "🎵", name: "抖音" },
+  { icon: "🎵", name: "TikTok" },
+]
+
 export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
   const locale = uiLocale
+  const tCompose = useTranslations("compose")
   const empty = !markdown.trim()
   const draft: ParsedDraft | null = useMemo(
     () => (empty ? null : parseDraft(markdown, outputLocale)),
@@ -375,11 +390,30 @@ export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
       </div>
 
       {empty || !draft ? (
-        <p className="mt-4 text-sm text-gray-400 dark:text-zinc-500 italic">
-          {locale === "zh"
-            ? "先在上方生成或写一篇草稿，这里会自动生成各平台版本。"
-            : "Generate or write a draft above first — platform versions appear here automatically."}
-        </p>
+        // Preview state — the panel must advertise distribution BEFORE
+        // the user has a draft, or nobody learns it exists. The 8
+        // platform tiles are greyed-out previews, not buttons.
+        <div className="mt-4">
+          <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
+            🔒 {tCompose("distributeUnlock")}
+          </p>
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2" aria-hidden>
+            {PREVIEW_PLATFORMS.map((p) => (
+              <div
+                key={p.name}
+                className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02] px-3 py-2.5 opacity-60"
+              >
+                <span aria-hidden className="text-base leading-none">{p.icon}</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-zinc-400 truncate">{p.name}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-gray-400 dark:text-zinc-500 italic">
+            {locale === "zh"
+              ? "先在上方生成或写一篇草稿，这里会自动生成各平台版本。"
+              : "Generate or write a draft above first — platform versions appear here automatically."}
+          </p>
+        </div>
       ) : (
         <>
           {aiError && (

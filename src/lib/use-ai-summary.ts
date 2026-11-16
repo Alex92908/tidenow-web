@@ -92,5 +92,9 @@ export function useAISummary(title: string, locale: string) {
     summary,
     loading,
     hoverProps: { onMouseEnter: schedule, onMouseLeave: cancel },
+    // Click trigger — same fetch as hover, but immediate. Used by the
+    // visible "✦ AI" button so users can discover summaries without
+    // knowing to hover first.
+    trigger: fire,
   }
 }

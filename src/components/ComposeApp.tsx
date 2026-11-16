@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import type { NewsItem } from "@/lib/types"
 import { aggregateTrending } from "@/lib/aggregate"
 import {
@@ -41,6 +42,7 @@ const emptyDraft = (locale: "en" | "zh"): Draft => ({
 })
 
 export function ComposeApp({ locale, initialData, sourceNames }: Props) {
+  const tCompose = useTranslations("compose")
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [currentId, setCurrentId] = useState<string | null>(null)
   const [materials, setMaterials] = useState<DraftMaterial[]>([])
@@ -607,6 +609,12 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             </button>
           </div>
         </div>
+        {/* One-click publish, explained up front — visible even with no
+            draft, so users learn the 🚀 button exists (and what the
+            GitHub token is for) before they have anything to publish. */}
+        <p className="text-[11px] text-gray-400 dark:text-zinc-500 leading-snug">
+          {tCompose("publishHint")}
+        </p>
       </div>
 
       {/* RIGHT: drafts list. Mobile gets a capped height so a long

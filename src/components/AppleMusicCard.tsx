@@ -99,12 +99,21 @@ export function AppleMusicCard({
       {/* Header — two rows so the actions never get squeezed by long names. */}
       <div className="flex flex-col gap-1.5 px-4 py-3 border-b border-gray-100 dark:border-white/5">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
+          {/* Same per-source link as SourceCard (applemusic is a built-in
+              source, so the page always exists). */}
+          <a
+            href={locale === "zh" ? `/zh/source/${meta.id}` : `/source/${meta.id}`}
+            title={locale === "zh" ? "查看来源页" : "View source page"}
+            className="group flex items-center gap-2 min-w-0"
+          >
             <span className="text-lg leading-none shrink-0">{meta.icon}</span>
-            <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate">
+            <span className="font-semibold text-sm text-gray-900 dark:text-zinc-100 tracking-tight truncate group-hover:underline underline-offset-2 decoration-sky-500">
               {sourceName}
             </span>
-          </div>
+            <span aria-hidden className="text-xs text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              →
+            </span>
+          </a>
           {updatedAt > 0 && (
             <span
               className="text-[11px] text-gray-400 dark:text-zinc-600 shrink-0 whitespace-nowrap"

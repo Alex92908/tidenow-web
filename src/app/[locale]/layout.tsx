@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { getMessages, getTranslations } from "next-intl/server"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "@/components/ThemeProvider"
+import { SiteNav } from "@/components/SiteNav"
 import { Analytics } from "@vercel/analytics/next"
 import Script from "next/script"
 import "./tide.css"
@@ -95,7 +96,10 @@ export default async function LocaleLayout({
       <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-zinc-100 antialiased">
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            <TooltipProvider>
+              <SiteNav locale={locale} />
+              {children}
+            </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
         <Analytics />

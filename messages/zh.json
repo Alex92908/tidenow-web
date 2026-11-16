@@ -6,7 +6,15 @@
     "heroLive": "{total} 个来源中已有 {loaded} 个更新",
     "heroUpdated": "最后更新 {time}",
     "heroLoading": "正在加载来源…",
-    "heroReadTakes": "读我们的分析 →"
+    "heroReadTakes": "读我们的分析 →",
+    "heroValueProp": "刷遍全网热榜，AI 帮你写文章，一键发布，分发到 8 个平台。",
+    "heroWriteTake": "✍️ 写文章",
+    "navTrending": "热榜",
+    "navTakes": "文章",
+    "navWrite": "写文章",
+    "navPredict": "预测",
+    "hintStrip": "拖动卡片可排序 · 点 ★ 收藏来源 · 悬停标题看 AI 解读 · ✍️ 写文章一键发布",
+    "hintDismiss": "不再显示"
   },
   "footer": {
     "feedback": "反馈建议",
@@ -14,6 +22,8 @@
     "feedbackBody": "你好，\n\n关于 TideNow（www.tide-now.com）的反馈：\n\n",
     "changelog": "更新日志",
     "posts": "文章",
+    "write": "写文章",
+    "predict": "预测",
     "about": "关于",
     "privacy": "隐私",
     "contact": "联系"
@@ -107,7 +117,9 @@
   },
   "compose": {
     "title": "写文章",
-    "subtitle": "选热点 → AI 生成草稿 → 编辑 → 导出"
+    "subtitle": "选热点 → AI 生成草稿 → 编辑 → 导出",
+    "publishHint": "🚀 发布：一键把文章发到 TideNow 上线——首次使用时在发布弹窗里粘贴 GitHub token（只存在你的浏览器里）。",
+    "distributeUnlock": "写一篇草稿，即可解锁分发到 X · 微博 · 知乎 · 小红书 · Bilibili · YouTube · 抖音 · TikTok"
   },
   "posts": {
     "title": "文章",
