@@ -25,7 +25,7 @@ export function extractImageFromRss(block: string): string | undefined {
   return undefined
 }
 
-function decodeXmlEntities(s: string): string {
+export function decodeXmlEntities(s: string): string {
   return s
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")

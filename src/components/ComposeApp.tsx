@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { NewsItem } from "@/lib/types"
 import { aggregateTrending } from "@/lib/aggregate"
 import {
@@ -68,6 +68,14 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // and the leave-page guards. Initialised once the mount auto-pick
   // settles so the baseline reflects the canvas the user sees first.
   const [baseline, setBaseline] = useState<string | null>(null)
+  // Live source data. Starts as the server-rendered initialData, then
+  // the client-side fallback (below) merges in any sources the server
+  // cache didn't have on this instance. TopicPicker + the trending
+  // auto-pick both read from this, not from initialData directly.
+  const [data, setData] = useState<Record<string, { items: NewsItem[]; updatedAt: number }>>(initialData)
+  const [dataLoading, setDataLoading] = useState(false)
+  // Auto-pick runs at most once per mount (see autoPick below).
+  const didAutoPick = useRef(false)
   const compose = useAICompose()
 
   // Seed a fresh draft with the top cross-source trending clusters — same
@@ -75,7 +83,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   // the highest-signal stories (appearing in 2+ feeds), so they're the
   // sanest default vs. forcing the user to manually scan 60+ sources.
   const suggestedMaterials = useMemo(() => {
-    const topics = aggregateTrending(initialData, 2, 5)
+    const topics = aggregateTrending(data, 2, 5)
     const out: DraftMaterial[] = []
     const seen = new Set<string>()
     for (const t of topics) {
@@ -89,7 +97,54 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
       if (out.length >= 5) break
     }
     return out
-  }, [initialData, sourceNames])
+  }, [data, sourceNames])
+
+  // Client-side fallback: the server-rendered initialData only covers
+  // sources whose cache row existed on the rendering instance (Vercel's
+  // /tmp cache is per-instance and cold-starts empty). Fetch any missing
+  // sources directly, staggered like TideBoard, so /compose works even
+  // on a cold instance instead of showing "No source data yet".
+  useEffect(() => {
+    const missing = Object.keys(sourceNames).filter(
+      (id) => !initialData[id]?.items?.length
+    )
+    if (missing.length === 0) return
+    let cancelled = false
+    setDataLoading(true)
+    const timers: ReturnType<typeof setTimeout>[] = []
+    missing.forEach((id, i) => {
+      timers.push(
+        setTimeout(async () => {
+          try {
+            const res = await fetch(`/api/sources/${id}`)
+            if (!res.ok) return
+            const json = await res.json()
+            if (cancelled) return
+            if (Array.isArray(json.items) && json.items.length > 0) {
+              setData((prev) => ({
+                ...prev,
+                [id]: { items: json.items, updatedAt: json.updatedAt ?? Date.now() },
+              }))
+            }
+          } catch {
+            // Per-source failure is fine — that source just stays out of
+            // the picker; the API route already surfaces the error state.
+          }
+        }, i * 120)
+      )
+    })
+    // Stop showing "loading" once the last staggered fetch is due.
+    timers.push(
+      setTimeout(() => {
+        if (!cancelled) setDataLoading(false)
+      }, missing.length * 120 + 1000)
+    )
+    return () => {
+      cancelled = true
+      timers.forEach(clearTimeout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Stable JSON snapshot of "what the user has authored". Used to detect
   // dirty state. We deliberately exclude `currentId` and `autoPicked` —
@@ -114,6 +169,19 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const currentSnapshot = makeSnapshot(materials, markdown, style, customPrompt, outputLocale)
   const isDirty = baseline !== null && currentSnapshot !== baseline
 
+  // Auto-pick once from the current suggested materials. Guarded by a
+  // ref so a later client-side data fill (or the user clearing picks)
+  // never re-triggers it. Sets the baseline to the picked materials so
+  // the auto-pick itself isn't flagged as an unsaved change.
+  function autoPick(mats: DraftMaterial[]) {
+    if (didAutoPick.current || mats.length === 0) return
+    didAutoPick.current = true
+    setMaterials(mats)
+    setSourceFilter(new Set(mats.map((m) => m.sourceId)))
+    setAutoPicked(true)
+    setBaseline(makeSnapshot(mats, "", "deep", "", locale))
+  }
+
   // Every entry into /compose starts on a fresh canvas with the current
   // moment's cross-source picks. The previous behavior — auto-loading the
   // most recent saved draft — felt like reopening a stale tab: users came
@@ -123,24 +191,29 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
     setDrafts(listDrafts())
     const blank = emptyDraft(locale)
     setCurrentId(blank.id)
-    const initialMaterials =
-      suggestedMaterials.length > 0 ? suggestedMaterials : []
-    if (initialMaterials.length > 0) {
-      setMaterials(initialMaterials)
-      // Mirror the source filter to the sources we just auto-picked
-      // from. The "📚 Sources" chip pane now reflects current context:
-      // All is unhighlighted, the source chips for the picks are blue,
-      // and the trending list naturally narrows to nearby candidates
-      // if the user wants to swap.
-      setSourceFilter(new Set(initialMaterials.map((m) => m.sourceId)))
-      setAutoPicked(true)
+    if (suggestedMaterials.length > 0) {
+      autoPick(suggestedMaterials)
+    } else {
+      // No data yet — the client fallback may fill it in shortly. The
+      // baseline is the empty canvas; the late auto-pick below
+      // re-baselines when it fires.
+      setBaseline(makeSnapshot([], "", "deep", "", locale))
     }
     // Establish baseline AFTER the auto-pick settles. The auto-picked
     // materials are "what the user opened to" — they aren't unsaved
     // changes themselves; only edits *on top* of this baseline are.
-    setBaseline(makeSnapshot(initialMaterials, "", "deep", "", locale))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Late auto-pick: if the server gave us nothing and the client-side
+  // fallback filled in data afterwards, pick from it once — but only if
+  // the user hasn't already picked (or cleared) anything.
+  useEffect(() => {
+    if (materials.length === 0 && !didAutoPick.current && suggestedMaterials.length > 0) {
+      autoPick(suggestedMaterials)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedMaterials])
 
   // beforeunload guard — fires on tab close, refresh, and external nav.
   // Browsers ignore the custom string (they show their generic "Leave
@@ -441,7 +514,8 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         )}
         <div className="h-[60vh] lg:h-auto lg:flex-1 lg:min-h-0">
           <TopicPicker
-            initialData={initialData}
+            initialData={data}
+            loading={dataLoading}
             sourceNames={sourceNames}
             selected={materials}
             onChange={handleMaterialsChange}

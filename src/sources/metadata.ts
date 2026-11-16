@@ -158,11 +158,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-blue-400 to-sky-300",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  linuxdo: {
-    id: "linuxdo", icon: "🐧", column: "tech",
-    accentColor: "bg-gradient-to-r from-yellow-500 to-orange-400",
-    interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
   github: {
     id: "github", icon: "🐙", column: "tech",
     accentColor: "bg-gradient-to-r from-gray-500 to-gray-700",
@@ -334,17 +329,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   // twitch: disabled (2FA blocker — needs non-CN phone to register a dev app)
-  // ── Design (tech-adjacent) ────────────────────────────
-  awwwards: {
-    id: "awwwards", icon: "🏆", column: "tech",
-    accentColor: "bg-gradient-to-r from-rose-500 to-pink-400",
-    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
-  behance: {
-    id: "behance", icon: "🎨", column: "tech",
-    accentColor: "bg-gradient-to-r from-blue-600 to-indigo-500",
-    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
   // ── Sports (global) ───────────────────────────────────
   bbcsport: {
     id: "bbcsport", icon: "⚽", column: "global",
@@ -379,15 +363,15 @@ export const SOURCE_IDS_EN: string[] = [
   // AI
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
   "deepseek", "doubao", "qwen", "kimi",
-  // Tech / design
-  "github", "awwwards", "behance",
+  // Tech
+  "github",
   // Finance
   "wallstreetcn",
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
-  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
+  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // TideNow editorial — last by design (gets pinned by readers who care)
   "tidenow-posts",
@@ -398,9 +382,9 @@ export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
-  // Tech / design
-  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta", "linuxdo",
-  "github", "hackernews", "awwwards", "behance",
+  // Tech
+  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta",
+  "github", "hackernews",
   // Finance
   "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // Chinese international news

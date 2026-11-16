@@ -373,9 +373,15 @@ export function TideBoard({
       const res = await fetch(`/api/sources/${id}${force ? "?force=1" : ""}`)
       if (!res.ok) throw new Error("failed")
       const data = await res.json()
+      // The API signals failure in-band (error: true, or pending with no
+      // items) instead of an HTTP error. A 200 with [] used to clear the
+      // error flag and render a silently empty card.
+      const failed =
+        data.error === true ||
+        (data.pending === true && (!data.items || data.items.length === 0))
       setState((prev) => ({
         ...prev,
-        [id]: { items: data.items, updatedAt: data.updatedAt, loading: false, error: false },
+        [id]: { items: data.items ?? [], updatedAt: data.updatedAt ?? 0, loading: false, error: failed },
       }))
     } catch {
       setState((prev) => ({ ...prev, [id]: { ...prev[id], loading: false, error: true } }))

@@ -20,18 +20,21 @@ interface BiliArchive {
   stat: { view: number }
 }
 
-// Bilibili 美食区（rid=211）最新视频。不需要 auth / WBI 签名。
+// Bilibili 美食区（rid=211）热门视频。原来的 region 动态接口
+// (dynamic/region) 现在对数据中心 IP 返回非零 code（疑似 WBI 校验），
+// 改用 ranking v2 接口，实测 2026-11-15 可用、无需签名，返回结构
+// 与 region 接口一致（bvid/title/pic/owner/stat）。
 export async function fetch(): Promise<NewsItem[]> {
   const res = await myFetch(
-    "https://api.bilibili.com/x/web-interface/dynamic/region?ps=25&rid=211",
+    "https://api.bilibili.com/x/web-interface/ranking/v2?rid=211&type=all",
     { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" } }
   )
   const data = (await res.json()) as {
     code: number
-    data?: { archives?: BiliArchive[] }
+    data?: { list?: BiliArchive[] }
   }
-  if (data.code !== 0 || !data.data?.archives) return []
-  return data.data.archives.slice(0, 25).map((v) => {
+  if (data.code !== 0 || !data.data?.list) return []
+  return data.data.list.slice(0, 25).map((v) => {
     const views =
       v.stat.view >= 10000
         ? `${(v.stat.view / 10000).toFixed(1)}万播放`

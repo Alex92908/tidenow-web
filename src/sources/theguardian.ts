@@ -1,5 +1,5 @@
 import { myFetch } from "@/lib/fetch"
-import { extractImageFromRss } from "@/lib/rss"
+import { decodeXmlEntities, extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {
@@ -25,8 +25,14 @@ export async function fetch(): Promise<NewsItem[]> {
       ?.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim() ?? ""
     const link = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim()
       ?? block.match(/<guid[^>]*>([\s\S]*?)<\/guid>/)?.[1]?.trim() ?? ""
-    const desc = block.match(/<description>([\s\S]*?)<\/description>/)?.[1]
-      ?.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").trim().slice(0, 80)
+    // The Guardian double-encodes its <description> HTML
+    // (&lt;p&gt;...), so decode entities FIRST and only then strip tags.
+    // Stripping first is a no-op (there are no literal < > chars), and
+    // decoding only &amp; leaves the literal "&lt;p&gt;" text in the UI.
+    const rawDesc = block.match(/<description>([\s\S]*?)<\/description>/)?.[1]
+    const desc = rawDesc
+      ? decodeXmlEntities(rawDesc).replace(/<[^>]+>/g, "").trim().slice(0, 80)
+      : undefined
     if (title && link) {
       items.push({ id: `guardian-${i}`, title, url: link, extra: desc || undefined })
     }

@@ -20,6 +20,24 @@ export async function fetch(): Promise<NewsItem[]> {
   // X has no real "worldwide" trends — the data is always per-WOEID. We pin
   // to United States as the canonical English-language trend pool; the home
   // page flips between countries hour to hour which is not what users expect.
+  //
+  // trends24 is the primary source but it blocks/rate-limits datacenter
+  // egress IPs (Vercel). getdaytrends is the fallback — same shape of
+  // data, different host, so one of them usually answers.
+  try {
+    const items = await fetchTrends24()
+    if (items.length > 0) return items
+  } catch {
+    // Fall through to the mirror.
+  }
+  try {
+    return await fetchGetDayTrends()
+  } catch {
+    return []
+  }
+}
+
+async function fetchTrends24(): Promise<NewsItem[]> {
   const res = await myFetch("https://trends24.in/united-states/", {
     headers: { Accept: "text/html,application/xhtml+xml" },
   })
@@ -48,6 +66,34 @@ export async function fetch(): Promise<NewsItem[]> {
       id: title,
       title,
       url,
+    })
+    if (out.length >= 50) break
+  }
+  return out
+}
+
+// Mirror: getdaytrends.com lists the same US trends as
+// <a href="/united-states/trend/NAME/">DISPLAY</a>. We link each trend
+// back to X search, the same thing trends24 does.
+async function fetchGetDayTrends(): Promise<NewsItem[]> {
+  const res = await myFetch("https://getdaytrends.com/united-states/", {
+    headers: { Accept: "text/html,application/xhtml+xml" },
+  })
+  if (!res.ok) throw new Error(`getdaytrends ${res.status}`)
+  const html = await res.text()
+  const rowRe =
+    /<a[^>]+href=["']\/united-states\/trend\/([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+  const out: NewsItem[] = []
+  const seen = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = rowRe.exec(html)) !== null) {
+    const title = decodeEntities(stripTags(m[2])).trim()
+    if (!title || seen.has(title)) continue
+    seen.add(title)
+    out.push({
+      id: title,
+      title,
+      url: `https://x.com/search?q=${encodeURIComponent(title)}`,
     })
     if (out.length >= 50) break
   }

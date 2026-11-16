@@ -7,6 +7,10 @@ import { materialFromItem, type DraftMaterial } from "@/lib/compose-storage"
 
 interface Props {
   initialData: Record<string, { items: NewsItem[]; updatedAt: number }>
+  /** True while the client-side fallback fetch is still loading sources
+   *  the server didn't have. Shows a loading state instead of the
+   *  "no data" copy. */
+  loading?: boolean
   sourceNames: Record<string, string>
   selected: DraftMaterial[]
   onChange: (next: DraftMaterial[]) => void
@@ -25,6 +29,7 @@ const MAX_SELECTED = 5
 // An empty source set = "show all" — same as the All chip being active.
 export function TopicPicker({
   initialData,
+  loading,
   sourceNames,
   selected,
   onChange,
@@ -177,17 +182,23 @@ export function TopicPicker({
       <div className="overflow-y-auto rounded-lg border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/40 p-2">
         {empty ? (
           <p className="text-center text-xs text-gray-400 dark:text-zinc-600 py-6 leading-relaxed">
-            {locale === "zh" ? (
+            {loading ? (
+              locale === "zh" ? (
+                <>正在加载源数据…</>
+              ) : (
+                <>Loading sources…</>
+              )
+            ) : locale === "zh" ? (
               <>
-                还没有源数据
+                暂无源数据
                 <br />
-                请先打开 <a href="/zh" className="underline hover:text-sky-500">首页</a> 加载一次
+                源数据会自动加载，请稍后重试
               </>
             ) : (
               <>
                 No source data yet
                 <br />
-                Open the <a href="/" className="underline hover:text-sky-500">home page</a> first to load it
+                Sources load automatically — please retry in a moment
               </>
             )}
           </p>

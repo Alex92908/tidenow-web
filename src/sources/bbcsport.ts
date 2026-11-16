@@ -1,5 +1,5 @@
 import { myFetch } from "@/lib/fetch"
-import { extractImageFromRss } from "@/lib/rss"
+import { decodeXmlEntities, extractImageFromRss } from "@/lib/rss"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 
 export const meta: SourceMeta = {
@@ -25,10 +25,13 @@ export async function fetch(): Promise<NewsItem[]> {
     const title = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1]?.trim()
       ?? block.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim() ?? ""
     const link = block.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() ?? ""
-    const desc = block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)?.[1]
-      ?.replace(/<[^>]+>/g, "").trim().slice(0, 80)
+    // Decode entities before stripping tags (see theguardian.ts).
+    const rawDesc =
+      block.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)?.[1]
       ?? block.match(/<description>([\s\S]*?)<\/description>/)?.[1]
-      ?.replace(/<[^>]+>/g, "").trim().slice(0, 80)
+    const desc = rawDesc
+      ? decodeXmlEntities(rawDesc).replace(/<[^>]+>/g, "").trim().slice(0, 80)
+      : undefined
     if (title && link) {
       items.push({
         id: `bbcsport-${items.length}`,

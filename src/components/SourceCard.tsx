@@ -162,6 +162,20 @@ export function SourceCard({
               {t("retry")}
             </button>
           </div>
+        ) : visible.length === 0 ? (
+          // Not an error, but nothing to show — e.g. a source whose feed
+          // legitimately has no items right now. Say so explicitly
+          // instead of rendering a bare header with an empty body.
+          <div className="px-4 py-10 flex flex-col items-center gap-2 text-gray-400 dark:text-zinc-500 text-sm">
+            <span className="text-2xl">📭</span>
+            <p>{t("empty")}</p>
+            <button
+              onClick={onRefresh}
+              className="text-xs text-gray-400 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200 underline underline-offset-2"
+            >
+              {t("retry")}
+            </button>
+          </div>
         ) : (
           visible.map((item, i) => (
             <NewsItemRow key={item.id} item={item} rank={i + 1} accentColor={meta.accentColor} locale={locale} />

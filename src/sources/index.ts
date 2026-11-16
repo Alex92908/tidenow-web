@@ -37,7 +37,6 @@ import * as ifeng from "./ifeng"
 import * as tencent from "./tencent"
 import * as solidot from "./solidot"
 import * as pcbeta from "./pcbeta"
-import * as linuxdo from "./linuxdo"
 import * as cls from "./cls"
 import * as gelonghui from "./gelonghui"
 import * as jin10 from "./jin10"
@@ -66,8 +65,6 @@ import * as apnews from "./apnews"
 import * as anilist from "./anilist"
 import * as tmdbMovies from "./tmdb-movies"
 import * as tmdbTv from "./tmdb-tv"
-import * as awwwards from "./awwwards"
-import * as behance from "./behance"
 import * as bbcsport from "./bbcsport"
 import * as bilifood from "./bilifood"
 import * as tidenowPosts from "./tidenow-posts"
@@ -96,7 +93,6 @@ export const sources = {
   v2ex,
   solidot,
   pcbeta,
-  linuxdo,
   github,
   hackernews,
   // Finance
@@ -142,9 +138,6 @@ export const sources = {
   "tmdb-tv": tmdbTv,
   anilist,
   // twitch — disabled until a non-CN phone is available to clear 2FA
-  // Design (tech-adjacent)
-  awwwards,
-  behance,
   // Sports
   bbcsport,
   // Chinese food (Bilibili 美食区)

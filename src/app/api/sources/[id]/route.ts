@@ -70,18 +70,25 @@ export async function GET(
 
   try {
     const items = sanitize(await source.fetch())
-    if (items.length > 0) setCached(id, items)
-    return withCors(Response.json({ items, updatedAt: Date.now(), cached: false }))
-  } catch (e) {
-    const stale = getStale(id)
-    if (stale) {
-      return withCors(Response.json({ items: stale.items, updatedAt: stale.updatedAt, cached: true, stale: true }))
+    if (items.length > 0) {
+      setCached(id, items)
+      return withCors(Response.json({ items, updatedAt: Date.now(), cached: false }))
     }
+    // An upstream that returns nothing (blocked, rate-limited, frozen
+    // feed) is a failure, not a success. Caching/serving [] as "fresh"
+    // is what produced permanently empty cards with no error state.
+    // Fall through to the stale/pending path below.
+    console.warn(`[${id}] fetch returned 0 items`)
+  } catch (e) {
     console.error(`[${id}] fetch error:`, e)
-    // Cold-start with no stale cache + flaky upstream is a frequent serverless
-    // edge case. Returning 200 + empty + pending lets the card show a benign
-    // "no data yet" state and keeps the route's error rate honest — only real
-    // user-visible failures count.
-    return withCors(Response.json({ items: [], updatedAt: Date.now(), pending: true }))
   }
+  // Failure path (empty result or throw): serve the stale cache if there
+  // is one, else signal pending + error so the card shows a retry state
+  // instead of a silently empty body. HTTP stays 200 + pending so the
+  // route's error rate still only counts real user-visible failures.
+  const stale = getStale(id)
+  if (stale) {
+    return withCors(Response.json({ items: stale.items, updatedAt: stale.updatedAt, cached: true, stale: true }))
+  }
+  return withCors(Response.json({ items: [], updatedAt: Date.now(), pending: true, error: true }))
 }
