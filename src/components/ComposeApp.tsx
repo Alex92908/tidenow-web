@@ -19,7 +19,7 @@ import { StylePicker } from "@/components/compose/StylePicker"
 import { DraftEditor } from "@/components/compose/DraftEditor"
 import { DraftList } from "@/components/compose/DraftList"
 import { ExportButtons } from "@/components/compose/ExportButtons"
-import { PublishButton } from "@/components/compose/PublishButton"
+import { PublishButton, PublishToSiteButton } from "@/components/compose/PublishButton"
 
 interface Props {
   locale: "en" | "zh"
@@ -573,6 +573,7 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
             )}
             <CopyMarkdownButton markdown={markdown} locale={locale} />
             <ShareArticleButton markdown={markdown} locale={locale} />
+            <PublishToSiteButton markdown={markdown} outputLocale={outputLocale} uiLocale={locale} />
             <PublishButton markdown={markdown} outputLocale={outputLocale} uiLocale={locale} />
             {isCurrentSaved && (
               <button
