@@ -1,8 +1,6 @@
 "use client"
 
-import { useState } from "react"
 import { useAISummary } from "@/lib/use-ai-summary"
-import { getAISettings } from "@/lib/ai-settings"
 import { useTranslations } from "next-intl"
 import { motion, type Variants } from "framer-motion"
 import type { NewsItem, SourceMeta } from "@/lib/types"
@@ -10,7 +8,6 @@ import { formatDistanceToNow } from "@/lib/time"
 import { sourceMeta } from "@/sources/metadata"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
-import { AISettingsModal } from "@/components/AISettingsModal"
 
 // Staggered entrance: the delay lives in the variant (mount only) so
 // drag-reorder layout shifts stay instant — a delay on the root
@@ -234,8 +231,6 @@ export function SourceCard({
               key={item.id}
               item={item}
               rank={i + 1}
-              accentColor={meta.accentColor}
-              icon={meta.icon}
               locale={locale}
             />
           ))
@@ -248,32 +243,18 @@ export function SourceCard({
 function NewsItemRow({
   item,
   rank,
-  accentColor,
-  icon,
   locale,
 }: {
   item: NewsItem
   rank: number
-  accentColor: string
-  icon: string
   locale: string
 }) {
   const isTop3 = rank <= 3
-  const { summary, loading: summaryLoading, hoverProps, trigger } = useAISummary(item.title, locale)
-  // No AI key configured? Open the settings modal right here, in place —
-  // the old behaviour showed a text hint ("go set it in ✦ above") that
-  // sent the user hunting for a tiny icon. Every other BYO-key product
-  // (Vibedit, Devin) puts the setup affordance at the point of use:
-  // one click instead of five.
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  function handleAiClick() {
-    if (summary || summaryLoading) return
-    if (!getAISettings()) {
-      setSettingsOpen(true)
-      return
-    }
-    trigger()
-  }
+  // Hover summary only — no visible AI button on the row (lee: the ✦ AI
+  // icon on every row is clutter). Hovering still shows a one-line
+  // summary on desktop when a key is set; with no key it silently does
+  // nothing (useAISummary returns early).
+  const { summary, loading: summaryLoading, hoverProps } = useAISummary(item.title, locale)
 
   return (
     <div
@@ -302,15 +283,11 @@ function NewsItemRow({
         {item.image ? (
           <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={40} />
         ) : (
-          // No thumbnail from the upstream: a gradient tile in the
-          // source's own accent colors + icon, so every row has the
-          // same 40px visual anchor instead of a ragged left edge.
-          <span
-            aria-hidden
-            className={`w-10 h-10 shrink-0 rounded-md ${accentColor} flex items-center justify-center text-base leading-none`}
-          >
-            {icon}
-          </span>
+          // No thumbnail from the upstream: render nothing. The old
+          // gradient tile in the source's accent colors + emoji was a
+          // fake image (lee: "不要这种深色背景的假图片") — rows without
+          // a real image are text-only, like the real Weibo hot list.
+          null
         )}
         <div className="flex-1 min-w-0">
           {/* No line-clamp — the title shows in full and the row height
@@ -335,22 +312,7 @@ function NewsItemRow({
           )}
         </div>
       </a>
-      {/* Visible AI affordance — hover alone never taught users summaries
-          exist. Click fires the same summary immediately; hidden once the
-          summary is showing. */}
-      {!summary && (
-        <button
-          type="button"
-          onClick={handleAiClick}
-          disabled={summaryLoading}
-          title={locale === "zh" ? "AI 解读这条标题" : "AI summary for this headline"}
-          className="shrink-0 self-start mt-0.5 px-1.5 py-0.5 rounded-md border border-sky-200 dark:border-sky-500/30 text-[10px] font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-colors disabled:opacity-60"
-        >
-          {summaryLoading ? "✦ …" : "✦ AI"}
-        </button>
-      )}
       <ShareButton item={item} />
-      {settingsOpen && <AISettingsModal locale={locale} onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }
