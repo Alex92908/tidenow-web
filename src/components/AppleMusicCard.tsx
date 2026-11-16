@@ -94,7 +94,8 @@ export function AppleMusicCard({
       transition={{ layout: { duration: 0.2, ease: "easeOut" } }}
       className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 hover:shadow-lg hover:shadow-gray-200/70 dark:hover:shadow-black/40 hover:border-gray-300 dark:hover:border-white/10 transition-shadow duration-200"
     >
-      <div className={`h-0.5 w-full ${meta.accentColor}`} />
+      {/* No accent bar on top — same coloured-line motif removed from
+          SourceCard / TrendingTopics (lee: "卡片上面是一条横线"). */}
 
       {/* Header — two rows so the actions never get squeezed by long names. */}
       <div className="flex flex-col gap-1.5 px-4 py-3 border-b border-gray-100 dark:border-white/5">
