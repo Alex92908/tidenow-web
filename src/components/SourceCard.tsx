@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "@/lib/time"
 import { sourceMeta } from "@/sources/metadata"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
+import { AISettingsModal } from "@/components/AISettingsModal"
 
 // Staggered entrance: the delay lives in the variant (mount only) so
 // drag-reorder layout shifts stay instant — a delay on the root
@@ -259,15 +260,16 @@ function NewsItemRow({
 }) {
   const isTop3 = rank <= 3
   const { summary, loading: summaryLoading, hoverProps, trigger } = useAISummary(item.title, locale)
-  // No AI key configured? The click shows a one-time hint instead of
-  // silently doing nothing — a dead button teaches users the feature
-  // doesn't exist.
-  const [noKey, setNoKey] = useState(false)
+  // No AI key configured? Open the settings modal right here, in place —
+  // the old behaviour showed a text hint ("go set it in ✦ above") that
+  // sent the user hunting for a tiny icon. Every other BYO-key product
+  // (Vibedit, Devin) puts the setup affordance at the point of use:
+  // one click instead of five.
+  const [settingsOpen, setSettingsOpen] = useState(false)
   function handleAiClick() {
     if (summary || summaryLoading) return
     if (!getAISettings()) {
-      setNoKey(true)
-      setTimeout(() => setNoKey(false), 4000)
+      setSettingsOpen(true)
       return
     }
     trigger()
@@ -331,11 +333,6 @@ function NewsItemRow({
           {item.extra && !summary && (
             <p className="text-[11px] text-gray-400 dark:text-zinc-600 mt-0.5 leading-snug select-text">{item.extra}</p>
           )}
-          {noKey && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 leading-snug">
-              {locale === "zh" ? "AI 解读需要先设置 key：点顶部 ✦ 设置" : "AI summaries need a key — set one in ✦ above"}
-            </p>
-          )}
         </div>
       </a>
       {/* Visible AI affordance — hover alone never taught users summaries
@@ -353,6 +350,7 @@ function NewsItemRow({
         </button>
       )}
       <ShareButton item={item} />
+      {settingsOpen && <AISettingsModal locale={locale} onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

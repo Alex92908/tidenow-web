@@ -18,6 +18,10 @@ interface ComposeState {
   markdown: string
   loading: boolean
   error: string | null
+  /** True when generation stopped because no usable AI key is configured —
+   * the UI renders an inline "Set AI key" button next to the error instead
+   * of telling the user to go hunt for a settings icon elsewhere. */
+  needsKey: boolean
 }
 
 // Companion to useAISummary, but for full-article generation. Returns the
@@ -25,11 +29,11 @@ interface ComposeState {
 // just bind it like a normal field. We deliberately do NOT auto-trigger on
 // material changes — generation is explicit, behind a "✦ Generate" button.
 export function useAICompose() {
-  const [state, setState] = useState<ComposeState>({ markdown: "", loading: false, error: null })
+  const [state, setState] = useState<ComposeState>({ markdown: "", loading: false, error: null, needsKey: false })
 
   const generate = useCallback(async ({ style, customPrompt, materials, locale, foresight }: ComposeArgs) => {
     if (materials.length === 0) {
-      setState({ markdown: "", loading: false, error: "No materials selected" })
+      setState({ markdown: "", loading: false, error: "No materials selected", needsKey: false })
       return
     }
     const settings = getAISettings()
@@ -37,7 +41,8 @@ export function useAICompose() {
       setState({
         markdown: "",
         loading: false,
-        error: "AI key not set. Configure in the ✦ button on the home page.",
+        error: "AI key not set.",
+        needsKey: true,
       })
       return
     }
@@ -48,12 +53,13 @@ export function useAICompose() {
       setState({
         markdown: "",
         loading: false,
-        error: "On-device Gemini Nano is too small for article generation. Pick a cloud provider in ✦.",
+        error: "On-device Gemini Nano is too small for article generation. Pick a cloud provider.",
+        needsKey: true,
       })
       return
     }
 
-    setState({ markdown: "", loading: true, error: null })
+    setState({ markdown: "", loading: true, error: null, needsKey: false })
     try {
       const res = await fetch("/api/compose", {
         method: "POST",
@@ -76,17 +82,17 @@ export function useAICompose() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setState({ markdown: "", loading: false, error: data.error ?? `HTTP ${res.status}` })
+        setState({ markdown: "", loading: false, error: data.error ?? `HTTP ${res.status}`, needsKey: false })
         return
       }
-      setState({ markdown: data.markdown ?? "", loading: false, error: null })
+      setState({ markdown: data.markdown ?? "", loading: false, error: null, needsKey: false })
     } catch (e) {
-      setState({ markdown: "", loading: false, error: (e as Error).message })
+      setState({ markdown: "", loading: false, error: (e as Error).message, needsKey: false })
     }
   }, [])
 
   const reset = useCallback(() => {
-    setState({ markdown: "", loading: false, error: null })
+    setState({ markdown: "", loading: false, error: null, needsKey: false })
   }, [])
 
   return { ...state, generate, reset }

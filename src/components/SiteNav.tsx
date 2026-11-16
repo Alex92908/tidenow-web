@@ -111,8 +111,9 @@ export function SiteNav({ locale }: { locale: string }) {
           )}
           {/* AI key setting is always visible: the key is needed on every
               page (summaries on the board + source pages, generate /
-              rewrite on /compose), and the "set one in ✦ above" hint
-              points at it from pages where it used to be hidden. */}
+              rewrite on /compose, translate on posts, ForeSight on
+              /predict), and the in-flow "set AI key" buttons open the
+              same modal where the feature is used. */}
           <AISettingsButton locale={locale} />
           <ThemeToggle />
           <LocaleSwitch />

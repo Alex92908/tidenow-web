@@ -30,6 +30,7 @@ import {
 } from "@/lib/distribute"
 import { downloadCanvasPng, drawCoverCard } from "@/lib/cover-card"
 import { getAISettings } from "@/lib/ai-settings"
+import { AISettingsModal } from "@/components/AISettingsModal"
 import { VideoKit } from "@/components/compose/VideoKit"
 
 type PlatformId = "x" | "weibo" | "zhihu" | "xhs"
@@ -267,6 +268,11 @@ export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
     xhs: false,
   })
   const [aiError, setAiError] = useState<string | null>(null)
+  // True when AI rewrite failed for lack of a key — the UI renders an
+  // inline "Set AI key" button next to the error (in-flow setup, the way
+  // Vibedit/Devin do it) instead of pointing at a nav icon.
+  const [aiNeedsKey, setAiNeedsKey] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   async function aiRewrite(platform: PlatformId) {
     if (!draft) return
@@ -274,12 +280,14 @@ export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
     if (!settings?.apiKey || settings.provider === "gemini-nano") {
       setAiError(
         locale === "zh"
-          ? "AI 改写需要先在主页 ✦ 里设置云端 AI key（OpenAI / Claude / DeepSeek / 智谱 / Gemini）。模板版可直接用，无需 key。"
-          : "AI rewrite needs a cloud AI key set in ✦ on the home page (OpenAI / Claude / DeepSeek / Zhipu / Gemini). The template version works without one."
+          ? "AI 改写需要先设置云端 AI key（OpenAI / Claude / DeepSeek / 智谱 / Gemini）。模板版可直接用，无需 key。"
+          : "AI rewrite needs a cloud AI key (OpenAI / Claude / DeepSeek / Zhipu / Gemini). The template version works without one."
       )
+      setAiNeedsKey(true)
       return
     }
     setAiError(null)
+    setAiNeedsKey(false)
     setAiLoading((prev) => ({ ...prev, [platform]: true }))
     try {
       const excerpt = draft.paragraphs.join("\n\n").slice(0, 3000)
@@ -318,6 +326,7 @@ export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
       }
     } catch (e) {
       setAiError((e as Error).message)
+      setAiNeedsKey(false)
     } finally {
       setAiLoading((prev) => ({ ...prev, [platform]: false }))
     }
@@ -421,6 +430,16 @@ export function DistributePanel({ markdown, outputLocale, uiLocale }: Props) {
               {aiError}
             </p>
           )}
+          {aiNeedsKey && (
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="mt-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-200 dark:ring-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+            >
+              ⚙️ {locale === "zh" ? "设置 AI Key" : "Set AI key"}
+            </button>
+          )}
+          {settingsOpen && <AISettingsModal locale={locale} onClose={() => setSettingsOpen(false)} />}
 
           {/* Text platforms */}
           <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">

@@ -4,6 +4,7 @@ import { Fragment, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { getAISettings } from "@/lib/ai-settings"
+import { AISettingsModal } from "@/components/AISettingsModal"
 
 interface PredictResult {
   domain: string
@@ -309,6 +310,11 @@ export function PredictApp({ locale }: Props) {
   const [domain, setDomain] = useState("auto")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // True when a flow stopped because no usable AI key is configured —
+  // the UI renders an inline "Set AI key" button next to the error
+  // (in-flow setup) instead of pointing at a nav icon.
+  const [needsKey, setNeedsKey] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [result, setResult] = useState<PredictResult | null>(null)
   const [scan, setScan] = useState<MarketScan | null>(null)
   const [funnelMode, setFunnelMode] = useState<FunnelMode>("growth")
@@ -363,10 +369,11 @@ export function PredictApp({ locale }: Props) {
     if (!settings?.provider || !settings?.apiKey) {
       setError(
         t(
-          "请先在主页右上角 ✦ 按钮里设置 AI key。",
-          "Set an AI key first via the ✦ button in the home page header."
+          "请先设置 AI key。",
+          "Set an AI key first."
         )
       )
+      setNeedsKey(true)
       return null
     }
     if (settings.provider === "gemini" || settings.provider === "gemini-nano") {
@@ -376,13 +383,16 @@ export function PredictApp({ locale }: Props) {
           "ForeSight needs a DeepSeek / OpenAI / Anthropic / Zhipu key. Gemini and on-device Nano aren't supported."
         )
       )
+      setNeedsKey(true)
       return null
     }
+    setNeedsKey(false)
     return { provider: settings.provider, apiKey: settings.apiKey }
   }
 
   async function handleScan(kind: ScanKind) {
     setError(null)
+    setNeedsKey(false)
     const key = readKey()
     if (!key) return
     setLoading(true)
@@ -962,6 +972,16 @@ export function PredictApp({ locale }: Props) {
       {error && (
         <p className="text-xs text-rose-500 leading-snug">{error}</p>
       )}
+      {needsKey && (
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-200 dark:ring-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+        >
+          ⚙️ {t("设置 AI Key", "Set AI key")}
+        </button>
+      )}
+      {settingsOpen && <AISettingsModal locale={locale} onClose={() => setSettingsOpen(false)} />}
 
       {/* Lottery quick-pick result — balls + honest note */}
       {lottery && (

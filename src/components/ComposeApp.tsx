@@ -22,6 +22,7 @@ import { DraftList } from "@/components/compose/DraftList"
 import { ExportButtons } from "@/components/compose/ExportButtons"
 import { PublishButton, PublishToSiteButton } from "@/components/compose/PublishButton"
 import { DistributePanel } from "@/components/compose/DistributePanel"
+import { AISettingsModal } from "@/components/AISettingsModal"
 
 interface Props {
   locale: "en" | "zh"
@@ -43,6 +44,9 @@ const emptyDraft = (locale: "en" | "zh"): Draft => ({
 
 export function ComposeApp({ locale, initialData, sourceNames }: Props) {
   const tCompose = useTranslations("compose")
+  // Opens the AI key modal in place when generation fails for lack of a
+  // key — the user sets it right here instead of hunting for a nav icon.
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [currentId, setCurrentId] = useState<string | null>(null)
   const [materials, setMaterials] = useState<DraftMaterial[]>([])
@@ -550,6 +554,16 @@ export function ComposeApp({ locale, initialData, sourceNames }: Props) {
         {compose.error && (
           <p className="text-[11px] text-rose-500 leading-snug">{compose.error}</p>
         )}
+        {compose.needsKey && (
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-200 dark:ring-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+          >
+            ⚙️ {locale === "zh" ? "设置 AI Key" : "Set AI key"}
+          </button>
+        )}
+        {settingsOpen && <AISettingsModal locale={locale} onClose={() => setSettingsOpen(false)} />}
       </div>
 
       {/* CENTER: editor + preview */}

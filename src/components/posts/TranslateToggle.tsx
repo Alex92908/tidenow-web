@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { getAISettings } from "@/lib/ai-settings"
+import { AISettingsModal } from "@/components/AISettingsModal"
 
 interface Props {
   slug: string
@@ -29,6 +30,11 @@ export function TranslateToggle({ slug, postLocale, uiLocale, body }: Props) {
   const [showing, setShowing] = useState<"original" | "translated">("original")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // True when translation stopped because no usable AI key is configured —
+  // the UI renders an inline "Set AI key" button next to the error
+  // (in-flow setup) instead of pointing at a nav icon.
+  const [needsKey, setNeedsKey] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Hydrate from cache so a returning visitor sees the toggle act as a
   // free swap, not as "translate again."
@@ -53,9 +59,10 @@ export function TranslateToggle({ slug, postLocale, uiLocale, body }: Props) {
     if (!settings?.provider || !settings?.apiKey) {
       setError(
         uiLocale === "zh"
-          ? "请先在主页右上角 ✦ 按钮里设置 AI key。"
-          : "Set an AI key first via the ✦ button in the home page header."
+          ? "请先设置 AI key。"
+          : "Set an AI key first."
       )
+      setNeedsKey(true)
       return
     }
     // Gemini Nano (on-device) is too small for the long-form output a
@@ -66,9 +73,11 @@ export function TranslateToggle({ slug, postLocale, uiLocale, body }: Props) {
           ? "Gemini Nano(本地)对长文翻译能力不足,请切到云端 provider。"
           : "On-device Gemini Nano is too small for long-form translation. Pick a cloud provider."
       )
+      setNeedsKey(true)
       return
     }
 
+    setNeedsKey(false)
     setLoading(true)
     try {
       const res = await fetch("/api/translate-post", {
@@ -142,6 +151,16 @@ export function TranslateToggle({ slug, postLocale, uiLocale, body }: Props) {
         {error && (
           <span className="text-[11px] text-rose-500">{error}</span>
         )}
+        {needsKey && (
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-200 dark:ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-medium hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+          >
+            ⚙️ {uiLocale === "zh" ? "设置 AI Key" : "Set AI key"}
+          </button>
+        )}
+        {settingsOpen && <AISettingsModal locale={uiLocale} onClose={() => setSettingsOpen(false)} />}
       </div>
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{display}</ReactMarkdown>
     </>
