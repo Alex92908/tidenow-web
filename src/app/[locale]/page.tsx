@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server"
 import { TideApp } from "@/components/TideApp"
 import { getStale } from "@/lib/cache"
+import { getPostsByLocale } from "@/lib/posts"
 import { SOURCE_IDS } from "@/sources/metadata"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
@@ -26,6 +27,14 @@ export default async function HomePage({
       initialData[id] = { items: cached.items, updatedAt: cached.updatedAt }
     }
   }
+
+  // Latest original takes for the homepage "Latest Takes" section — the
+  // transformation's point is that the homepage leads with original
+  // content, not only hot lists. Only the fields the section renders
+  // (no body) cross the server/client boundary.
+  const latestPosts = getPostsByLocale(locale === "zh" ? "zh" : "en")
+    .slice(0, 3)
+    .map((p) => ({ slug: p.slug, title: p.title, description: p.description, date: p.date }))
 
   // Two JSON-LD blobs in a @graph: a WebSite (for SearchAction) plus a
   // CollectionPage that exposes the source list as an ItemList. AI assistants
@@ -88,7 +97,7 @@ export default async function HomePage({
 
       {/* Main content — the persistent SiteNav lives in layout.tsx */}
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
-        <TideApp locale={locale} initialData={initialData} />
+        <TideApp locale={locale} initialData={initialData} latestPosts={latestPosts} />
       </main>
 
       <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-8 text-gray-400 dark:text-zinc-700 text-xs tracking-wide">
@@ -131,6 +140,13 @@ export default async function HomePage({
           className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
         >
           {tFooter("about")}
+        </a>
+        <span className="text-gray-300 dark:text-zinc-800">·</span>
+        <a
+          href={locale === "zh" ? "/zh/editorial" : "/editorial"}
+          className="hover:text-gray-700 dark:hover:text-zinc-400 transition-colors underline-offset-2 hover:underline"
+        >
+          {locale === "zh" ? "编辑标准" : "Editorial Standards"}
         </a>
         <span className="text-gray-300 dark:text-zinc-800">·</span>
         <a

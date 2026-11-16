@@ -10,6 +10,14 @@ import { getFontSize, applyFontSize } from "@/lib/font-settings"
 
 type PreloadedData = Record<string, { items: NewsItem[]; updatedAt: number }>
 
+/** Minimal post fields for the homepage "Latest Takes" section. */
+export interface LatestPost {
+  slug: string
+  title: string
+  description: string
+  date: string
+}
+
 function mergeOrder(saved: string[], base: string[]): string[] {
   return [
     ...saved.filter((id) => SOURCE_IDS.includes(id)),
@@ -17,7 +25,7 @@ function mergeOrder(saved: string[], base: string[]): string[] {
   ]
 }
 
-export function TideApp({ locale, initialData }: { locale: string; initialData?: PreloadedData }) {
+export function TideApp({ locale, initialData, latestPosts }: { locale: string; initialData?: PreloadedData; latestPosts?: LatestPost[] }) {
   const defaultOrder = locale === "zh" ? SOURCE_IDS_ZH : SOURCE_IDS_EN
   const [order, setOrder] = useState<string[]>(defaultOrder)
   const [activeFilter, setActiveFilter] = useState<FilterId>("all")
@@ -74,6 +82,7 @@ export function TideApp({ locale, initialData }: { locale: string; initialData?:
         <TideBoard
           locale={locale}
           initialData={initialData}
+          latestPosts={latestPosts}
           order={order}
           setOrder={setOrder}
           orderDirty={orderDirty}

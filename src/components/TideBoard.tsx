@@ -33,6 +33,7 @@ import { formatDistanceToNow } from "@/lib/time"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
 import { getCustomFeeds, type CustomFeed } from "@/lib/custom-feeds"
 import type { NewsItem, FilterId } from "@/lib/types"
+import type { LatestPost } from "./TideApp"
 
 interface SourceState {
   items: NewsItem[]
@@ -60,6 +61,7 @@ function initialState(preloaded?: PreloadedData): Record<string, SourceState> {
 interface TideBoardProps {
   locale: string
   initialData?: PreloadedData
+  latestPosts?: LatestPost[]
   order?: string[]
   setOrder?: (next: string[]) => void
   orderDirty?: boolean
@@ -88,6 +90,7 @@ function highlight(text: string, query: string) {
 export function TideBoard({
   locale,
   initialData,
+  latestPosts,
   order = SOURCE_IDS,
   setOrder,
   orderDirty = false,
@@ -780,6 +783,50 @@ export function TideBoard({
                   : "No hidden sources. Tap ✕ on any card header to hide it."}
               </p>
             </div>
+          )}
+
+          {/* Latest Takes — the transformation's homepage anchor. The
+              original articles are the site's indexed, AdSense-reviewed
+              surface; they get a visible section right after Trending and
+              above the 57-card grid, so the homepage leads with original
+              content instead of only hot lists. Only on the "all" filter. */}
+          {activeFilter === "all" && latestPosts && latestPosts.length > 0 && (
+            <section aria-label={locale === "zh" ? "最新文章" : "Latest takes"}>
+              <div className="flex items-baseline justify-between gap-2 px-1 pb-2">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 tracking-tight">
+                  {locale === "zh" ? "最新文章" : "Latest Takes"}
+                </h2>
+                <a
+                  href={locale === "zh" ? "/zh/posts" : "/posts"}
+                  className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
+                >
+                  {locale === "zh" ? "全部文章 →" : "All takes →"}
+                </a>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                {latestPosts.map((post) => (
+                  <a
+                    key={post.slug}
+                    href={
+                      locale === "zh"
+                        ? `/zh/posts/${post.slug}`
+                        : `/posts/${post.slug}`
+                    }
+                    className="group rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 px-4 py-3.5 hover:border-gray-300 dark:hover:border-white/10 hover:shadow-md transition-all"
+                  >
+                    <p className="text-[11px] text-gray-400 dark:text-zinc-600 tabular-nums">
+                      {post.date}
+                    </p>
+                    <h3 className="mt-1 text-[14px] font-semibold text-gray-900 dark:text-zinc-100 leading-snug line-clamp-2 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                      {post.title}
+                    </h3>
+                    <p className="mt-1 text-[13px] text-gray-500 dark:text-zinc-400 leading-snug line-clamp-2">
+                      {post.description}
+                    </p>
+                  </a>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* Cards — horizontal snap on mobile, grid on md+; wrapped in
