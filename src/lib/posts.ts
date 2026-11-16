@@ -125,3 +125,21 @@ export function getPostBySlug(slug: string): Post | null {
 export function getAllSlugs(): string[] {
   return getAllPosts().map((p) => p.slug)
 }
+
+/**
+ * Related posts for the bottom of an article page (Phase 3): same
+ * locale only, overlapping tags first, then newest. Excludes the post
+ * itself. Pure function over the file-system posts — no fetching.
+ */
+export function getRelatedPosts(post: Post, limit = 3): Post[] {
+  const tags = new Set(post.tags ?? [])
+  return getAllPosts()
+    .filter((p) => p.slug !== post.slug && p.locale === post.locale)
+    .map((p) => ({
+      p,
+      score: (p.tags ?? []).filter((t) => tags.has(t)).length,
+    }))
+    .sort((a, b) => b.score - a.score || b.p.date.localeCompare(a.p.date))
+    .slice(0, limit)
+    .map(({ p }) => p)
+}

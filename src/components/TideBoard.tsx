@@ -29,6 +29,7 @@ import { ShareButton } from "./ShareButton"
 import { ThumbWithPreview } from "./ThumbWithPreview"
 import { TrendingTopics } from "./TrendingTopics"
 import { AddFeedModal } from "./AddFeedModal"
+import { formatDistanceToNow } from "@/lib/time"
 import { sourceMeta, SOURCE_IDS, getColumns } from "@/sources/metadata"
 import { getCustomFeeds, type CustomFeed } from "@/lib/custom-feeds"
 import type { NewsItem, FilterId } from "@/lib/types"
@@ -97,6 +98,7 @@ export function TideBoard({
   onOpenDrawer,
 }: TideBoardProps) {
   const t = useTranslations("sources")
+  const tSite = useTranslations("site")
   const [state, setState] = useState<Record<string, SourceState>>(() => initialState(initialData))
   const [internalFilter, setInternalFilter] = useState<FilterId>("all")
   const [searchOpen, setSearchOpen] = useState(false)
@@ -456,8 +458,79 @@ export function TideBoard({
   const noResults = locale === "zh" ? "没有找到相关内容" : "No results found"
   const resultCount = locale === "zh" ? `${searchResults.length} 条结果` : `${searchResults.length} results`
 
+  // Hero freshness: how many sources have live items, and the newest
+  // update across the board. Drives the "live" line in the hero band.
+  const loadedCount = useMemo(
+    () => SOURCE_IDS.filter((id) => (state[id]?.items?.length ?? 0) > 0).length,
+    [state]
+  )
+  const freshestAt = useMemo(
+    () => Math.max(0, ...SOURCE_IDS.map((id) => state[id]?.updatedAt ?? 0)),
+    [state]
+  )
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Hero band — compact wordmark + value prop + live source count.
+          Sits above the tab bar / Trending panel; purely presentational. */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="relative overflow-hidden rounded-2xl border border-gray-200/70 dark:border-white/[0.06] bg-gradient-to-r from-sky-50 via-white to-violet-50 dark:from-sky-950/30 dark:via-zinc-900/80 dark:to-violet-950/30 px-5 py-4"
+      >
+        <div className="hero-blob pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-sky-400/20 dark:bg-sky-500/20 blur-2xl" />
+        <div className="hero-blob-slow pointer-events-none absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-violet-400/20 dark:bg-violet-500/20 blur-2xl" />
+        <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1 select-none">
+              <span
+                className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight leading-none"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                Tide
+              </span>
+              <span
+                className="text-2xl font-normal tracking-tight leading-none bg-gradient-to-r from-sky-500 to-violet-500 bg-clip-text text-transparent"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                Now
+              </span>
+              <span className="ml-2 text-[10px] font-semibold uppercase tracking-widest text-sky-600/80 dark:text-sky-400/80">
+                {locale === "zh" ? "实时" : "Live"}
+              </span>
+            </div>
+            <p className="mt-1 text-[13px] text-gray-500 dark:text-zinc-400 leading-snug">
+              {tSite("heroTagline")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 dark:text-zinc-300 shrink-0">
+            {freshestAt > 0 ? (
+              <>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  {tSite("heroLive", { loaded: loadedCount, total: SOURCE_IDS.length })}
+                </span>
+                <span className="text-gray-300 dark:text-zinc-700">·</span>
+                <span>{tSite("heroUpdated", { time: formatDistanceToNow(freshestAt, locale) })}</span>
+              </>
+            ) : (
+              <span className="text-gray-400 dark:text-zinc-500">{tSite("heroLoading")}</span>
+            )}
+            <span className="text-gray-300 dark:text-zinc-700">·</span>
+            <a
+              href={locale === "zh" ? "/zh/posts" : "/posts"}
+              className="font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
+            >
+              {tSite("heroReadTakes")}
+            </a>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Tab bar / Search bar */}
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
         {searchOpen ? (
@@ -675,7 +748,7 @@ export function TideBoard({
                 onScroll={handleScroll}
                 className="cards-container"
               >
-                {visibleIds.map((id) => (
+                {visibleIds.map((id, i) => (
                   <SortableCard key={id} id={id}>
                     {(dragHandleProps) =>
                       id === "applemusic" ? (
@@ -693,6 +766,7 @@ export function TideBoard({
                           isPinned={favoriteIds.has(id)}
                           onTogglePin={() => togglePin(id)}
                           dragHandleProps={dragHandleProps}
+                          index={i}
                         />
                       ) : (
                         <SourceCard
@@ -709,6 +783,7 @@ export function TideBoard({
                           isPinned={favoriteIds.has(id)}
                           onTogglePin={() => togglePin(id)}
                           dragHandleProps={dragHandleProps}
+                          index={i}
                         />
                       )
                     }
@@ -748,7 +823,7 @@ export function TideBoard({
           {/* Custom RSS feed cards */}
           {customFeeds.length > 0 && activeFilter === "all" && (
             <div className="cards-container mt-0">
-              {customFeeds.map((feed) => (
+              {customFeeds.map((feed, ci) => (
                 <div key={feed.id} className="card-item">
                   <SourceCard
                     meta={{
@@ -766,6 +841,7 @@ export function TideBoard({
                     error={customState[feed.id]?.error ?? false}
                     locale={locale}
                     onRefresh={() => loadCustomFeed(feed)}
+                    index={visibleIds.length + ci}
                   />
                 </div>
               ))}

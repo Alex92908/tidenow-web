@@ -2,12 +2,31 @@
 
 import { useAISummary } from "@/lib/use-ai-summary"
 import { useTranslations } from "next-intl"
-import { motion } from "framer-motion"
-import { Skeleton } from "@/components/ui/skeleton"
+import { motion, type Variants } from "framer-motion"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
+
+// Staggered entrance: the delay lives in the variant (mount only) so
+// drag-reorder layout shifts stay instant — a delay on the root
+// `transition` prop would make every reorder lag.
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      delay: Math.min(i * 0.04, 0.4),
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  }),
+}
+
+// Skeleton title widths cycle so loading rows look like real headlines
+// instead of identical bars.
+const SKELETON_WIDTHS = [88, 64, 76, 58, 82, 70]
 
 interface SourceCardProps {
   meta: SourceMeta
@@ -24,6 +43,8 @@ interface SourceCardProps {
   onTogglePin?: () => void
   /** dnd-kit listeners + attributes forwarded from SortableCard (desktop only) */
   dragHandleProps?: React.HTMLAttributes<HTMLElement>
+  /** Position in the visible grid — drives the entrance stagger. */
+  index?: number
 }
 
 export function SourceCard({
@@ -40,6 +61,7 @@ export function SourceCard({
   isPinned,
   onTogglePin,
   dragHandleProps,
+  index = 0,
 }: SourceCardProps) {
   const t = useTranslations("source")
 
@@ -48,10 +70,12 @@ export function SourceCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30"
+      variants={cardVariants}
+      initial="hidden"
+      animate="show"
+      custom={index}
+      transition={{ layout: { duration: 0.2, ease: "easeOut" } }}
+      className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 hover:shadow-lg hover:shadow-gray-200/70 dark:hover:shadow-black/40 hover:border-gray-300 dark:hover:border-white/10 transition-shadow duration-200"
     >
       {/* Accent bar */}
       <div className={`h-0.5 w-full ${meta.accentColor}`} />
@@ -145,10 +169,15 @@ export function SourceCard({
       {/* Items */}
       <div className="overflow-y-auto max-h-[420px] thin-scroll divide-y divide-gray-100 dark:divide-white/[0.04]">
         {loading ? (
+          // Shimmer skeleton that matches the row layout (rank + title),
+          // with varying title widths so it reads as arriving headlines.
           Array.from({ length: meta.defaultCount }).map((_, i) => (
             <div key={i} className="px-4 py-2.5 flex gap-3 items-center">
-              <Skeleton className="h-3 w-4 rounded bg-gray-200 dark:bg-zinc-800 shrink-0" />
-              <Skeleton className="h-3 flex-1 rounded bg-gray-200 dark:bg-zinc-800" />
+              <div className="skeleton-shimmer h-3 w-4 rounded shrink-0" />
+              <div
+                className="skeleton-shimmer h-3 rounded"
+                style={{ width: `${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}%` }}
+              />
             </div>
           ))
         ) : error ? (
@@ -178,7 +207,14 @@ export function SourceCard({
           </div>
         ) : (
           visible.map((item, i) => (
-            <NewsItemRow key={item.id} item={item} rank={i + 1} accentColor={meta.accentColor} locale={locale} />
+            <NewsItemRow
+              key={item.id}
+              item={item}
+              rank={i + 1}
+              accentColor={meta.accentColor}
+              icon={meta.icon}
+              locale={locale}
+            />
           ))
         )}
       </div>
@@ -190,11 +226,13 @@ function NewsItemRow({
   item,
   rank,
   accentColor,
+  icon,
   locale,
 }: {
   item: NewsItem
   rank: number
   accentColor: string
+  icon: string
   locale: string
 }) {
   const isTop3 = rank <= 3
@@ -224,8 +262,18 @@ function NewsItemRow({
         >
           {rank}
         </span>
-        {item.image && (
+        {item.image ? (
           <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={40} />
+        ) : (
+          // No thumbnail from the upstream: a gradient tile in the
+          // source's own accent colors + icon, so every row has the
+          // same 40px visual anchor instead of a ragged left edge.
+          <span
+            aria-hidden
+            className={`w-10 h-10 shrink-0 rounded-md ${accentColor} flex items-center justify-center text-base leading-none`}
+          >
+            {icon}
+          </span>
         )}
         <div className="flex-1 min-w-0">
           {/* No line-clamp — the title shows in full and the row height

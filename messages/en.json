@@ -1,7 +1,12 @@
 {
   "site": {
     "title": "TideNow",
-    "description": "Real-time hot trending aggregator — GitHub, Hacker News, YouTube, Weibo, Zhihu, Bilibili and many more sources in one place"
+    "description": "Real-time hot trending aggregator — GitHub, Hacker News, YouTube, Weibo, Zhihu, Bilibili and many more sources in one place",
+    "heroTagline": "Every hot list, one page — what's trending, right now.",
+    "heroLive": "{loaded} of {total} sources live",
+    "heroUpdated": "updated {time}",
+    "heroLoading": "Loading sources…",
+    "heroReadTakes": "Read our takes →"
   },
   "footer": {
     "feedback": "Feedback",
@@ -108,6 +113,11 @@
   "posts": {
     "title": "Posts",
     "subtitle": "Editorial takes on cross-source trends. Weekly-ish.",
-    "empty": "No posts yet. Coming soon."
+    "empty": "No posts yet. Coming soon.",
+    "related": "Related posts",
+    "share": "Share this post",
+    "copied": "Copied!",
+    "authorBio": "TideNow editor — weekly takes on what the trends actually mean.",
+    "moreFrom": "More from TideNow →"
   }
 }

@@ -1,7 +1,12 @@
 {
   "site": {
     "title": "TideNow",
-    "description": "实时热点聚合导航 — 微博、知乎、B站、抖音、GitHub 等多平台热搜榜单一站看尽"
+    "description": "实时热点聚合导航 — 微博、知乎、B站、抖音、GitHub 等多平台热搜榜单一站看尽",
+    "heroTagline": "全网热点，一页尽览——此刻正在发生什么。",
+    "heroLive": "{total} 个来源中已有 {loaded} 个更新",
+    "heroUpdated": "最后更新 {time}",
+    "heroLoading": "正在加载来源…",
+    "heroReadTakes": "读我们的分析 →"
   },
   "footer": {
     "feedback": "反馈建议",
@@ -108,6 +113,11 @@
   "posts": {
     "title": "文章",
     "subtitle": "对跨源热点的编辑视角。每周一篇左右。",
-    "empty": "还没有文章，敬请期待。"
+    "empty": "还没有文章，敬请期待。",
+    "related": "相关文章",
+    "share": "分享这篇文章",
+    "copied": "已复制！",
+    "authorBio": "TideNow 主笔，每周写一篇跨源热点的成因与趋势。",
+    "moreFrom": "更多 TideNow 文章 →"
   }
 }

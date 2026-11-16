@@ -2,12 +2,28 @@
 
 import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { motion } from "framer-motion"
-import { Skeleton } from "@/components/ui/skeleton"
+import { motion, type Variants } from "framer-motion"
 import type { NewsItem, SourceMeta } from "@/lib/types"
 import { formatDistanceToNow } from "@/lib/time"
 import { ShareButton } from "@/components/ShareButton"
 import { ThumbWithPreview } from "@/components/ThumbWithPreview"
+
+// Same staggered-entrance pattern as SourceCard: delay in the variant
+// (mount only) so drag-reorder layout shifts stay instant.
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      delay: Math.min(i * 0.04, 0.4),
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  }),
+}
+
+const SKELETON_WIDTHS = [88, 64, 76, 58, 82, 70]
 
 type Chart = "songs" | "albums"
 type Region = "us" | "gb" | "jp" | "cn"
@@ -39,6 +55,8 @@ interface Props {
   onTogglePin?: () => void
   /** dnd-kit listeners forwarded from SortableCard (desktop only) */
   dragHandleProps?: React.HTMLAttributes<HTMLElement>
+  /** Position in the visible grid — drives the entrance stagger. */
+  index?: number
 }
 
 export function AppleMusicCard({
@@ -55,6 +73,7 @@ export function AppleMusicCard({
   isPinned,
   onTogglePin,
   dragHandleProps,
+  index = 0,
 }: Props) {
   const t = useTranslations("source")
   const [chart, setChart] = useState<Chart>("songs")
@@ -68,10 +87,12 @@ export function AppleMusicCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30"
+      variants={cardVariants}
+      initial="hidden"
+      animate="show"
+      custom={index}
+      transition={{ layout: { duration: 0.2, ease: "easeOut" } }}
+      className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 hover:shadow-lg hover:shadow-gray-200/70 dark:hover:shadow-black/40 hover:border-gray-300 dark:hover:border-white/10 transition-shadow duration-200"
     >
       <div className={`h-0.5 w-full ${meta.accentColor}`} />
 
@@ -196,10 +217,14 @@ export function AppleMusicCard({
 
       <div className="overflow-y-auto max-h-[420px] thin-scroll divide-y divide-gray-100 dark:divide-white/[0.04]">
         {loading ? (
+          // Shimmer skeleton matching the row layout, varying widths.
           Array.from({ length: meta.defaultCount }).map((_, i) => (
             <div key={i} className="px-4 py-2.5 flex gap-3 items-center">
-              <Skeleton className="h-3 w-4 rounded bg-gray-200 dark:bg-zinc-800 shrink-0" />
-              <Skeleton className="h-3 flex-1 rounded bg-gray-200 dark:bg-zinc-800" />
+              <div className="skeleton-shimmer h-3 w-4 rounded shrink-0" />
+              <div
+                className="skeleton-shimmer h-3 rounded"
+                style={{ width: `${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}%` }}
+              />
             </div>
           ))
         ) : error ? (
@@ -219,7 +244,7 @@ export function AppleMusicCard({
           </div>
         ) : (
           filtered.map((item, i) => (
-            <Row key={item.id} item={item} rank={i + 1} />
+            <Row key={item.id} item={item} rank={i + 1} icon={meta.icon} accentColor={meta.accentColor} />
           ))
         )}
       </div>
@@ -227,7 +252,7 @@ export function AppleMusicCard({
   )
 }
 
-function Row({ item, rank }: { item: NewsItem; rank: number }) {
+function Row({ item, rank, icon, accentColor }: { item: NewsItem; rank: number; icon: string; accentColor: string }) {
   const isTop3 = rank <= 3
   return (
     <div className="flex items-start gap-2.5 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group">
@@ -244,8 +269,16 @@ function Row({ item, rank }: { item: NewsItem; rank: number }) {
         >
           {rank}
         </span>
-        {item.image && (
+        {item.image ? (
           <ThumbWithPreview src={item.image} srcLarge={item.imageLarge} size={40} />
+        ) : (
+          // Same gradient-tile fallback as SourceCard rows.
+          <span
+            aria-hidden
+            className={`w-10 h-10 shrink-0 rounded-md ${accentColor} flex items-center justify-center text-base leading-none`}
+          >
+            {icon}
+          </span>
         )}
         <p className="flex-1 min-w-0 text-[13px] text-gray-600 dark:text-zinc-300 group-hover:text-gray-900 dark:group-hover:text-zinc-100 leading-snug line-clamp-2 transition-colors">
           {item.title}

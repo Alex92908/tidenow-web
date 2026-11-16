@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { getTranslations } from "next-intl/server"
 import { getPostsByLocale } from "@/lib/posts"
+import { coverGradientFor } from "@/lib/post-cover"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
 
@@ -77,7 +78,7 @@ export default async function PostsIndexPage({
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -104,22 +105,49 @@ export default async function PostsIndexPage({
           {tCommon("empty")}
         </p>
       ) : (
-        <ol className="flex flex-col gap-6">
-          {posts.map((p) => (
-            <li key={p.slug} className="border-b border-gray-100 dark:border-white/[0.04] pb-6 last:border-b-0">
-              <Link
-                href={lang === "zh" ? `/zh/posts/${p.slug}` : `/posts/${p.slug}`}
-                className="group block"
-              >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 group-hover:text-sky-500 transition-colors leading-snug">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {posts.map((p, i) => (
+            <Link
+              key={p.slug}
+              href={lang === "zh" ? `/zh/posts/${p.slug}` : `/posts/${p.slug}`}
+              className="card-enter group block overflow-hidden rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-zinc-900/80 shadow-sm hover:shadow-xl hover:shadow-gray-200/60 dark:hover:shadow-black/40 hover:-translate-y-0.5 hover:border-gray-300 dark:hover:border-white/10 transition-all duration-200"
+              style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
+            >
+              {/* Cover — author image when present, otherwise a gradient
+                  (stable per slug) in the cover-card visual language:
+                  deep color + glow blobs + tag chip + title on top. */}
+              <div className="relative h-36 overflow-hidden">
+                {p.cover ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.cover} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                ) : (
+                  <div className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(p.slug)}`}>
+                    <div className="absolute -right-6 -top-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+                    <div className="absolute -left-4 bottom-0 h-24 w-24 rounded-full bg-black/15 blur-xl" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                {p.tags && p.tags.length > 0 && (
+                  <span className="absolute left-4 top-4 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur">
+                    {p.tags[0]}
+                  </span>
+                )}
+                <span className="absolute right-4 top-4 text-[10px] font-bold tracking-widest text-white/60">
+                  TIDENOW
+                </span>
+                <h2 className="absolute bottom-0 left-0 right-0 p-4 text-lg font-bold leading-snug text-white line-clamp-3">
                   {p.title}
                 </h2>
+              </div>
+
+              {/* Excerpt + meta */}
+              <div className="p-4">
                 {p.description && (
-                  <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1.5 leading-relaxed line-clamp-3">
+                  <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed line-clamp-2">
                     {p.description}
                   </p>
                 )}
-                <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-400 dark:text-zinc-600">
+                <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-gray-400 dark:text-zinc-600">
                   <time dateTime={p.date}>{p.date}</time>
                   {p.author && (
                     <>
@@ -127,10 +155,10 @@ export default async function PostsIndexPage({
                       <span>{p.author}</span>
                     </>
                   )}
-                  {p.tags && p.tags.length > 0 && (
+                  {p.tags && p.tags.length > 1 && (
                     <>
                       <span>·</span>
-                      {p.tags.map((t) => (
+                      {p.tags.slice(1).map((t) => (
                         <span key={t} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5">
                           {t}
                         </span>
@@ -138,10 +166,10 @@ export default async function PostsIndexPage({
                     </>
                   )}
                 </div>
-              </Link>
-            </li>
+              </div>
+            </Link>
           ))}
-        </ol>
+        </div>
       )}
 
       {/* Submission CTA — intentionally just an email line, not a form.
