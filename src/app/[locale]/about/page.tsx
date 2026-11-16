@@ -130,6 +130,11 @@ function AboutEn() {
           {" "}discord.gg/chjPuC963T
         </a>.
       </p>
+      <p>
+        How the editorial side works — sourcing, verification, AI use,
+        and corrections — is on the{" "}
+        <Link href="/editorial">Editorial Standards</Link> page.
+      </p>
     </article>
   )
 }
@@ -183,6 +188,10 @@ function AboutZh() {
         <a href="https://discord.gg/chjPuC963T" target="_blank" rel="noopener noreferrer">
           {" "}discord.gg/chjPuC963T
         </a>。
+      </p>
+      <p>
+        编辑这一面怎么做——选题、核实、AI 使用、更正——见
+        <Link href="/zh/editorial">编辑标准</Link>。
       </p>
     </article>
   )

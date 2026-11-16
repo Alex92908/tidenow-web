@@ -38,6 +38,13 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Transformation (low-value risk): per-source pages are headline lists
+    // with no original text — thin pages that drag the site-level quality
+    // signal. They stay fully usable for visitors, but they are NOT
+    // indexed and NOT in the sitemap. The indexed surface is the homepage
+    // + the original articles in /posts. `follow: true` so crawlers still
+    // follow the outbound links to the original reporting.
+    robots: { index: false, follow: true },
     alternates: {
       canonical,
       languages: {

@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next"
-import { SOURCE_IDS } from "@/sources/metadata"
 import { getAllPosts } from "@/lib/posts"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
@@ -33,33 +32,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  const sourcePages: MetadataRoute.Sitemap = SOURCE_IDS.flatMap((id) => {
-    const enUrl = `${SITE_URL}/source/${id}`
-    const zhUrl = `${SITE_URL}/zh/source/${id}`
-    const alts = {
-      languages: {
-        en: enUrl,
-        "zh-Hans": zhUrl,
-      },
-    }
-    return [
-      {
-        url: enUrl,
-        lastModified: now,
-        changeFrequency: "hourly" as const,
-        priority: 0.7,
-        alternates: alts,
-      },
-      {
-        url: zhUrl,
-        lastModified: now,
-        changeFrequency: "hourly" as const,
-        priority: 0.7,
-        alternates: alts,
-      },
-    ]
-  })
-
+  // Per-source pages are NOT in the sitemap. They are headline lists with
+  // no original text (see the noindex on the /source page metadata) — the
+  // transformation's indexed surface is the homepage + /posts. Visitors
+  // still reach every source from the homepage and the nav.
   const changelogPages: MetadataRoute.Sitemap = [
     {
       url: `${SITE_URL}/changelog`,
@@ -129,7 +105,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Trust / legal pages — required for AdSense, also useful credibility
   // signals for any reviewer or new visitor.
-  const trustSlugs = ["privacy", "about", "contact"] as const
+  const trustSlugs = ["privacy", "about", "contact", "editorial"] as const
   const trustPages: MetadataRoute.Sitemap = trustSlugs.flatMap((slug) => [
     {
       url: `${SITE_URL}/${slug}`,
@@ -159,7 +135,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...homepages,
-    ...sourcePages,
     ...changelogPages,
     ...postsIndexes,
     ...postPages,
