@@ -112,10 +112,10 @@ export default async function PostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Hero — brand navy → violet gradient (cover-card visual language),
-          author cover image underneath at low opacity when present. */}
+      {/* Hero — pale tint (lee: no dark backgrounds), dark ink text.
+          Author cover image underneath at low opacity when present. */}
       <section
-        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${HERO_GRADIENT} px-6 py-8 sm:px-10 sm:py-10 mb-8`}
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${HERO_GRADIENT} px-6 py-8 sm:px-10 sm:py-10 mb-8 border border-black/5`}
       >
         {post.cover && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -125,13 +125,11 @@ export default async function PostPage({
             className="absolute inset-0 h-full w-full object-cover opacity-30"
           />
         )}
-        <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-sky-500/25 blur-3xl" />
-        <div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
         <div className="relative">
-          <nav className="text-xs text-white/60 mb-6">
+          <nav className="text-xs text-slate-500 mb-6">
             <Link
               href={lang === "zh" ? "/zh/posts" : "/posts"}
-              className="hover:text-white transition-colors"
+              className="hover:text-slate-900 transition-colors"
             >
               ← {lang === "zh" ? "全部文章" : "All posts"}
             </Link>
@@ -141,22 +139,22 @@ export default async function PostPage({
               {post.tags.map((t) => (
                 <span
                   key={t}
-                  className="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-medium text-white/85 backdrop-blur"
+                  className="px-2 py-0.5 rounded-full bg-white/80 text-[11px] font-medium text-slate-700 border border-black/5 backdrop-blur"
                 >
                   {t}
                 </span>
               ))}
             </div>
           )}
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight break-words">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-tight break-words">
             {post.title}
           </h1>
           {post.description && (
-            <p className="text-base text-white/75 mt-3 leading-relaxed">
+            <p className="text-base text-slate-600 mt-3 leading-relaxed">
               {post.description}
             </p>
           )}
-          <div className="flex flex-wrap items-center gap-2 mt-5 text-xs text-white/60">
+          <div className="flex flex-wrap items-center gap-2 mt-5 text-xs text-slate-500">
             <time dateTime={post.date}>{post.date}</time>
             {post.author && (
               <>
@@ -165,7 +163,7 @@ export default async function PostPage({
               </>
             )}
             <span>·</span>
-            <span className="font-bold tracking-widest text-white/50 text-[10px]">
+            <span className="font-bold tracking-widest text-slate-900/30 text-[10px]">
               TIDENOW
             </span>
           </div>

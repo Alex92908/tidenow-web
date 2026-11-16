@@ -151,9 +151,9 @@ export default async function DailyArchivePage({
                   href={lang === "zh" ? `/zh/posts/${p.slug}` : `/posts/${p.slug}`}
                   className="group flex gap-4 rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-zinc-900/80 p-4 shadow-sm hover:shadow-lg hover:shadow-gray-200/60 dark:hover:shadow-black/40 hover:-translate-y-0.5 hover:border-gray-300 dark:hover:border-white/10 transition-all duration-200"
                 >
-                  {/* Date badge — gradient cover in the post-cover language */}
+                  {/* Date badge — pale tint in the post-cover language, dark text */}
                   <div
-                    className={`shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br ${coverGradientFor(p.slug)} flex flex-col items-center justify-center text-white`}
+                    className={`shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br ${coverGradientFor(p.slug)} flex flex-col items-center justify-center text-slate-800 border border-black/5`}
                   >
                     <span className="text-lg font-bold leading-none">{p.date.slice(8, 10)}</span>
                     <span className="text-[10px] font-medium opacity-80 mt-0.5">

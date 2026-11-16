@@ -123,29 +123,44 @@ export default async function PostsIndexPage({
               className="card-enter group block overflow-hidden rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-zinc-900/80 shadow-sm hover:shadow-xl hover:shadow-gray-200/60 dark:hover:shadow-black/40 hover:-translate-y-0.5 hover:border-gray-300 dark:hover:border-white/10 transition-all duration-200"
               style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
             >
-              {/* Cover — author image when present, otherwise a gradient
-                  (stable per slug) in the cover-card visual language:
-                  deep color + glow blobs + tag chip + title on top. */}
+              {/* Cover — author image when present, otherwise a pale
+                  tint (stable per slug). Light theme (lee: no dark
+                  backgrounds): dark ink title on a near-white cover.
+                  A real photo cover keeps the dark overlay + white
+                  title for legibility. */}
               <div className="relative h-36 overflow-hidden">
                 {p.cover ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.cover} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                 ) : (
-                  <div className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(p.slug)}`}>
-                    <div className="absolute -right-6 -top-10 h-32 w-32 rounded-full bg-white/[0.07] blur-2xl" />
-                    <div className="absolute -left-4 bottom-0 h-24 w-24 rounded-full bg-black/10 blur-xl" />
-                  </div>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(p.slug)}`} />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent" />
+                {p.cover && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                )}
                 {p.tags && p.tags.length > 0 && (
-                  <span className="absolute left-4 top-4 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur">
+                  <span
+                    className={`absolute left-4 top-4 rounded-full px-2 py-0.5 text-[11px] font-medium backdrop-blur ${
+                      p.cover
+                        ? "bg-white/20 text-white"
+                        : "bg-white/85 text-slate-700 border border-black/5"
+                    }`}
+                  >
                     {p.tags[0]}
                   </span>
                 )}
-                <span className="absolute right-4 top-4 text-[10px] font-bold tracking-widest text-white/60">
+                <span
+                  className={`absolute right-4 top-4 text-[10px] font-bold tracking-widest ${
+                    p.cover ? "text-white/60" : "text-slate-900/30"
+                  }`}
+                >
                   TIDENOW
                 </span>
-                <h2 className="absolute bottom-0 left-0 right-0 p-4 text-lg font-bold leading-snug text-white line-clamp-3">
+                <h2
+                  className={`absolute bottom-0 left-0 right-0 p-4 text-lg font-bold leading-snug line-clamp-3 ${
+                    p.cover ? "text-white" : "text-slate-900"
+                  }`}
+                >
                   {p.title}
                 </h2>
               </div>
