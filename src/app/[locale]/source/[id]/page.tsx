@@ -3,7 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { ShareButton } from "@/components/ShareButton"
-import { getStale } from "@/lib/cache"
+import { RetryButton } from "@/components/RetryButton"
+import { getSourceItems } from "@/lib/source-data"
 import { sourceMeta, SOURCE_IDS } from "@/sources/metadata"
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tide-now.com"
@@ -65,14 +66,14 @@ export default async function SourceDetailPage({
 
   const tSources = await getTranslations({ locale, namespace: "sources" })
   const sourceName = tSources(id)
-  const cached = getStale(id)
-  const items = cached?.items ?? []
+  // Cold-instance safe: when the per-instance cache is empty this fetches
+  // the source live (same path as /api/sources/[id]) instead of rendering
+  // the old "No cached data yet" dead end.
+  const { items, updatedAt, error } = await getSourceItems(id)
 
   const homeHref = locale === "zh" ? `/zh#source-card-${id}` : `/#source-card-${id}`
   const lastUpdatedText =
-    cached?.updatedAt && cached.updatedAt > 0
-      ? new Date(cached.updatedAt).toISOString()
-      : null
+    updatedAt && updatedAt > 0 ? new Date(updatedAt).toISOString() : null
   const canonical = locale === "zh" ? `${SITE_URL}/zh/source/${id}` : `${SITE_URL}/source/${id}`
 
   // JSON-LD: CollectionPage wrapping an ItemList. AI assistants reading this
@@ -141,9 +142,17 @@ export default async function SourceDetailPage({
 
       {/* Items */}
       <ol className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 divide-y divide-gray-100 dark:divide-white/[0.04] overflow-hidden">
-        {items.length === 0 ? (
-          <li className="px-4 py-10 text-center text-sm text-gray-400 dark:text-zinc-500">
-            {locale === "zh" ? "暂无缓存数据，请回主页加载。" : "No cached data yet — load it from the home page."}
+        {error ? (
+          <li className="px-4 py-10 text-center">
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mb-1">
+              {locale === "zh"
+                ? `暂时无法加载 ${sourceName}，来源可能临时不可用。`
+                : `Couldn't load ${sourceName} right now — the source may be temporarily unavailable.`}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-zinc-600 mb-5">
+              {locale === "zh" ? "请重试，或回主页查看其他来源。" : "Please try again, or head back to the home page for other sources."}
+            </p>
+            <RetryButton label={locale === "zh" ? "↻ 重试" : "↻ Retry"} />
           </li>
         ) : (
           items.slice(0, meta.expandCount).map((item, i) => {
