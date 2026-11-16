@@ -31,6 +31,8 @@ export function useAISummary(title: string, locale: string) {
     if (summary !== null || loading) return
     const settings = getAISettings()
     if (!settings) return
+    // Hover summaries can be switched off in AI Settings (default on).
+    if (settings.hoverSummary === false) return
     setLoading(true)
     try {
       // Gemini Nano runs fully on-device via Chrome's built-in AI API

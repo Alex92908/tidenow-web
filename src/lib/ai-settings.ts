@@ -4,6 +4,9 @@ export interface AISettings {
   provider: AIProvider
   /** Empty string for gemini-nano (no key needed) */
   apiKey: string
+  /** Hover one-line summary on news rows. Absent = on (legacy saves
+   * predate the toggle). Set false to turn hover summaries off. */
+  hoverSummary?: boolean
 }
 
 export const PROVIDER_META: Record<

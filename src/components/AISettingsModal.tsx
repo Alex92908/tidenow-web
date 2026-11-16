@@ -36,21 +36,37 @@ export function AISettingsModal({ onClose, locale }: AISettingsModalProps) {
   const [saved, setSaved] = useState(false)
   const [hasSaved, setHasSaved] = useState(false)
   const [nanoStatus, setNanoStatus] = useState<"ready" | "downloading" | "unavailable" | "checking">("checking")
+  // Hover one-line summary on news rows — on by default (absent = on).
+  const [hoverSummary, setHoverSummary] = useState(true)
 
   useEffect(() => {
     const s = getAISettings()
     if (s) {
       setProvider(s.provider)
       setApiKey(s.apiKey)
+      setHoverSummary(s.hoverSummary !== false)
       setHasSaved(true)
     }
     checkGeminiNano().then(setNanoStatus)
   }, [])
 
+  // The toggle is a preference, not a credential — it saves immediately
+  // (merging with the saved provider/key so toggling never wipes them).
+  function persistHoverSummary(v: boolean) {
+    const s = getAISettings()
+    saveAISettings({
+      provider: s?.provider ?? provider,
+      apiKey: s?.apiKey ?? apiKey,
+      hoverSummary: v,
+    })
+    setHoverSummary(v)
+    setHasSaved(true)
+  }
+
   function handleProviderSelect(p: AIProvider) {
     setProvider(p)
     if (p === "gemini-nano") {
-      saveAISettings({ provider: p, apiKey: "" })
+      saveAISettings({ provider: p, apiKey: "", hoverSummary })
       setHasSaved(true)
     }
   }
@@ -58,7 +74,7 @@ export function AISettingsModal({ onClose, locale }: AISettingsModalProps) {
   function handleSave() {
     const meta = PROVIDER_META[provider]
     if (!meta.local && !apiKey.trim()) return
-    saveAISettings({ provider, apiKey: apiKey.trim() })
+    saveAISettings({ provider, apiKey: apiKey.trim(), hoverSummary })
     setSaved(true)
     setHasSaved(true)
     setTimeout(() => { setSaved(false); onClose() }, 900)
@@ -112,6 +128,38 @@ export function AISettingsModal({ onClose, locale }: AISettingsModalProps) {
             className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-all text-sm"
           >
             ✕
+          </button>
+        </div>
+
+        {/* Hover summary toggle — off means hovering a headline shows
+            nothing (the per-row AI button is already gone, so this is the
+            only hover-summary control). Saves immediately. */}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-white/[0.07] bg-gray-50 dark:bg-zinc-800/50 px-3 py-2.5">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-gray-700 dark:text-zinc-200">
+              {isZh ? "悬停 AI 解读" : "Hover AI summary"}
+            </p>
+            <p className="text-[11px] text-gray-400 dark:text-zinc-500 leading-snug">
+              {isZh
+                ? "鼠标悬停新闻标题时，显示一句话 AI 解读"
+                : "Show a one-sentence AI summary when hovering a headline"}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hoverSummary}
+            aria-label={isZh ? "悬停 AI 解读" : "Hover AI summary"}
+            onClick={() => persistHoverSummary(!hoverSummary)}
+            className={`shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors ${
+              hoverSummary ? "bg-sky-500" : "bg-gray-300 dark:bg-zinc-600"
+            }`}
+          >
+            <span
+              className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                hoverSummary ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
           </button>
         </div>
 
