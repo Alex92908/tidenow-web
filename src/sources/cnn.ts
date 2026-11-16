@@ -45,12 +45,51 @@ export async function fetch(): Promise<NewsItem[]> {
     const pubDate = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim()
     const ts = pubDate ? Date.parse(pubDate) : NaN
     if (!Number.isNaN(ts) && ts > newest) newest = ts
-    // Description is an entity-encoded HTML anchor; decode first, then
-    // strip tags (same order as theguardian.ts).
+    // Description is an entity-encoded HTML anchor whose text is just the
+    // headline + a "CNN" source label — decode first, then strip tags
+    // (same order as theguardian.ts). The anchor text repeats the title,
+    // so drop the duplicated leading portion and the source suffix; a
+    // snippet that adds nothing is dropped entirely (extra: undefined).
+    // &nbsp; arrives double-encoded (&amp;nbsp;) so it survives one
+    // decode pass as a literal "&nbsp;" — turn it into a real space.
     const rawDesc = block.match(/<description>([\s\S]*?)<\/description>/)?.[1]
-    const desc = rawDesc
-      ? decodeXmlEntities(rawDesc).replace(/<[^>]+>/g, "").trim().slice(0, 80)
-      : undefined
+    let desc: string | undefined
+    if (rawDesc) {
+      let cleaned = decodeXmlEntities(rawDesc)
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&#160;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+      if (cleaned) {
+        // Compare separator-flattened forms: Google's anchor text and the
+        // <title> can differ by a " - " vs " " (e.g. "... Programming -
+        // CNN Press Room" vs "... Programming CNN Press Room"), which
+        // would defeat a plain prefix check.
+        const flat = (s: string) => s.replace(/[\s\-–—·|]+/g, " ").trim()
+        const titleFlat = flat(title)
+        const descFlat = flat(cleaned)
+        if (
+          title &&
+          (descFlat.startsWith(titleFlat) || titleFlat.startsWith(descFlat))
+        ) {
+          // The description is the headline (or a prefix of it). Keep
+          // only whatever substantive text follows the headline, if any
+          // (in this feed there is none — just source labels).
+          const rest = descFlat
+            .slice(titleFlat.length)
+            .replace(/CNN/gi, "")
+            .replace(/\s+/g, " ")
+            .trim()
+          desc = rest.slice(0, 80).trim() || undefined
+        } else {
+          // Independent snippet text: only the trailing <font>CNN</font>
+          // source label is noise.
+          cleaned = cleaned.replace(/\s+CNN\s*$/i, "").trim()
+          desc = cleaned.slice(0, 80).trim() || undefined
+        }
+      }
+    }
     if (title && link) {
       items.push({ id: `cnn-${i}`, title, url: link, extra: desc || undefined, image: extractImageFromRss(block) })
     }

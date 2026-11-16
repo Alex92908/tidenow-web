@@ -153,11 +153,6 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-violet-500 to-purple-400",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  pcbeta: {
-    id: "pcbeta", icon: "🪟", column: "tech",
-    accentColor: "bg-gradient-to-r from-blue-400 to-sky-300",
-    interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
-  },
   github: {
     id: "github", icon: "🐙", column: "tech",
     accentColor: "bg-gradient-to-r from-gray-500 to-gray-700",
@@ -371,7 +366,7 @@ export const SOURCE_IDS_EN: string[] = [
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
-  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta",
+  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // TideNow editorial — last by design (gets pinned by readers who care)
   "tidenow-posts",
@@ -383,7 +378,7 @@ export const SOURCE_IDS_ZH: string[] = [
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
   // Tech
-  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot", "pcbeta",
+  "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "github", "hackernews",
   // Finance
   "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",

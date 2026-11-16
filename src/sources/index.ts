@@ -36,7 +36,6 @@ import * as ifeng from "./ifeng"
 // import * as nowcoder from "./nowcoder"
 import * as tencent from "./tencent"
 import * as solidot from "./solidot"
-import * as pcbeta from "./pcbeta"
 import * as cls from "./cls"
 import * as gelonghui from "./gelonghui"
 import * as jin10 from "./jin10"
@@ -92,7 +91,8 @@ export const sources = {
   juejin,
   v2ex,
   solidot,
-  pcbeta,
+  // pcbeta dropped 2026-11-15 — bbs.pcbeta.com serves a JS bot-check page
+  // to server fetches (no working RSS endpoint); the card was permanently empty.
   github,
   hackernews,
   // Finance
