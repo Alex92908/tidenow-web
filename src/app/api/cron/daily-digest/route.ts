@@ -263,6 +263,10 @@ function smartTruncate(s: string, max: number): string {
   if (sentenceEnd > max * 0.5) return text.slice(0, sentenceEnd + 1).trim()
   const space = window.lastIndexOf(" ")
   if (space > max * 0.5) return text.slice(0, space).trim() + "…"
+  // Chinese has no spaces, so a word-boundary cut is impossible — break at
+  // a clause punctuation mark instead (，。、；：）, never mid-phrase.
+  const cnPunct = window.search(/[，。、；：][^，。、；：]*$/)
+  if (cnPunct > max * 0.4) return text.slice(0, cnPunct).trim() + "…"
   return text.slice(0, max).trim() + "…"
 }
 
@@ -319,7 +323,7 @@ function buildMarkdown(
   const { tags, cleaned } = parseTags(rawBody)
   const body = stripLeadingH1(cleaned, "").trim()
   const dateLong = formatDateLong(date, locale)
-  const topShort = smartTruncate(topTitle, locale === "zh" ? 28 : 60).replace(/…$/, "")
+  const topShort = smartTruncate(topTitle, locale === "zh" ? 36 : 60).replace(/…$/, "")
   const title =
     locale === "zh"
       ? `今日热点日报 · ${dateLong} — ${topShort}`
