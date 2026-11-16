@@ -122,6 +122,12 @@ export function getPostBySlug(slug: string): Post | null {
   return getAllPosts().find((p) => p.slug === slug) ?? null
 }
 
+/** Daily-digest posts only (tag `daily-digest`), newest first, for one
+ *  locale. Backs the /posts/daily archive page. */
+export function getDailyDigests(locale: "en" | "zh"): Post[] {
+  return getPostsByLocale(locale).filter((p) => (p.tags ?? []).includes("daily-digest"))
+}
+
 export function getAllSlugs(): string[] {
   return getAllPosts().map((p) => p.slug)
 }

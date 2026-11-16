@@ -96,8 +96,18 @@ export default async function PostsIndexPage({
       <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-zinc-100 mb-2">
         {tCommon("title")}
       </h1>
-      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-10 leading-relaxed">
+      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4 leading-relaxed">
         {tCommon("subtitle")}
+      </p>
+
+      {/* Daily digest archive — the auto-published roundups, newest first. */}
+      <p className="mb-10">
+        <Link
+          href={lang === "zh" ? "/zh/posts/daily" : "/posts/daily"}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline"
+        >
+          📅 {tCommon("dailyArchive")} →
+        </Link>
       </p>
 
       {posts.length === 0 ? (

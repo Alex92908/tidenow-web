@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import type { AIProvider } from "@/lib/ai-settings"
 import { getForesight, foresightContextBlock } from "@/lib/foresight-client"
 import { extractArticles } from "@/lib/extract-article"
+import { callAI } from "@/lib/ai-call"
 
 // Long-form companion to /api/summary. Same BYOK pattern (the key is sent
 // per-request from localStorage, never stored server-side), but with a
@@ -21,106 +22,6 @@ const MAX_TOKENS_BY_STYLE: Record<string, number> = {
   list: 1600,
   personal: 1800,
   custom: 2200,
-}
-
-async function callAI(
-  provider: AIProvider,
-  apiKey: string,
-  systemPrompt: string,
-  userPrompt: string,
-  maxTokens: number
-): Promise<string> {
-  switch (provider) {
-    case "anthropic": {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: maxTokens,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error?.message ?? "anthropic error")
-      return d.content[0].text.trim()
-    }
-    case "openai": {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          max_tokens: maxTokens,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error?.message ?? "openai error")
-      return d.choices[0].message.content.trim()
-    }
-    case "deepseek": {
-      const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          max_tokens: maxTokens,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error?.message ?? "deepseek error")
-      return d.choices[0].message.content.trim()
-    }
-    case "zhipu": {
-      const res = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-        body: JSON.stringify({
-          model: "glm-4-flash",
-          max_tokens: maxTokens,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error?.message ?? "zhipu error")
-      return d.choices[0].message.content.trim()
-    }
-    case "gemini": {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ parts: [{ text: userPrompt }] }],
-            generationConfig: { maxOutputTokens: maxTokens },
-          }),
-        }
-      )
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error?.message ?? "gemini error")
-      return d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ""
-    }
-    default:
-      throw new Error("unsupported provider")
-  }
 }
 
 // Long requests can take 20s+; bump from the 10s default so Vercel

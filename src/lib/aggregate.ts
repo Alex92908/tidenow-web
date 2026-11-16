@@ -1,5 +1,7 @@
-"use client"
-
+// Pure functions (keyword extraction + union-find clustering) —
+// deliberately NO "use client" so this module is importable from both
+// client components (TideBoard / ComposeApp) and server routes (the
+// daily-digest cron). It uses no browser APIs and no React.
 import type { NewsItem } from "./types"
 
 export interface TrendingTopic {
