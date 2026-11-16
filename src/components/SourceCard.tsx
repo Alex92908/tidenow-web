@@ -76,10 +76,11 @@ export function SourceCard({
       animate="show"
       custom={index}
       transition={{ layout: { duration: 0.2, ease: "easeOut" } }}
-      className="flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 hover:shadow-lg hover:shadow-gray-200/70 dark:hover:shadow-black/40 hover:border-gray-300 dark:hover:border-white/10 transition-shadow duration-200"
+      className="group flex flex-col rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 hover:shadow-lg hover:shadow-gray-200/70 dark:hover:shadow-black/40 hover:border-gray-300 dark:hover:border-white/10 transition-shadow duration-200"
     >
-      {/* Accent bar */}
-      <div className={`h-0.5 w-full ${meta.accentColor}`} />
+      {/* No accent bar on top — the per-source gradient strip was a
+          coloured horizontal line on every card (lee: "卡片上面是一条横线").
+          Cards are plain white now; the source identity is the name + icon. */}
 
       {/* Header — two rows so long source names don't squeeze the actions.
           Row 1: icon + name (+ updated-at on the right).
@@ -121,11 +122,13 @@ export function SourceCard({
           )}
         </div>
         <div className="flex items-center justify-end gap-1.5">
-          {/* Drag handle — desktop only, injected by SortableCard */}
+          {/* Drag handle — desktop only, injected by SortableCard.
+              Hover-only: 5 identical icons on every one of 57 cards was
+              hundreds of grey controls competing with the source names. */}
           {dragHandleProps && (
             <div
               {...dragHandleProps}
-              className="hidden md:flex w-5 h-5 items-center justify-center rounded cursor-grab active:cursor-grabbing text-gray-300 dark:text-zinc-700 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all touch-none select-none text-sm"
+              className="hidden md:flex w-5 h-5 items-center justify-center rounded cursor-grab active:cursor-grabbing text-gray-300 dark:text-zinc-700 hover:text-gray-500 dark:hover:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all touch-none select-none text-sm opacity-0 group-hover:opacity-100"
               title="Drag to reorder"
             >
               ⠿
@@ -138,11 +141,11 @@ export function SourceCard({
                 (typeof window !== "undefined" ? window.location.origin : "https://www.tide-now.com") +
                 (locale === "zh" ? `/zh/source/${meta.id}` : `/source/${meta.id}`),
             }}
-            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100"
           />
           <button
             onClick={onRefresh}
-            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all text-sm"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all text-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100"
             title={t("retry")}
           >
             ↻
@@ -153,8 +156,8 @@ export function SourceCard({
               className={[
                 "w-6 h-6 flex items-center justify-center rounded-full transition-all text-xs",
                 isPinned
-                  ? "text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
-                  : "text-gray-300 dark:text-zinc-700 hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-white/5",
+                  ? "opacity-100 text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                  : "opacity-0 group-hover:opacity-100 text-gray-300 dark:text-zinc-700 hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-white/5",
               ].join(" ")}
               title={
                 isPinned
@@ -171,8 +174,8 @@ export function SourceCard({
               className={[
                 "w-6 h-6 flex items-center justify-center rounded-full transition-all text-xs",
                 isHidden
-                  ? "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
-                  : "text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5",
+                  ? "opacity-100 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                  : "opacity-0 group-hover:opacity-100 text-gray-300 dark:text-zinc-700 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5",
               ].join(" ")}
               title={
                 isHidden
@@ -312,7 +315,15 @@ function NewsItemRow({
           )}
         </div>
       </a>
-      <ShareButton item={item} />
+      {/* Share — hover-only. Every row used to show its own share icon
+          (1,375 of them on the board), a dotted right column of controls
+          that made the list read as a table of buttons. The row itself is
+          the link; share appears on hover (desktop) and stays reachable
+          via the card header share + the source page. */}
+      <ShareButton
+        item={item}
+        className="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 dark:text-zinc-700 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-white/5 active:scale-90 transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+      />
     </div>
   )
 }

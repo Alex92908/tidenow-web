@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { useTranslations } from "next-intl"
 import type { NewsItem } from "@/lib/types"
 import { aggregateTrending, type TrendingTopic } from "@/lib/aggregate"
-import { sourceMeta } from "@/sources/metadata"
 import { useAISummary } from "@/lib/use-ai-summary"
 
 interface TrendingTopicsProps {
@@ -48,8 +47,8 @@ export function TrendingTopics({ sourceData, locale, onHide }: TrendingTopicsPro
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-zinc-900/80 backdrop-blur shadow-sm dark:shadow-lg dark:shadow-black/30 overflow-hidden">
-      {/* Accent bar — multi-color gradient */}
-      <div className="h-0.5 w-full bg-gradient-to-r from-orange-400 via-pink-500 to-purple-500" />
+      {/* No rainbow accent strip on top — same coloured-line motif as the
+          source cards (lee: "卡片上面是一条横线"). The panel is plain. */}
 
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-white/5">
@@ -135,31 +134,31 @@ function TopicRow({ topic, rank, locale }: { topic: TrendingTopic; rank: number;
             ✦ {summary}
           </p>
         )}
-        <div className="flex items-center gap-1 mt-1 flex-wrap">
-          {sourceLinks.map(([sid, url]) => {
-            const meta = sourceMeta[sid]
-            return (
+        {/* Sources carrying this story — plain muted text, not coloured
+            pills. The old chips were a gradient pill per source (up to 4
+            different colours + emoji per row), the loudest element in the
+            panel; the headline is what matters. */}
+        <div className="flex items-center gap-1 mt-1 flex-wrap text-[11px] text-gray-400 dark:text-zinc-500">
+          {sourceLinks.map(([sid, url], i) => (
+            <span key={sid} className="inline-flex items-center gap-1">
+              {i > 0 && <span aria-hidden>·</span>}
               <a
-                key={sid}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={t(sid)}
-                className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-white/90 hover:brightness-110 hover:scale-[1.04] transition-transform ${meta?.accentColor ?? "bg-gray-400"}`}
+                className="hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
               >
-                <span>{meta?.icon}</span>
-                <span className="hidden sm:inline">{t(sid)}</span>
+                {t(sid)}
               </a>
-            )
-          })}
-          {topic.mentions.length > 4 && (
-            <span className="text-[10px] text-gray-400 dark:text-zinc-600">
-              +{topic.mentions.length - 4}
             </span>
+          ))}
+          {topic.mentions.length > 4 && (
+            <span>· +{topic.mentions.length - 4}</span>
           )}
-          {/* Heat score */}
-          <span className="ml-auto text-[10px] text-orange-400 font-medium tabular-nums">
-            🔥 {topic.score}
+          {/* Heat score — quiet: a plain muted number, no flame emoji. */}
+          <span className="ml-auto tabular-nums">
+            {topic.score}
           </span>
         </div>
       </div>

@@ -493,16 +493,17 @@ export function TideBoard({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Hero band — compact wordmark + value prop + live source count.
-          Sits above the tab bar / Trending panel; purely presentational. */}
+      {/* Hero band — quiet now, on purpose. It used to be a gradient band
+          with blur blobs and gradient wordmark, which competed with the
+          Trending panel for attention; the page had no centre. The hero is
+          now a plain header and the Trending panel below is the focal
+          point — the hot stories are the centre of the page. */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="relative overflow-hidden rounded-2xl border border-gray-200/70 dark:border-white/[0.06] bg-gradient-to-r from-sky-50 via-white to-violet-50 dark:from-sky-950/30 dark:via-zinc-900/80 dark:to-violet-950/30 px-5 py-4"
+        className="relative overflow-hidden rounded-2xl border border-gray-200/70 dark:border-white/[0.06] bg-white dark:bg-zinc-900/80 px-5 py-4"
       >
-        <div className="hero-blob pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-sky-400/20 dark:bg-sky-500/20 blur-2xl" />
-        <div className="hero-blob-slow pointer-events-none absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-violet-400/20 dark:bg-violet-500/20 blur-2xl" />
         <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-baseline gap-1 select-none">
@@ -513,7 +514,7 @@ export function TideBoard({
                 Tide
               </span>
               <span
-                className="text-2xl font-normal tracking-tight leading-none bg-gradient-to-r from-sky-500 to-violet-500 bg-clip-text text-transparent"
+                className="text-2xl font-normal tracking-tight leading-none text-sky-500 dark:text-sky-400"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 Now
