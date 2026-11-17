@@ -24,7 +24,6 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { SourceCard } from "./SourceCard"
-import { AppleMusicCard } from "./AppleMusicCard"
 import { ShareButton } from "./ShareButton"
 import { ThumbWithPreview } from "./ThumbWithPreview"
 import { TrendingTopics } from "./TrendingTopics"
@@ -847,72 +846,40 @@ export function TideBoard({
               >
                 {visibleIds.map((id, i) => (
                   <SortableCard key={id} id={id}>
-                    {(dragHandleProps) =>
-                      id === "applemusic" ? (
-                        <AppleMusicCard
-                          meta={sourceMeta[id]}
-                          sourceName={t(id)}
-                          items={(state[id]?.items ?? []).filter((it) => passesMute(it.title))}
-                          updatedAt={state[id]?.updatedAt ?? 0}
-                          loading={state[id]?.loading ?? true}
-                          error={state[id]?.error ?? false}
-                          locale={locale}
-                          onRefresh={() => loadSource(id, true)}
-                          onHide={() => toggleHide(id)}
-                          isHidden={hiddenIds.has(id)}
-                          isPinned={favoriteIds.has(id)}
-                          onTogglePin={() => togglePin(id)}
-                          dragHandleProps={dragHandleProps}
-                          index={i}
-                        />
-                      ) : (
-                        <SourceCard
-                          meta={sourceMeta[id]}
-                          sourceName={t(id)}
-                          items={(state[id]?.items ?? []).filter((it) => passesMute(it.title))}
-                          updatedAt={state[id]?.updatedAt ?? 0}
-                          loading={state[id]?.loading ?? true}
-                          error={state[id]?.error ?? false}
-                          locale={locale}
-                          onRefresh={() => loadSource(id, true)}
-                          onHide={() => toggleHide(id)}
-                          isHidden={hiddenIds.has(id)}
-                          isPinned={favoriteIds.has(id)}
-                          onTogglePin={() => togglePin(id)}
-                          dragHandleProps={dragHandleProps}
-                          index={i}
-                        />
-                      )
-                    }
+                    {(dragHandleProps) => (
+                      <SourceCard
+                        meta={sourceMeta[id]}
+                        sourceName={t(id)}
+                        items={(state[id]?.items ?? []).filter((it) => passesMute(it.title))}
+                        updatedAt={state[id]?.updatedAt ?? 0}
+                        loading={state[id]?.loading ?? true}
+                        error={state[id]?.error ?? false}
+                        locale={locale}
+                        onRefresh={() => loadSource(id, true)}
+                        onHide={() => toggleHide(id)}
+                        isHidden={hiddenIds.has(id)}
+                        isPinned={favoriteIds.has(id)}
+                        onTogglePin={() => togglePin(id)}
+                        dragHandleProps={dragHandleProps}
+                        index={i}
+                      />
+                    )}
                   </SortableCard>
                 ))}
               </div>
             </SortableContext>
             <DragOverlay dropAnimation={{ duration: 200 }}>
               {activeDragId ? (
-                activeDragId === "applemusic" ? (
-                  <AppleMusicCard
-                    meta={sourceMeta[activeDragId]}
-                    sourceName={t(activeDragId)}
-                    items={state[activeDragId]?.items ?? []}
-                    updatedAt={state[activeDragId]?.updatedAt ?? 0}
-                    loading={state[activeDragId]?.loading ?? true}
-                    error={state[activeDragId]?.error ?? false}
-                    locale={locale}
-                    onRefresh={() => {}}
-                  />
-                ) : (
-                  <SourceCard
-                    meta={sourceMeta[activeDragId]}
-                    sourceName={t(activeDragId)}
-                    items={state[activeDragId]?.items ?? []}
-                    updatedAt={state[activeDragId]?.updatedAt ?? 0}
-                    loading={state[activeDragId]?.loading ?? true}
-                    error={state[activeDragId]?.error ?? false}
-                    locale={locale}
-                    onRefresh={() => {}}
-                  />
-                )
+                <SourceCard
+                  meta={sourceMeta[activeDragId]}
+                  sourceName={t(activeDragId)}
+                  items={state[activeDragId]?.items ?? []}
+                  updatedAt={state[activeDragId]?.updatedAt ?? 0}
+                  loading={state[activeDragId]?.loading ?? true}
+                  error={state[activeDragId]?.error ?? false}
+                  locale={locale}
+                  onRefresh={() => {}}
+                />
               ) : null}
             </DragOverlay>
           </DndContext>

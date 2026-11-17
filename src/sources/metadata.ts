@@ -50,6 +50,16 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-pink-500 to-rose-400",
     interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 30,
   },
+  qqmusic: {
+    id: "qqmusic", icon: "🎵", column: "china",
+    accentColor: "bg-gradient-to-r from-green-600 to-lime-500",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  hongguo: {
+    id: "hongguo", icon: "🍅", column: "china",
+    accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
+    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 20,
+  },
   toutiao: {
     id: "toutiao", icon: "📰", column: "china",
     accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
@@ -246,9 +256,14 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-red-500 to-pink-500",
     interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
-  applemusic: {
-    id: "applemusic", icon: "🎵", column: "global",
-    accentColor: "bg-gradient-to-r from-pink-500 to-rose-400",
+  spotify: {
+    id: "spotify", icon: "🎧", column: "global",
+    accentColor: "bg-gradient-to-r from-green-500 to-emerald-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  reelshort: {
+    id: "reelshort", icon: "🎬", column: "global",
+    accentColor: "bg-gradient-to-r from-red-600 to-rose-500",
     interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   steam: {
@@ -354,7 +369,7 @@ export const SOURCE_IDS_EN: string[] = [
   "googletrends", "twitter", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
   "tmdb-movies", "tmdb-tv", "anilist",
-  "youtube", "applemusic", "steam",
+  "youtube", "spotify", "reelshort", "steam",
   // AI
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
   "deepseek", "doubao", "qwen", "kimi",
@@ -365,6 +380,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
+  "qqmusic", "hongguo",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
@@ -377,6 +393,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
+  "qqmusic", "hongguo",
   // Tech
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "github", "hackernews",
@@ -387,7 +404,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms
-  "googletrends", "twitter", "producthunt", "youtube", "devto", "applemusic", "steam", "hupu",
+  "googletrends", "twitter", "producthunt", "youtube", "devto", "spotify", "reelshort", "steam", "hupu",
   // Entertainment
   "tmdb-movies", "tmdb-tv", "anilist",
   // AI

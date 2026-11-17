@@ -14,7 +14,10 @@ import * as producthunt from "./producthunt"
 import * as kr36 from "./36kr"
 import * as ithome from "./ithome"
 import * as baidu from "./baidu"
-import * as applemusic from "./applemusic"
+import * as spotify from "./spotify"
+import * as qqmusic from "./qqmusic"
+import * as hongguo from "./hongguo"
+import * as reelshort from "./reelshort"
 import * as toutiao from "./toutiao"
 import * as tieba from "./tieba"
 import * as v2ex from "./v2ex"
@@ -84,6 +87,8 @@ export const sources = {
   // nowcoder, — geo-blocked from Vercel; re-enable with CN proxy
   douban,
   iqiyi,
+  qqmusic,
+  hongguo,
   // Tech
   "36kr": kr36,
   ithome,
@@ -121,7 +126,8 @@ export const sources = {
   twitter,
   producthunt,
   youtube,
-  applemusic,
+  spotify,
+  reelshort,
   devto,
   // AI
   huggingface,
