@@ -24,6 +24,7 @@ import * as techcrunch from "./techcrunch"
 import * as theverge from "./theverge"
 import * as billboard from "./billboard"
 import * as weread from "./weread"
+import * as fanqie from "./fanqie"
 import * as toutiao from "./toutiao"
 import * as tieba from "./tieba"
 import * as v2ex from "./v2ex"
@@ -97,6 +98,7 @@ export const sources = {
   hongguo,
   netease,
   weread,
+  fanqie,
   // Tech
   "36kr": kr36,
   ithome,

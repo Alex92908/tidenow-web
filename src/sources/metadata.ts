@@ -70,6 +70,11 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-blue-500 to-cyan-400",
     interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 20,
   },
+  fanqie: {
+    id: "fanqie", icon: "🍅", column: "china",
+    accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 10,
+  },
   toutiao: {
     id: "toutiao", icon: "📰", column: "china",
     accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
@@ -410,7 +415,7 @@ export const SOURCE_IDS_EN: string[] = [
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
-  "qqmusic", "hongguo", "netease", "weread",
+  "qqmusic", "hongguo", "netease", "weread", "fanqie",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "techcrunch", "theverge",
@@ -424,7 +429,7 @@ export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
-  "qqmusic", "hongguo", "netease", "weread",
+  "qqmusic", "hongguo", "netease", "weread", "fanqie",
   // Tech
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
   "techcrunch", "theverge",
