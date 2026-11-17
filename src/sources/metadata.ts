@@ -60,6 +60,16 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
     interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 20,
   },
+  netease: {
+    id: "netease", icon: "🎶", column: "china",
+    accentColor: "bg-gradient-to-r from-red-500 to-rose-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  weread: {
+    id: "weread", icon: "📚", column: "china",
+    accentColor: "bg-gradient-to-r from-blue-500 to-cyan-400",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 20,
+  },
   toutiao: {
     id: "toutiao", icon: "📰", column: "china",
     accentColor: "bg-gradient-to-r from-red-500 to-orange-400",
@@ -163,6 +173,16 @@ export const sourceMeta: Record<string, SourceMeta> = {
     accentColor: "bg-gradient-to-r from-violet-500 to-purple-400",
     interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
+  techcrunch: {
+    id: "techcrunch", icon: "🚀", column: "tech",
+    accentColor: "bg-gradient-to-r from-green-600 to-emerald-500",
+    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  theverge: {
+    id: "theverge", icon: "📱", column: "tech",
+    accentColor: "bg-gradient-to-r from-violet-600 to-purple-500",
+    interval: 30 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
   github: {
     id: "github", icon: "🐙", column: "tech",
     accentColor: "bg-gradient-to-r from-gray-500 to-gray-700",
@@ -183,6 +203,11 @@ export const sourceMeta: Record<string, SourceMeta> = {
     id: "xueqiu", icon: "❄️", column: "finance",
     accentColor: "bg-gradient-to-r from-sky-500 to-blue-400",
     interval: 10 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  coingecko: {
+    id: "coingecko", icon: "🪙", column: "finance",
+    accentColor: "bg-gradient-to-r from-amber-500 to-yellow-400",
+    interval: 15 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   cls: {
     id: "cls", icon: "📡", column: "finance",
@@ -264,6 +289,11 @@ export const sourceMeta: Record<string, SourceMeta> = {
   reelshort: {
     id: "reelshort", icon: "🎬", column: "global",
     accentColor: "bg-gradient-to-r from-red-600 to-rose-500",
+    interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
+  },
+  billboard: {
+    id: "billboard", icon: "🏆", column: "global",
+    accentColor: "bg-gradient-to-r from-slate-700 to-slate-500",
     interval: 60 * 60 * 1000, defaultCount: 10, expandCount: 25,
   },
   steam: {
@@ -369,20 +399,21 @@ export const SOURCE_IDS_EN: string[] = [
   "googletrends", "twitter", "hackernews", "devto", "producthunt",
   // Entertainment & gaming
   "tmdb-movies", "tmdb-tv", "anilist",
-  "youtube", "spotify", "reelshort", "steam",
+  "youtube", "spotify", "reelshort", "billboard", "steam",
   // AI
   "openai", "anthropic", "googleai", "tldrai", "huggingface",
   "deepseek", "doubao", "qwen", "kimi",
   // Tech
   "github",
   // Finance
-  "wallstreetcn",
+  "wallstreetcn", "coingecko",
   // Chinese content (at the end for EN users)
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
-  "qqmusic", "hongguo",
+  "qqmusic", "hongguo", "netease", "weread",
   "zaobao", "cankaoxiaoxi", "sputniknewscn", "hupu",
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
+  "techcrunch", "theverge",
   "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // TideNow editorial — last by design (gets pinned by readers who care)
   "tidenow-posts",
@@ -393,18 +424,19 @@ export const SOURCE_IDS_ZH: string[] = [
   // China
   "weibo", "baidu", "zhihu", "bilibili", "toutiao", "tieba", "douyin",
   "ifeng", "thepaper", "tencent", "douban", "iqiyi", "bilifood",
-  "qqmusic", "hongguo",
+  "qqmusic", "hongguo", "netease", "weread",
   // Tech
   "36kr", "ithome", "sspai", "juejin", "v2ex", "solidot",
+  "techcrunch", "theverge",
   "github", "hackernews",
   // Finance
-  "wallstreetcn", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
+  "wallstreetcn", "coingecko", "xueqiu", "cls", "gelonghui", "jin10", "mktnews",
   // Chinese international news
   "zaobao", "cankaoxiaoxi", "sputniknewscn",
   // Global news
   "bbc", "reuters", "apnews", "cnn", "theguardian", "bbcsport",
   // Global platforms
-  "googletrends", "twitter", "producthunt", "youtube", "devto", "spotify", "reelshort", "steam", "hupu",
+  "googletrends", "twitter", "producthunt", "youtube", "devto", "spotify", "reelshort", "billboard", "steam", "hupu",
   // Entertainment
   "tmdb-movies", "tmdb-tv", "anilist",
   // AI

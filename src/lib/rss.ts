@@ -13,6 +13,8 @@ const IMG_RE = [
   /<itunes:image[^>]*\bhref=["']([^"']+)["']/i,
   // <image>url</image> (RSS 1.0)
   /<image>([^<]+)<\/image>/i,
+  // Atom <content type="html"> (The Verge's feed is Atom, not RSS 2.0)
+  /<content[^>]*>(?:<!\[CDATA\[)?[\s\S]*?<img[^>]+src=["']([^"']+)["']/i,
   // First <img src="..."> inside <description> CDATA / encoded content
   /<(?:description|content:encoded)[^>]*>(?:<!\[CDATA\[)?[\s\S]*?<img[^>]+src=["']([^"']+)["']/i,
 ]
@@ -33,4 +35,14 @@ export function decodeXmlEntities(s: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&#39;/g, "'")
+    // Numeric character references: &#8216; / &#x201C; etc.
+    // Guarded: an out-of-range code point must not throw and kill the fetch.
+    .replace(/&#(\d+);/g, (m: string, code: string) => {
+      const n = Number(code)
+      return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : m
+    })
+    .replace(/&#x([0-9a-fA-F]+);/g, (m: string, code: string) => {
+      const n = parseInt(code, 16)
+      return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : m
+    })
 }

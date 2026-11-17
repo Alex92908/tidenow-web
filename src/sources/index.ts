@@ -18,6 +18,12 @@ import * as spotify from "./spotify"
 import * as qqmusic from "./qqmusic"
 import * as hongguo from "./hongguo"
 import * as reelshort from "./reelshort"
+import * as netease from "./netease"
+import * as coingecko from "./coingecko"
+import * as techcrunch from "./techcrunch"
+import * as theverge from "./theverge"
+import * as billboard from "./billboard"
+import * as weread from "./weread"
 import * as toutiao from "./toutiao"
 import * as tieba from "./tieba"
 import * as v2ex from "./v2ex"
@@ -89,6 +95,8 @@ export const sources = {
   iqiyi,
   qqmusic,
   hongguo,
+  netease,
+  weread,
   // Tech
   "36kr": kr36,
   ithome,
@@ -96,6 +104,8 @@ export const sources = {
   juejin,
   v2ex,
   solidot,
+  techcrunch,
+  theverge,
   // pcbeta dropped 2026-11-15 — bbs.pcbeta.com serves a JS bot-check page
   // to server fetches (no working RSS endpoint); the card was permanently empty.
   github,
@@ -107,6 +117,7 @@ export const sources = {
   gelonghui,
   jin10,
   mktnews,
+  coingecko,
   // Sports/Entertainment
   hupu,
   steam,
@@ -128,6 +139,7 @@ export const sources = {
   youtube,
   spotify,
   reelshort,
+  billboard,
   devto,
   // AI
   huggingface,
