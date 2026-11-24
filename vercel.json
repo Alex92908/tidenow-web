@@ -6,10 +6,6 @@
     {
       "path": "/api/cron/warm",
       "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/daily-digest",
-      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
