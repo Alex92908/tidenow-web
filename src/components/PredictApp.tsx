@@ -405,6 +405,7 @@ export function PredictApp({ locale }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           ...key,
+          locale,
           scan: kind,
           // poly 每个市场一次串行 LLM 盲估，压到 ≤10 保住函数 60s 预算
           top:
@@ -461,6 +462,7 @@ export function PredictApp({ locale }: Props) {
         body: JSON.stringify({
           provider: key.provider,
           apiKey: key.apiKey,
+          locale,
           seed: trimmed,
           domain,
         }),

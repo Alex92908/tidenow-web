@@ -121,6 +121,10 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, {"error": "missing seed"})
             return
 
+        # Report language: "en" renders the whole report in English,
+        # anything else (incl. absent) is the old Chinese default.
+        locale = body.get("locale") if body.get("locale") in ("en", "zh") else "zh"
+
         # ForeSight reuses the caller's BYOK key. Without one (and not in
         # mock mode) there's nothing to drive the LLM with.
         provider = (body.get("provider") or "deepseek").strip()
@@ -156,6 +160,7 @@ class handler(BaseHTTPRequestHandler):
             top = max(1, min(top, 10 if scan_kind == "poly" else 30))
 
             cfg = _llm_cfg_from_body(provider, api_key)
+            cfg["locale"] = locale
             mock = cfg.pop("mock", False)
             llm = LLM(cfg, mock=mock)
 
@@ -194,6 +199,9 @@ class handler(BaseHTTPRequestHandler):
         for k in ("domain", "symbol", "csv", "odds", "agents", "rounds", "mode", "chapters"):
             if k in body and body[k] is not None:
                 kwargs[k] = body[k]
+        # Locale is always forwarded (normalised above) so an English page
+        # gets an English report; absent in the body it is "zh" already.
+        kwargs["locale"] = locale
 
         try:
             result = predict_once(

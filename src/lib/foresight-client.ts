@@ -27,7 +27,7 @@ export interface ForesightResult {
 export async function getForesight(
   seed: string,
   byok: { provider: string; apiKey: string },
-  opts: { domain?: string; symbol?: string; signal?: AbortSignal } = {}
+  opts: { domain?: string; symbol?: string; locale?: "en" | "zh"; signal?: AbortSignal } = {}
 ): Promise<ForesightResult | null> {
   // ForeSight's LLM client speaks OpenAI-compatible + Anthropic. Google
   // Gemini (native API) and on-device Gemini Nano can't drive it, so
@@ -59,6 +59,7 @@ export async function getForesight(
         domain: opts.domain ?? "auto",
         provider: byok.provider,
         apiKey: byok.apiKey,
+        locale: opts.locale ?? "zh",
         ...(opts.symbol ? { symbol: opts.symbol } : {}),
       }),
       signal: opts.signal,
@@ -159,7 +160,7 @@ export type FunnelMode = "growth" | "quality" | "wide"
 
 export async function scanMarket(
   byok: { provider: string; apiKey: string },
-  opts: { kind?: ScanKind; top?: number; mode?: FunnelMode; signal?: AbortSignal } = {}
+  opts: { kind?: ScanKind; top?: number; mode?: FunnelMode; locale?: "en" | "zh"; signal?: AbortSignal } = {}
 ): Promise<MarketScan | null> {
   if (byok.provider === "gemini" || byok.provider === "gemini-nano") return null
   if (!byok.apiKey) return null
@@ -179,6 +180,7 @@ export async function scanMarket(
         ...(opts.mode ? { mode: opts.mode } : {}),
         provider: byok.provider,
         apiKey: byok.apiKey,
+        locale: opts.locale ?? "zh",
       }),
       signal: opts.signal,
     })

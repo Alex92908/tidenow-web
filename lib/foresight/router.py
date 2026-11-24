@@ -43,19 +43,24 @@ ROUTER_PROMPT = """你是一个预测任务分类器。根据种子信息，判�
 
 
 def classify(llm, seed: str, forced: str | None = None) -> dict:
+    # The LLM carries the output locale (set by pipeline.predict_once);
+    # forced-domain and error-fallback reasons are the only strings
+    # classify itself writes, so they follow it. The LLM-routed reason
+    # comes back in the model's language via the English instruction.
+    en = getattr(llm, "locale", "zh") == "en"
     if forced and forced != "auto":
         if forced not in DOMAINS:
-            return {"domain": "scenario", "reason": f"未知领域 {forced}，回退到 scenario"}
-        return {"domain": forced, "reason": "用户指定"}
+            return {"domain": "scenario", "reason": f"Unknown domain {forced}; fell back to scenario" if en else f"未知领域 {forced}，回退到 scenario"}
+        return {"domain": forced, "reason": "User specified" if en else "用户指定"}
     try:
         result = llm.chat_json(
             [{"role": "user", "content": ROUTER_PROMPT + seed[:2000]}],
             temperature=0.0,
         )
     except Exception as e:
-        return {"domain": "scenario", "reason": f"路由失败（{type(e).__name__}），回退到 scenario"}
+        return {"domain": "scenario", "reason": f"Routing failed ({type(e).__name__}); fell back to scenario" if en else f"路由失败（{type(e).__name__}），回退到 scenario"}
     if not isinstance(result, dict):
-        return {"domain": "scenario", "reason": "路由返回格式异常，回退到 scenario"}
+        return {"domain": "scenario", "reason": "Routing returned a malformed response; fell back to scenario" if en else "路由返回格式异常，回退到 scenario"}
     domain = result.get("domain", "scenario")
     if domain not in DOMAINS:
         domain = "scenario"

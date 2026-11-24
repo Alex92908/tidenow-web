@@ -26,12 +26,20 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
                  agents: int = 12, rounds: int = 3,
                  llm_cfg: dict | None = None, mock: bool = False,
                  mode: str = "predict", chapters: int = 3,
-                 on_stage=None, save_report: bool = True) -> dict:
+                 on_stage=None, save_report: bool = True,
+                 locale: str = "zh") -> dict:
     """执行一次完整预测。on_stage(str) 为进度回调（GUI 用）。
 
     mode="fiction" 时走创作模式：默认用 strange 引擎当情节生成器，
     强制 no_prediction 不污染校准。仅 strange 支持创作分支。
+
+    locale="en" 时整份报告出英文：LLM 输出加英文指令、报告标题
+    用英文、流水线内硬编码的路由理由/核心问题也切英文；"zh"（默认）
+    与此前行为完全一致。
     """
+    # Anything other than "en" is the old default Chinese behaviour.
+    locale = "en" if locale == "en" else "zh"
+    en = locale == "en"
     notify = on_stage or (lambda s: None)
     seed = (seed or "").strip()
     if not seed:
@@ -39,20 +47,20 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
     fiction = (mode == "fiction")
 
     base_model = (llm_cfg or {}).get("model", "")
-    llm = LLM(llm_cfg or {}, mock=mock)
+    llm = LLM(llm_cfg or {}, mock=mock, locale=locale)
     if mode == "novel":
-        route = {"domain": "novel", "reason": "长篇模式：初始设定 → 故事圣经+章纲+逐章推演生成（不入校准）"}
+        route = {"domain": "novel", "reason": "Novel mode: premise → story bible + outline + chapter-by-chapter generation (not calibrated)" if en else "长篇模式：初始设定 → 故事圣经+章纲+逐章推演生成（不入校准）"}
     elif mode == "screenplay":
-        route = {"domain": "screenplay", "reason": "剧本模式：故事/前提 → 剧本+分镜（供AI生成电影/漫剧，不入校准）"}
+        route = {"domain": "screenplay", "reason": "Screenplay mode: story/premise → script + storyboard (for AI film/comic generation, not calibrated)" if en else "剧本模式：故事/前提 → 剧本+分镜（供AI生成电影/漫剧，不入校准）"}
     elif fiction:
         # 创作模式只接 strange（情节生成器）；其余引擎暂不支持创作分支
         if domain not in ("strange", "auto"):
-            notify(f"创作模式仅支持 strange 引擎，已忽略 --domain {domain}")
-        route = {"domain": "strange", "reason": "创作模式：破局决策树当情节生成器（不入校准）"}
+            notify(f"Fiction mode only supports the strange engine; ignored --domain {domain}" if en else f"创作模式仅支持 strange 引擎，已忽略 --domain {domain}")
+        route = {"domain": "strange", "reason": "Fiction mode: breakthrough decision tree as plot generator (not calibrated)" if en else "创作模式：破局决策树当情节生成器（不入校准）"}
     elif domain == "oracle":
-        route = {"domain": "oracle", "reason": "用户指定元引擎（五路独立推理+极化聚合）"}
+        route = {"domain": "oracle", "reason": "User-specified meta-engine (five independent lines of reasoning + polarized aggregation)" if en else "用户指定元引擎（五路独立推理+极化聚合）"}
     elif domain == "strange":
-        route = {"domain": "strange", "reason": "用户指定破局搜索（决策树+对抗推演）"}
+        route = {"domain": "strange", "reason": "User-specified breakthrough search (decision tree + adversarial simulation)" if en else "用户指定破局搜索（决策树+对抗推演）"}
     else:
         notify("领域路由中…")
         llm.model = _pick_model(llm_cfg, "router", base_model)  # 路由用便宜模型
@@ -102,25 +110,25 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
         question = result.get("key_question", seed[:80])
     elif d == "market":
         result = quant.run(llm, enriched_seed, symbol=symbol, csv=csv, verbose=False)
-        question = f"该标的未来20个交易日收涨？（{symbol or csv}）"
+        question = f"Will {symbol or csv} close higher in 20 trading days?" if en else f"该标的未来20个交易日收涨？（{symbol or csv}）"
     elif d == "opinion":
         result = swarm.run(llm, enriched_seed, n_agents=agents, n_rounds=rounds, verbose=False)
-        question = f"主导立场为「{result.get('dominant_stance', '?')}」？"
+        question = f"Is the dominant stance '{result.get('dominant_stance', '?')}'?" if en else f"主导立场为「{result.get('dominant_stance', '?')}」？"
     elif d == "sports":
         result = sports.run(llm, enriched_seed, odds=odds, verbose=False)
         question = result.get("key_question", seed[:80])
     elif d == "counterfactual":
         result = counterfactual.run(llm, enriched_seed, verbose=False)
-        question = "（反事实推演，不产生预测）"
+        question = "(Counterfactual simulation; no prediction)" if en else "（反事实推演，不产生预测）"
     elif d == "randomness":
         result = randomness.run(llm, enriched_seed, verbose=False)
-        question = "（纯随机事件，不产生预测）"
+        question = "(Purely random event; no prediction)" if en else "（纯随机事件，不产生预测）"
     elif d == "metaphysics":
         result = metaphysics.run(llm, enriched_seed, verbose=False)
-        question = "（玄学解读，不产生可校准预测）"
+        question = "(Metaphysics reading; no calibrated prediction)" if en else "（玄学解读，不产生可校准预测）"
     elif d == "industry":
         result = industry.run(llm, enriched_seed, verbose=False)
-        question = "（行业前瞻建议，不产生可校准预测）"
+        question = "(Industry outlook; no calibrated prediction)" if en else "（行业前瞻建议，不产生可校准预测）"
     else:
         backend = {"macro": macro, "trend": trend, "election": election,
                    "boxoffice": boxoffice, "nature": nature}.get(d, scenario)
@@ -137,7 +145,7 @@ def predict_once(seed: str, domain: str = "auto", symbol: str | None = None,
         pid = calibration.log_prediction(seed, d, question, to_prob(result.get("probability")), result)
         notify(f"预测已落库（ID: {pid}）")
 
-    md = report.render(seed, route, result, pid)
+    md = report.render(seed, route, result, pid, locale=locale)
     path = None
     if save_report:
         path = os.path.join(ROOT, "reports", f"report_{time.strftime('%Y%m%d_%H%M%S')}.md")

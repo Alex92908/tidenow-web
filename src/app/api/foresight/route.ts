@@ -13,6 +13,9 @@ export const maxDuration = 60
 interface PredictRequest {
   provider: AIProvider
   apiKey: string
+  /** Page locale: "en" renders the report in English, "zh" (default)
+   *  keeps the current Chinese report. Absent = "zh". */
+  locale?: "en" | "zh"
   seed: string
   domain?: string
   /** Stock code for the market/quant domain (e.g. 600519). With it, the
@@ -36,6 +39,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 })
   }
   const { provider, apiKey, seed, domain, symbol, scan, top, mode } = body
+  // Unknown/absent locale stays Chinese — the compose pipeline and any
+  // older caller that never sends locale behave exactly as before.
+  const locale: "en" | "zh" = body.locale === "en" ? "en" : "zh"
   if (!provider || !apiKey) {
     return NextResponse.json({ error: "missing provider/apiKey" }, { status: 503 })
   }
@@ -52,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   // Market-scan mode returns many candidates and carries no seed.
   if (scan === "zt" || scan === "funnel" || scan === "poly") {
-    const result = await scanMarket({ provider, apiKey }, { kind: scan, top, mode })
+    const result = await scanMarket({ provider, apiKey }, { kind: scan, top, mode, locale })
     if (!result) {
       return NextResponse.json(
         { error: "scan failed — check your API key and try again" },
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing seed" }, { status: 400 })
   }
 
-  let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain, symbol })
+  let fs = await getForesight(seed.trim(), { provider, apiKey }, { domain, symbol, locale })
 
   // The 'market' (quant) backend needs a price feed. With a symbol it
   // fetches real quotes (Sina daily K-line). WITHOUT a symbol it can't,
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest) {
   // as 'scenario' (the general narrative backend, which handles company/
   // price events fine). If the user gave a symbol, let market run.
   if (fs && fs.domain === "market" && !symbol) {
-    const retried = await getForesight(seed.trim(), { provider, apiKey }, { domain: "scenario" })
+    const retried = await getForesight(seed.trim(), { provider, apiKey }, { domain: "scenario", locale })
     if (retried) fs = retried
   }
 

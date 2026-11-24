@@ -14,7 +14,17 @@ import requests
 
 
 class LLM:
-    def __init__(self, cfg: dict, mock: bool = False):
+    # When locale is "en", chat()/chat_json() append an English-output
+    # instruction to the last message so ALL backend outputs come back
+    # English without rewriting every backend prompt. "zh" (default) is
+    # byte-for-byte the old behaviour — no instruction is added.
+    EN_INSTRUCTION = (
+        "\n\n[Output language: English. Write your entire response in "
+        "English, including all names, descriptions, and reasoning. "
+        "Keep JSON keys exactly as specified.]"
+    )
+
+    def __init__(self, cfg: dict, mock: bool = False, locale: str | None = None):
         self.base_url = cfg.get("base_url", "https://api.deepseek.com/v1").rstrip("/")
         # Caller-supplied key (TideNow BYOK request body) wins;
         # FORESIGHT_API_KEY env is only a fallback for standalone CLI use.
@@ -22,6 +32,9 @@ class LLM:
         self.model = cfg.get("model", "deepseek-chat")
         self.mock = mock or cfg.get("mock", False)
         self.temperature = cfg.get("temperature", 0.7)
+        # Output locale: explicit arg wins, then cfg, then default "zh".
+        # Anything other than "en" behaves exactly like the old default.
+        self.locale = "en" if (locale or cfg.get("locale")) == "en" else "zh"
         # provider: 显式指定，或从 base_url 推断（含 anthropic 即走原生）
         self.provider = cfg.get("provider") or ("anthropic" if "anthropic" in self.base_url else "openai")
         self.effort = cfg.get("effort", "high")  # Anthropic effort：low|medium|high|xhigh|max
@@ -32,6 +45,11 @@ class LLM:
     def chat(self, messages: list, temperature: float | None = None, json_mode: bool = False) -> str:
         if self.mock:
             return self._mock_response(messages, json_mode)
+        if self.locale == "en":
+            # Copy so the caller's message list is never mutated.
+            messages = [dict(m) for m in messages]
+            if messages:
+                messages[-1]["content"] = str(messages[-1].get("content", "")) + self.EN_INSTRUCTION
         if self.provider == "anthropic":
             return self._post_anthropic(messages, temperature, json_mode)
         last_err = None

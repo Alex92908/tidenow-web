@@ -1,10 +1,355 @@
-"""把后端结果渲染成 Markdown 报告。"""
+"""把后端结果渲染成 Markdown 报告。
+
+locale="en" 时所有固定标题/标签出英文（LLM 生成的正文内容由
+LLMClient 的英文指令负责）；"zh"（默认）与此前输出完全一致。
+"""
 from __future__ import annotations
 
 import time
 from email.utils import parsedate_to_datetime
 
 from .backends.common import to_prob
+
+# Fixed headings/labels. Values are str.format templates; keep the same
+# structure in both languages so only the wording changes.
+_STR = {
+    "zh": {
+        "title": "# ForeSight 预测报告",
+        "search_ok": "- 🌐 实时搜索：已联网，注入 {count} 条结果{date_note}",
+        "search_ok_date": "，最新 {date}",
+        "search_fail": "- 🌐 实时搜索：本次未获取到结果，仅基于模型知识（数据可能滞后）",
+        "time": "- 时间：{now}",
+        "route": "- 路由：`{domain}`（{reason}）",
+        "pid": "- 预测ID：`{pid}`（用 `resolve {pid} 1|0` 事后判定）",
+        "seed_h": "## 种子信息",
+        "error_h": "## ⚠️ 错误",
+        "swarm_h": "## 舆情仿真结果",
+        "swarm_subject": "**表态命题：** {subject}",
+        "swarm_subject_note": "（下方「支持/反对/观望」均针对此命题，非对相关公司/人物的整体态度）",
+        "swarm_crowd_h": "### 模拟人群构成",
+        "swarm_persona": "- **{name}**（{age}岁，{bg}{bias_note}）",
+        "swarm_bias": "，倾向：{bias}",
+        "swarm_evo_h": "### 立场演化",
+        "swarm_round": "- 第 {round} 轮：{dist}",
+        "swarm_final_dist": "**最终分布：** {split}",
+        "swarm_dom": "**最终主导立场：{dom}{dom_note} — {prob}**",
+        "swarm_dom_note": "（对「{subject}」）",
+        "swarm_sample_h": "### 抽样观点",
+        "quant_h": "## 量化信号",
+        "quant_source": "数据源：{source}",
+        "quant_interp": "**解读：** {interp}",
+        "quant_range": "**20日上涨概率区间：{lo} – {hi}**",
+        "quant_risk": "**最大失效风险：** {risk}",
+        "scenario_h": "## 情景树分析",
+        "scenario_base": "**外部视角（基率）：** {note}",
+        "scenario_leading": "先行指标：{inds}",
+        "key_q": "**核心问题：** {q}",
+        "prob": "**概率：{p}**",
+        "sports_t_h": "## 🏆 锦标赛预测",
+        "sports_t_name": "**赛事：** {v}",
+        "sports_t_stage": "**当前阶段：** {v}",
+        "sports_base_h": "### 基率因素",
+        "sports_title_h": "### 夺冠概率",
+        "key_q_prob": "**核心问题：** {q}（{p}）",
+        "sports_h": "## 赛事分析",
+        "sports_match": "**比赛：** {v}",
+        "sports_out_h": "### 结果概率",
+        "sports_odds": "\n赔率隐含概率（锚点）：{v}",
+        "macro_h": "## 宏观区间预测",
+        "macro_ind": "**指标：** {v}",
+        "macro_anchor": "**锚点：** {value}（截至 {as_of}；{warn}）",
+        "macro_leading": "先行数据：{items}",
+        "trend_h": "## 趋势分析",
+        "trend_stage": "**S曲线阶段：** {v}",
+        "trend_fad": "**持久趋势 or 短期热点：** {verdict} — {reason}",
+        "trend_drivers": "驱动力：{items}",
+        "trend_blockers": "阻力：{items}",
+        "trend_outlook_h": "### 展望",
+        "election_h": "## 选举预测",
+        "election_race": "**选举：** {v}",
+        "election_poll": "**民调锚点：** {value}（截至 {as_of}；{warn}）",
+        "election_err": "**历史民调误差：** {v}",
+        "election_win_h": "### 获胜概率",
+        "box_h": "## 票房预测（对标影片法）",
+        "box_film": "**影片：** {title}（{market}）",
+        "box_comp_h": "### 对标影片",
+        "box_range_h": "### 票房区间",
+        "box_leading": "先行指标：{items}",
+        "nature_h": "## 自然事件分析",
+        "nature_sub": "**子类型：** {v}",
+        "nature_boundary": "⚖️ **科学边界：** {v}",
+        "nature_base": "**气候学基率：** {v}",
+        "nature_mod": "调制因素：{items}",
+        "nature_no_pred": "（本次不产生可校准预测）",
+        "random_h": "## 🎲 这是纯随机事件，拒绝预测",
+        "random_event": "**事件：** {v}",
+        "random_why": "**为什么不可预测：** {v}",
+        "random_ev": "**期望值数学：** {v}",
+        "random_advice": "**理性建议：** {v}",
+        "random_part": "💡 你的问题里可预测的部分：{v}",
+        "random_lucky_h": "### 🎰 娱乐随机号（图个乐）",
+        "random_lucky_note": "*号码由等概率真随机生成，中奖率与任何其他号码完全相同，不改变期望值。*",
+        "no_log": "（不写入校准日志）",
+        "meta_sysname": {"zodiac": "西方占星", "bazi": "八字命理", "yijing": "周易卦象",
+                         "fengshui": "风水堪舆", "ziwei": "紫微斗数", "tarot": "塔罗"},
+        "metaphysics_h": "## 🔮 玄学解读（{sys}）",
+        "meta_symbols": "**用到的符号：** {items}",
+        "meta_tendency": "**倾向：** {v}",
+        "meta_advice": "**建议：** {v}",
+        "meta_note": "（传统文化娱乐，不写入校准日志）",
+        "industry_h": "## 💼 行业前瞻（{industry}）",
+        "industry_profile": "**画像假设：** {v}",
+        "industry_core_h": "### 核心判断",
+        "industry_dir_h": "### 可执行方向",
+        "industry_proj": "- **可开工项目**：{items}",
+        "industry_tech": "- **技术选型**：{v}",
+        "industry_region": "- **地域适配**：{v}",
+        "industry_cost": "- **成本**：{v}",
+        "industry_horizon": "- **见效周期**：{v}",
+        "industry_avoid_h": "### ⛔ 别碰的坑",
+        "industry_fail": "⚖️ **判断失效条件：** {v}",
+        "industry_note": "（方向建议不写入校准日志）",
+        "oracle_h": "## 🔮 元引擎：五路独立推理",
+        "oracle_agg": "## 聚合结果：**{p}**",
+        "oracle_disp": "方法间分歧度：{disp}（{agree}）",
+        "cf_h": "## ⏪ 反事实推演：决策节点复盘",
+        "cf_outcome": "**实际结局：** {v}",
+        "cf_tl_h": "### 决策节点时间线",
+        "cf_node_h": "#### {time}｜{node} — 翻转概率 {p} {tag}",
+        "cf_hindsight": "🔸后见之明",
+        "cf_actual": "- 实际：{v}",
+        "cf_alt": "- 替代：{v}",
+        "cf_down": "- 连锁推演：{v}",
+        "cf_salvage": "## 🎯 最小挽救点：{node}",
+        "cf_deep": "**深层结构原因：** {v}",
+        "cf_note": "（反事实推演不写入校准日志）",
+        "novel_h": "## 📖 长篇：《{title}》",
+        "novel_logline": "**Logline：** {v}",
+        "novel_bible_h": "### 故事圣经（全书脊柱）",
+        "novel_world": "- **世界观**：{v}",
+        "novel_conflict": "- **核心冲突引擎**：{v}",
+        "novel_win": "- **胜利条件**：{v}",
+        "novel_ceiling": "- **结构性宿命（主题）**：{v}",
+        "novel_theme": "- **主题**：{v}",
+        "novel_pov_h": "**POV 角色**",
+        "novel_pov": "- **{name}**（{role}）：{arc}",
+        "novel_outline_h": "### 全书章纲",
+        "novel_outline": "- **第 {chapter} 章 {title}**（{pov}）：{beat} —— 转折：{turn}",
+        "novel_main_h": "## 正文（本次成稿 {n} 章）",
+        "novel_ch_h": "### 第 {chapter} 章　{title}",
+        "novel_ch_pov": "*POV：{pov}*",
+        "novel_note": "（长篇创作产物，不写入校准日志；状态账本已保存，可续写）",
+        "screen_h": "## 🎬 剧本 + 分镜：《{title}》",
+        "screen_logline": "**Logline：** {v}",
+        "screen_style": "**整体视觉风格：** {v}",
+        "screen_chars_h": "### 角色设定（AI 生成形象锚点）",
+        "screen_char": "- **{name}**：{look}",
+        "screen_scene_h": "### 第 {no} 场　{heading}",
+        "screen_shots_h": "**分镜表**",
+        "screen_table_h": "| 镜号 | 景别 | 机位 | 运镜 | 时长 | 画面 | 声音 | AI 生成提示词 |",
+        "screen_total": "**全片共 {n} 场 / {m} 镜**",
+        "screen_note": "（创作产物，不写入校准日志）",
+        "strange_fic_h": "## 🎭 创作模式：情节生成器（破局决策树）",
+        "strange_fic_win": "**主角的胜利条件：** {v}",
+        "strange_fic_cand_h": "### 候选情节线（按戏剧张力排序）",
+        "strange_fic_base": "（读者预期主线）",
+        "strange_fic_branch": "#### {name}{base} — 戏剧合理度 {p}",
+        "strange_fic_counter": "- 反派最强反击/转折：{v}",
+        "strange_fic_weak": "- 主角命门（故事钩子）：{v}",
+        "strange_fic_hybrid": "（复合结构）",
+        "strange_fic_best": "## 🎬 推荐主线：{path}{hy}",
+        "strange_fic_tone": "**故事基调：{v}**",
+        "strange_fic_ceiling": "**结构性宿命（主题所在）：** {v}",
+        "strange_fic_why": "**其他情节线为何逊色：** {v}",
+        "strange_fic_core": "**故事内核：** {v}",
+        "strange_fic_note": "（创作输出，不写入校准日志）",
+        "strange_h": "## 🌀 破局搜索（决策树+对抗推演）",
+        "strange_win": "**胜利条件：** {v}",
+        "strange_branches_h": "### 各分支推演（按胜率排序）",
+        "strange_base": "（基线）",
+        "strange_branch": "#### {name}{base} — P(win) {p}",
+        "strange_counter": "- 对手最强反制：{v}",
+        "strange_weak": "- 致命脆弱点：{v}",
+        "strange_hybrid": "（混合路径）",
+        "strange_best": "## 🎯 最优破局：{path}{hy}",
+        "strange_rate": "**胜率 {p} — 裁决：{v}**",
+        "strange_ceiling": "**结构性天花板：** {v}",
+        "strange_why": "**其他路径为何失败：** {v}",
+        "conf_label": {"low": "低", "medium": "中", "high": "高"},
+        "meta_conf": "- **置信度：** {v}",
+        "meta_wwcm": "- **什么会改变判断：** {v}",
+        "meta_ka": "- **关键假设：**",
+        "meta_h": "### 🎯 预测质量",
+    },
+    "en": {
+        "title": "# ForeSight Prediction Report",
+        "search_ok": "- 🌐 Live search: connected, injected {count} results{date_note}",
+        "search_ok_date": ", newest {date}",
+        "search_fail": "- 🌐 Live search: no results this time; model knowledge only (may be stale)",
+        "time": "- Time: {now}",
+        "route": "- Route: `{domain}` ({reason})",
+        "pid": "- Prediction ID: `{pid}` (resolve later with `resolve {pid} 1|0`)",
+        "seed_h": "## Seed",
+        "error_h": "## ⚠️ Error",
+        "swarm_h": "## Opinion Simulation",
+        "swarm_subject": "**Proposition:** {subject}",
+        "swarm_subject_note": "(Support / Oppose / Wait-and-see below all refer to this proposition, not to any company or person.)",
+        "swarm_crowd_h": "### Simulated Crowd",
+        "swarm_persona": "- **{name}** ({age}, {bg}{bias_note})",
+        "swarm_bias": ", lean: {bias}",
+        "swarm_evo_h": "### Stance Evolution",
+        "swarm_round": "- Round {round}: {dist}",
+        "swarm_final_dist": "**Final distribution:** {split}",
+        "swarm_dom": "**Dominant stance: {dom}{dom_note} — {prob}**",
+        "swarm_dom_note": ' (on "{subject}")',
+        "swarm_sample_h": "### Sampled Opinions",
+        "quant_h": "## Quantitative Signals",
+        "quant_source": "Data source: {source}",
+        "quant_interp": "**Interpretation:** {interp}",
+        "quant_range": "**20-day up-probability range: {lo} – {hi}**",
+        "quant_risk": "**Key failure risk:** {risk}",
+        "scenario_h": "## Scenario Tree",
+        "scenario_base": "**Outside view (base rate):** {note}",
+        "scenario_leading": "Leading indicators: {inds}",
+        "key_q": "**Key question:** {q}",
+        "prob": "**Probability: {p}**",
+        "sports_t_h": "## 🏆 Tournament Prediction",
+        "sports_t_name": "**Tournament:** {v}",
+        "sports_t_stage": "**Stage:** {v}",
+        "sports_base_h": "### Base-Rate Factors",
+        "sports_title_h": "### Title Probabilities",
+        "key_q_prob": "**Key question:** {q} ({p})",
+        "sports_h": "## Match Analysis",
+        "sports_match": "**Match:** {v}",
+        "sports_out_h": "### Outcome Probabilities",
+        "sports_odds": "\nOdds-implied probability (anchor): {v}",
+        "macro_h": "## Macro Range Forecast",
+        "macro_ind": "**Indicator:** {v}",
+        "macro_anchor": "**Anchor:** {value} (as of {as_of}; {warn})",
+        "macro_leading": "Leading data: {items}",
+        "trend_h": "## Trend Analysis",
+        "trend_stage": "**S-curve stage:** {v}",
+        "trend_fad": "**Lasting trend or short-lived fad:** {verdict} — {reason}",
+        "trend_drivers": "Drivers: {items}",
+        "trend_blockers": "Blockers: {items}",
+        "trend_outlook_h": "### Outlook",
+        "election_h": "## Election Forecast",
+        "election_race": "**Race:** {v}",
+        "election_poll": "**Poll anchor:** {value} (as of {as_of}; {warn})",
+        "election_err": "**Historical polling error:** {v}",
+        "election_win_h": "### Win Probabilities",
+        "box_h": "## Box-Office Forecast (comparables method)",
+        "box_film": "**Film:** {title} ({market})",
+        "box_comp_h": "### Comparable Films",
+        "box_range_h": "### Gross Range",
+        "box_leading": "Leading indicators: {items}",
+        "nature_h": "## Natural-Event Analysis",
+        "nature_sub": "**Subtype:** {v}",
+        "nature_boundary": "⚖️ **Scientific boundary:** {v}",
+        "nature_base": "**Climatological base rate:** {v}",
+        "nature_mod": "Modulating factors: {items}",
+        "nature_no_pred": "(No calibrated prediction this time)",
+        "random_h": "## 🎲 This is a purely random event — no prediction",
+        "random_event": "**Event:** {v}",
+        "random_why": "**Why it is unpredictable:** {v}",
+        "random_ev": "**Expected-value math:** {v}",
+        "random_advice": "**Rational advice:** {v}",
+        "random_part": "💡 The predictable part of your question: {v}",
+        "random_lucky_h": "### 🎰 Fun random numbers (just for fun)",
+        "random_lucky_note": "*Numbers are drawn uniformly at random; any other numbers have exactly the same chance, and the expected value is unchanged.*",
+        "no_log": "(Not written to the calibration log)",
+        "meta_sysname": {"zodiac": "Western astrology", "bazi": "BaZi", "yijing": "I Ching",
+                         "fengshui": "Feng shui", "ziwei": "Zi Wei Dou Shu", "tarot": "Tarot"},
+        "metaphysics_h": "## 🔮 Metaphysics Reading ({sys})",
+        "meta_symbols": "**Symbols used:** {items}",
+        "meta_tendency": "**Lean:** {v}",
+        "meta_advice": "**Advice:** {v}",
+        "meta_note": "(Traditional-culture entertainment; not written to the calibration log)",
+        "industry_h": "## 💼 Industry Outlook ({industry})",
+        "industry_profile": "**Profile assumptions:** {v}",
+        "industry_core_h": "### Core Judgment",
+        "industry_dir_h": "### Actionable Directions",
+        "industry_proj": "- **Projects to start:** {items}",
+        "industry_tech": "- **Tech stack:** {v}",
+        "industry_region": "- **Regional fit:** {v}",
+        "industry_cost": "- **Cost:** {v}",
+        "industry_horizon": "- **Time to payoff:** {v}",
+        "industry_avoid_h": "### ⛔ Pitfalls to Avoid",
+        "industry_fail": "⚖️ **When this judgment fails:** {v}",
+        "industry_note": "(Directional advice; not written to the calibration log)",
+        "oracle_h": "## 🔮 Meta-Engine: Five Independent Lines of Reasoning",
+        "oracle_agg": "## Aggregated Result: **{p}**",
+        "oracle_disp": "Cross-method dispersion: {disp} ({agree})",
+        "cf_h": "## ⏪ Counterfactual: Decision-Node Review",
+        "cf_outcome": "**Actual outcome:** {v}",
+        "cf_tl_h": "### Decision-Node Timeline",
+        "cf_node_h": "#### {time} | {node} — flip probability {p} {tag}",
+        "cf_hindsight": "🔸 Hindsight",
+        "cf_actual": "- Actual: {v}",
+        "cf_alt": "- Alternative: {v}",
+        "cf_down": "- Downstream: {v}",
+        "cf_salvage": "## 🎯 Minimal Salvage Point: {node}",
+        "cf_deep": "**Deep structural cause:** {v}",
+        "cf_note": "(Counterfactuals are not written to the calibration log)",
+        "novel_h": "## 📖 Novel: “{title}”",
+        "novel_logline": "**Logline:** {v}",
+        "novel_bible_h": "### Story Bible (the book's spine)",
+        "novel_world": "- **World:** {v}",
+        "novel_conflict": "- **Core conflict engine:** {v}",
+        "novel_win": "- **Win condition:** {v}",
+        "novel_ceiling": "- **Structural fate (theme):** {v}",
+        "novel_theme": "- **Theme:** {v}",
+        "novel_pov_h": "**POV Characters**",
+        "novel_pov": "- **{name}** ({role}): {arc}",
+        "novel_outline_h": "### Full Outline",
+        "novel_outline": "- **Chapter {chapter}: {title}** ({pov}): {beat} — Turn: {turn}",
+        "novel_main_h": "## Main Text ({n} chapters drafted this time)",
+        "novel_ch_h": "### Chapter {chapter}: {title}",
+        "novel_ch_pov": "*POV: {pov}*",
+        "novel_note": "(Novel output; not written to the calibration log. State ledger saved — can be continued.)",
+        "screen_h": "## 🎬 Screenplay + Storyboard: “{title}”",
+        "screen_logline": "**Logline:** {v}",
+        "screen_style": "**Overall visual style:** {v}",
+        "screen_chars_h": "### Characters (AI image anchors)",
+        "screen_char": "- **{name}**: {look}",
+        "screen_scene_h": "### Scene {no}: {heading}",
+        "screen_shots_h": "**Shot List**",
+        "screen_table_h": "| Shot | Size | Angle | Movement | Duration | Visual | Audio | AI Image Prompt |",
+        "screen_total": "**Total: {n} scenes / {m} shots**",
+        "screen_note": "(Creative output; not written to the calibration log)",
+        "strange_fic_h": "## 🎭 Fiction Mode: Plot Generator (breakthrough decision tree)",
+        "strange_fic_win": "**Protagonist's win condition:** {v}",
+        "strange_fic_cand_h": "### Candidate Plot Lines (by dramatic tension)",
+        "strange_fic_base": "(reader-expected main line)",
+        "strange_fic_branch": "#### {name}{base} — dramatic plausibility {p}",
+        "strange_fic_counter": "- Strongest antagonist counter / twist: {v}",
+        "strange_fic_weak": "- Protagonist's weak spot (story hook): {v}",
+        "strange_fic_hybrid": "(hybrid structure)",
+        "strange_fic_best": "## 🎬 Recommended Main Line: {path}{hy}",
+        "strange_fic_tone": "**Story tone: {v}**",
+        "strange_fic_ceiling": "**Structural fate (where the theme lives):** {v}",
+        "strange_fic_why": "**Why the other lines fall short:** {v}",
+        "strange_fic_core": "**Story core:** {v}",
+        "strange_fic_note": "(Creative output; not written to the calibration log)",
+        "strange_h": "## 🌀 Breakthrough Search (decision tree + adversarial simulation)",
+        "strange_win": "**Win condition:** {v}",
+        "strange_branches_h": "### Branch Simulations (by win rate)",
+        "strange_base": "(baseline)",
+        "strange_branch": "#### {name}{base} — P(win) {p}",
+        "strange_counter": "- Strongest counter-move: {v}",
+        "strange_weak": "- Fatal weakness: {v}",
+        "strange_hybrid": "(hybrid path)",
+        "strange_best": "## 🎯 Best Breakthrough: {path}{hy}",
+        "strange_rate": "**Win rate {p} — Verdict: {v}**",
+        "strange_ceiling": "**Structural ceiling:** {v}",
+        "strange_why": "**Why the other paths fail:** {v}",
+        "conf_label": {"low": "Low", "medium": "Medium", "high": "High"},
+        "meta_conf": "- **Confidence:** {v}",
+        "meta_wwcm": "- **What would change my mind:** {v}",
+        "meta_ka": "- **Key assumptions:**",
+        "meta_h": "### 🎯 Forecast Quality",
+    },
+}
 
 
 def _newest_date(dates: list) -> str:
@@ -25,7 +370,9 @@ def _newest_date(dates: list) -> str:
     return best.strftime("%Y-%m-%d") if best else ""
 
 
-def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
+def render(seed: str, route: dict, result: dict, pid: str | None, locale: str = "zh") -> str:
+    # Anything other than "en" is the old default Chinese output.
+    S = _STR["en" if locale == "en" else "zh"]
     # Search transparency line: shows whether live web search actually ran
     # and injected fresh context, so a stale-looking answer can be told
     # apart from a silently-failed search.
@@ -33,285 +380,290 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
     if ss and ss.get("attempted"):
         if ss.get("ok"):
             newest = _newest_date(ss.get("dates") or [])
-            date_note = f"，最新 {newest}" if newest else ""
-            search_line = f"- 🌐 实时搜索：已联网，注入 {ss.get('count', 0)} 条结果{date_note}"
+            date_note = S["search_ok_date"].format(date=newest) if newest else ""
+            search_line = S["search_ok"].format(count=ss.get("count", 0), date_note=date_note)
         else:
-            search_line = "- 🌐 实时搜索：本次未获取到结果，仅基于模型知识（数据可能滞后）"
+            search_line = S["search_fail"]
     else:
         search_line = ""
 
     lines = [
-        f"# ForeSight 预测报告",
-        f"",
-        f"- 时间：{time.strftime('%Y-%m-%d %H:%M')}",
-        f"- 路由：`{route['domain']}`（{route.get('reason', '')}）",
+        S["title"],
+        "",
+        S["time"].format(now=time.strftime("%Y-%m-%d %H:%M")),
+        S["route"].format(domain=route["domain"], reason=route.get("reason", "")),
         search_line,
-        f"- 预测ID：`{pid}`（用 `resolve {pid} 1|0` 事后判定）" if pid else "",
-        f"",
-        f"## 种子信息",
+        S["pid"].format(pid=pid) if pid else "",
+        "",
+        S["seed_h"],
         f"> {seed[:500]}",
-        f"",
+        "",
     ]
     b = result.get("backend")
 
     if result.get("error"):
-        lines += [f"## ⚠️ 错误", result["error"], result.get("hint", "")]
+        lines += [S["error_h"], result["error"], result.get("hint", "")]
 
     elif b == "swarm":
-        lines += ["## 舆情仿真结果", ""]
+        lines += [S["swarm_h"], ""]
         # Anchor what the stances are ABOUT. Without this, "反对 50%" reads
         # as "50% are negative on the company" when it may mean "50%
         # disagree with one specific claim". Show the proposition up front.
         subject = result.get("stance_subject", "")
         if subject:
-            lines += [f"**表态命题：** {subject}", "",
-                      "（下方「支持/反对/观望」均针对此命题，非对相关公司/人物的整体态度）", ""]
+            lines += [S["swarm_subject"].format(subject=subject), "",
+                      S["swarm_subject_note"], ""]
         # Show who the simulated crowd was — the credibility of an
         # opinion simulation rests entirely on persona diversity, so a
         # report that hides the cast asks for blind trust.
         personas = result.get("personas", [])
         if personas:
-            lines += ["### 模拟人群构成", ""]
+            lines += [S["swarm_crowd_h"], ""]
             for p in personas[:12]:
                 name = p.get("name", "")
                 age = p.get("age", "")
                 bg = p.get("background", "")
                 bias = p.get("stance_bias", "")
-                bias_note = f"，倾向：{bias}" if bias else ""
-                lines.append(f"- **{name}**（{age}岁，{bg}{bias_note}）")
+                bias_note = S["swarm_bias"].format(bias=bias) if bias else ""
+                lines.append(S["swarm_persona"].format(name=name, age=age, bg=bg, bias_note=bias_note))
             lines.append("")
-        lines += ["### 立场演化", ""]
+        lines += [S["swarm_evo_h"], ""]
         for h in result["evolution"]:
             dist = "  ".join(f"{k} {v}" for k, v in h["distribution"].items())
-            lines.append(f"- 第 {h['round']} 轮：{dist}")
+            lines.append(S["swarm_round"].format(round=h["round"], dist=dist))
         # Final distribution as a clean split, not just the dominant one.
         fd = result.get("final_distribution", {})
         if fd:
             split = "　".join(f"{k} {to_prob(v):.0%}" for k, v in sorted(fd.items(), key=lambda x: -x[1]))
-            lines += ["", f"**最终分布：** {split}"]
+            lines += ["", S["swarm_final_dist"].format(split=split)]
         dom = result["dominant_stance"]
-        dom_note = f"（对「{subject}」）" if subject else ""
-        lines += ["", f"**最终主导立场：{dom}{dom_note} — {to_prob(result.get('probability')):.0%}**", "",
-                  "### 抽样观点"]
+        dom_note = S["swarm_dom_note"].format(subject=subject) if subject else ""
+        lines += ["", S["swarm_dom"].format(dom=dom, dom_note=dom_note, prob=f"{to_prob(result.get('probability')):.0%}"), "",
+                  S["swarm_sample_h"]]
         lines += [f"- {c}" for c in result.get("sample_comments", [])]
 
     elif b == "quant":
-        lines += ["## 量化信号", "", f"数据源：{result['source']}", ""]
+        lines += [S["quant_h"], "", S["quant_source"].format(source=result["source"]), ""]
         for k, v in result["signals"].items():
             lines.append(f"- {k}：{v}")
         rng = result.get("probability_range") or [0, 0]
-        lines += ["", f"**解读：** {result['interpretation']}", "",
-                  f"**20日上涨概率区间：{to_prob(rng[0]):.0%} – {to_prob(rng[1]):.0%}**", "",
-                  f"**最大失效风险：** {result['key_risk']}"]
+        lines += ["", S["quant_interp"].format(interp=result["interpretation"]), "",
+                  S["quant_range"].format(lo=f"{to_prob(rng[0]):.0%}", hi=f"{to_prob(rng[1]):.0%}"), "",
+                  S["quant_risk"].format(risk=result["key_risk"])]
 
     elif b == "scenario":
-        lines += ["## 情景树分析", "", f"**外部视角（基率）：** {result['base_rate_note']}", ""]
+        lines += [S["scenario_h"], "", S["scenario_base"].format(note=result["base_rate_note"]), ""]
         for s in result["scenarios"]:
             lines.append(f"### {s['name']} — {s['probability']:.0%}")
             lines.append(s.get("description", ""))
             inds = s.get("indicators", [])
             if inds:
-                lines.append("先行指标：" + "；".join(inds))
+                lines.append(S["scenario_leading"].format(inds="；".join(inds)))
             lines.append("")
-        lines += [f"**核心问题：** {result['key_question']}",
-                  f"**概率：{to_prob(result.get('probability')):.0%}**"]
+        lines += [S["key_q"].format(q=result["key_question"]),
+                  S["prob"].format(p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "sports" and result.get("mode") == "tournament":
-        lines += ["## 🏆 锦标赛预测", "",
-                  f"**赛事：** {result.get('tournament','')}",
-                  f"**当前阶段：** {result.get('stage','')}", "", "### 基率因素"]
+        lines += [S["sports_t_h"], "",
+                  S["sports_t_name"].format(v=result.get("tournament", "")),
+                  S["sports_t_stage"].format(v=result.get("stage", "")), "", S["sports_base_h"]]
         for f0 in result.get("base_rate_factors", []):
             lines.append(f"- {f0.get('factor','')}（{f0.get('certainty','')}）")
-        lines += ["", "### 夺冠概率"]
+        lines += ["", S["sports_title_h"]]
         for c in result.get("contenders", []):
             lines.append(f"- **{c.get('name','')}**：{to_prob(c.get('probability')):.0%} — {c.get('rationale','')}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "sports":
-        lines += ["## 赛事分析", "", f"**比赛：** {result.get('match','')}", "", "### 基率因素"]
+        lines += [S["sports_h"], "", S["sports_match"].format(v=result.get("match", "")), "", S["sports_base_h"]]
         for f0 in result.get("base_rate_factors", []):
             lines.append(f"- {f0.get('factor','')}（{f0.get('certainty','')}）")
-        lines += ["", "### 结果概率"]
+        lines += ["", S["sports_out_h"]]
         for o in result.get("outcomes", []):
             rat = f" — {o['rationale']}" if o.get("rationale") else ""
             lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}{rat}")
         if result.get("implied_from_odds"):
-            lines.append(f"\n赔率隐含概率（锚点）：{result['implied_from_odds']}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+            lines.append(S["sports_odds"].format(v=result["implied_from_odds"]))
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "macro":
         a = result.get("anchor", {}) or {}
-        lines += ["## 宏观区间预测", "", f"**指标：** {result.get('indicator','')}",
-                  f"**锚点：** {a.get('value','?')}（截至 {a.get('as_of','?')}；{a.get('staleness_warning','')}）", ""]
+        lines += [S["macro_h"], "", S["macro_ind"].format(v=result.get("indicator", "")),
+                  S["macro_anchor"].format(value=a.get("value", "?"), as_of=a.get("as_of", "?"), warn=a.get("staleness_warning", "")), ""]
         for r in result.get("ranges", []):
             rat = f" — {r['rationale']}" if r.get("rationale") else ""
             lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}{rat}")
         ld = result.get("leading_data", [])
         if ld:
-            lines += ["", "先行数据：" + "；".join(str(x) for x in ld)]
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+            lines += ["", S["macro_leading"].format(items="；".join(str(x) for x in ld))]
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "trend":
         ft = result.get("fad_or_trend", {}) or {}
-        lines += ["## 趋势分析", "", f"**S曲线阶段：** {result.get('stage','')}",
-                  f"**持久趋势 or 短期热点：** {ft.get('verdict','')} — {ft.get('reason','')}", "",
-                  "驱动力：" + "；".join(str(x) for x in result.get("drivers", [])),
-                  "阻力：" + "；".join(str(x) for x in result.get("blockers", [])), "", "### 展望"]
+        lines += [S["trend_h"], "", S["trend_stage"].format(v=result.get("stage", "")),
+                  S["trend_fad"].format(verdict=ft.get("verdict", ""), reason=ft.get("reason", "")), "",
+                  S["trend_drivers"].format(items="；".join(str(x) for x in result.get("drivers", []))),
+                  S["trend_blockers"].format(items="；".join(str(x) for x in result.get("blockers", []))), "", S["trend_outlook_h"]]
         for o in result.get("outlook", []):
             lines.append(f"- {o.get('horizon','')}：{o.get('direction','')} — {o.get('note','')}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "election":
         a = result.get("poll_anchor", {}) or {}
-        lines += ["## 选举预测", "", f"**选举：** {result.get('race','')}",
-                  f"**民调锚点：** {a.get('value','?')}（截至 {a.get('as_of','?')}；{a.get('staleness_warning','')}）",
-                  f"**历史民调误差：** {result.get('historical_polling_error','')}", "", "### 获胜概率"]
+        lines += [S["election_h"], "", S["election_race"].format(v=result.get("race", "")),
+                  S["election_poll"].format(value=a.get("value", "?"), as_of=a.get("as_of", "?"), warn=a.get("staleness_warning", "")),
+                  S["election_err"].format(v=result.get("historical_polling_error", "")), "", S["election_win_h"]]
         for o in result.get("outcomes", []):
             rat = f" — {o['rationale']}" if o.get("rationale") else ""
             lines.append(f"- {o.get('name','')}：{to_prob(o.get('probability')):.0%}{rat}")
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "boxoffice":
-        lines += ["## 票房预测（对标影片法）", "", f"**影片：** {result.get('title','')}（{result.get('market','')}）",
-                  "", "### 对标影片"]
+        lines += [S["box_h"], "", S["box_film"].format(title=result.get("title", ""), market=result.get("market", "")),
+                  "", S["box_comp_h"]]
         for c in result.get("comparables", []):
             lines.append(f"- {c.get('title','')}：{c.get('gross','')}（{c.get('note','')}）")
-        lines += ["", "### 票房区间"]
+        lines += ["", S["box_range_h"]]
         for r in result.get("ranges", []):
             rat = f" — {r['rationale']}" if r.get("rationale") else ""
             lines.append(f"- {r.get('name','')} {r.get('range','')}：{to_prob(r.get('probability')):.0%}{rat}")
         li = result.get("leading_indicators", [])
         if li:
-            lines += ["", "先行指标：" + "；".join(str(x) for x in li)]
-        lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+            lines += ["", S["box_leading"].format(items="；".join(str(x) for x in li))]
+        lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
 
     elif b == "nature":
-        lines += ["## 自然事件分析", "", f"**子类型：** {result.get('sub_type','')}",
-                  f"", f"⚖️ **科学边界：** {result.get('honest_note','')}", "",
-                  f"**气候学基率：** {result.get('climatology_base_rate','')}",
-                  "调制因素：" + "；".join(str(x) for x in result.get("modulating_factors", []))]
+        lines += [S["nature_h"], "", S["nature_sub"].format(v=result.get("sub_type", "")),
+                  "", S["nature_boundary"].format(v=result.get("honest_note", "")), "",
+                  S["nature_base"].format(v=result.get("climatology_base_rate", "")),
+                  S["nature_mod"].format(items="；".join(str(x) for x in result.get("modulating_factors", [])))]
         if not result.get("no_prediction"):
-            lines += ["", f"**核心问题：** {result.get('key_question','')}（{to_prob(result.get('probability')):.0%}）"]
+            lines += ["", S["key_q_prob"].format(q=result.get("key_question", ""), p=f"{to_prob(result.get('probability')):.0%}")]
         else:
-            lines += ["", "（本次不产生可校准预测）"]
+            lines += ["", S["nature_no_pred"]]
 
     elif b == "randomness":
-        lines += ["## 🎲 这是纯随机事件，拒绝预测", "",
-                  f"**事件：** {result.get('game','')}",
-                  f"**为什么不可预测：** {result.get('why_unpredictable','')}",
-                  f"**期望值数学：** {result.get('ev_math','')}",
-                  f"**理性建议：** {result.get('rational_advice','')}"]
+        lines += [S["random_h"], "",
+                  S["random_event"].format(v=result.get("game", "")),
+                  S["random_why"].format(v=result.get("why_unpredictable", "")),
+                  S["random_ev"].format(v=result.get("ev_math", "")),
+                  S["random_advice"].format(v=result.get("rational_advice", ""))]
         if result.get("predictable_part"):
-            lines += ["", f"💡 你的问题里可预测的部分：{result['predictable_part']}"]
+            lines += ["", S["random_part"].format(v=result["predictable_part"])]
         lucky = result.get("lucky_numbers", [])
         if lucky:
             picks = "　".join(
                 f"{p.get('name','')} {' '.join(f'{n:02d}' for n in p.get('numbers', []))}"
                 for p in lucky
             )
-            lines += ["", "### 🎰 娱乐随机号（图个乐）",
+            lines += ["", S["random_lucky_h"],
                       picks,
-                      "*号码由等概率真随机生成，中奖率与任何其他号码完全相同，不改变期望值。*"]
-        lines += ["", "（不写入校准日志）"]
+                      S["random_lucky_note"]]
+        lines += ["", S["no_log"]]
 
     elif b == "metaphysics":
-        sysname = {"zodiac": "西方占星", "bazi": "八字命理", "yijing": "周易卦象",
-                   "fengshui": "风水堪舆", "ziwei": "紫微斗数", "tarot": "塔罗"}.get(
-                       result.get("sub_system", ""), result.get("sub_system", ""))
-        lines += [f"## 🔮 玄学解读（{sysname}）", "",
+        sysname = S["meta_sysname"].get(
+            result.get("sub_system", ""), result.get("sub_system", ""))
+        lines += [S["metaphysics_h"].format(sys=sysname), "",
                   result.get("reading", "")]
         syms = result.get("key_symbols", [])
         if syms:
-            lines += ["", "**用到的符号：** " + "、".join(str(s) for s in syms)]
-        lines += ["", f"**倾向：** {result.get('tendency','')}",
-                  f"**建议：** {result.get('advice','')}", "",
+            lines += ["", S["meta_symbols"].format(items="、".join(str(s) for s in syms))]
+        lines += ["", S["meta_tendency"].format(v=result.get("tendency", "")),
+                  S["meta_advice"].format(v=result.get("advice", "")), "",
                   f"⚖️ {result.get('honest_note','')}",
-                  "", "（传统文化娱乐，不写入校准日志）"]
+                  "", S["meta_note"]]
 
     elif b == "industry":
-        lines += [f"## 💼 行业前瞻（{result.get('industry','')}）", ""]
+        lines += [S["industry_h"].format(industry=result.get("industry", "")), ""]
         if result.get("profile_note"):
-            lines += [f"**画像假设：** {result['profile_note']}", ""]
-        lines += ["### 核心判断", result.get("outlook", ""), "",
-                  "### 可执行方向"]
+            lines += [S["industry_profile"].format(v=result["profile_note"]), ""]
+        lines += [S["industry_core_h"], result.get("outlook", ""), "",
+                  S["industry_dir_h"]]
         for i, dd in enumerate(result.get("directions", []), 1):
             lines.append(f"#### {i}. {dd.get('name','')}")
             lines.append(dd.get("why", ""))
             projs = dd.get("projects", [])
             if projs:
-                lines.append("- **可开工项目**：" + "；".join(str(p) for p in projs))
+                lines.append(S["industry_proj"].format(items="；".join(str(p) for p in projs)))
             if dd.get("tech"):
-                lines.append(f"- **技术选型**：{dd['tech']}")
+                lines.append(S["industry_tech"].format(v=dd["tech"]))
             if dd.get("region"):
-                lines.append(f"- **地域适配**：{dd['region']}")
+                lines.append(S["industry_region"].format(v=dd["region"]))
             if dd.get("cost"):
-                lines.append(f"- **成本**：{dd['cost']}")
+                lines.append(S["industry_cost"].format(v=dd["cost"]))
             if dd.get("horizon"):
-                lines.append(f"- **见效周期**：{dd['horizon']}")
+                lines.append(S["industry_horizon"].format(v=dd["horizon"]))
             lines.append("")
         avoid = result.get("avoid", [])
         if avoid:
-            lines += ["### ⛔ 别碰的坑"] + [f"- {a}" for a in avoid] + [""]
-        lines += [f"⚖️ **判断失效条件：** {result.get('honest_note','')}",
-                  "", "（方向建议不写入校准日志）"]
+            lines += [S["industry_avoid_h"]] + [f"- {a}" for a in avoid] + [""]
+        lines += [S["industry_fail"].format(v=result.get("honest_note", "")),
+                  "", S["industry_note"]]
 
     elif b == "oracle":
-        lines += ["## 🔮 元引擎：五路独立推理", "", f"**核心问题：** {result.get('key_question','')}", ""]
+        lines += [S["oracle_h"], "", S["key_q"].format(q=result.get("key_question", "")), ""]
         for e in result.get("estimates", []):
             lines.append(f"### {e.get('method','')} → {to_prob(e.get('probability')):.0%}")
             lines.append(e.get("detail", ""))
             lines.append("")
-        lines += [f"## 聚合结果：**{to_prob(result.get('probability')):.0%}**",
-                  f"方法间分歧度：{result.get('dispersion','?')}（{result.get('agreement','')}）"]
+        lines += [S["oracle_agg"].format(p=f"{to_prob(result.get('probability')):.0%}"),
+                  S["oracle_disp"].format(disp=result.get("dispersion", "?"), agree=result.get("agreement", ""))]
 
     elif b == "counterfactual":
-        lines += ["## ⏪ 反事实推演：决策节点复盘", "",
-                  f"**实际结局：** {result.get('outcome','')}", "", "### 决策节点时间线"]
+        lines += [S["cf_h"], "",
+                  S["cf_outcome"].format(v=result.get("outcome", "")), "", S["cf_tl_h"]]
         for n in result.get("nodes", []):
-            tag = "🟢" if n.get("knowable") == "当时可知" else "🔸后见之明"
-            lines.append(f"#### {n.get('time','?')}｜{n.get('node','')} — 翻转概率 {to_prob(n.get('flip_probability'),0.3):.0%} {tag}")
-            lines.append(f"- 实际：{n.get('actual','')}")
-            lines.append(f"- 替代：{n.get('alternative','')}")
-            lines.append(f"- 连锁推演：{n.get('downstream','')}")
+            # The LLM writes knowability in the report language; accept
+            # both ("当时可知" / "Knowable at the time") — but NOT
+            # "only knowable in hindsight", which starts with "only".
+            _k = str(n.get("knowable", ""))
+            _knowable = _k == "当时可知" or _k.strip().lower().startswith("knowable")
+            tag = "🟢" if _knowable else S["cf_hindsight"]
+            lines.append(S["cf_node_h"].format(time=n.get("time", "?"), node=n.get("node", ""),
+                                               p=f"{to_prob(n.get('flip_probability'), 0.3):.0%}", tag=tag))
+            lines.append(S["cf_actual"].format(v=n.get("actual", "")))
+            lines.append(S["cf_alt"].format(v=n.get("alternative", "")))
+            lines.append(S["cf_down"].format(v=n.get("downstream", "")))
             lines.append("")
         sp = result.get("minimal_salvage_point", {}) or {}
-        lines += [f"## 🎯 最小挽救点：{sp.get('node','—')}", sp.get("why", ""), "",
-                  f"**深层结构原因：** {result.get('deep_cause','')}", "", "（反事实推演不写入校准日志）"]
+        lines += [S["cf_salvage"].format(node=sp.get("node", "—")), sp.get("why", ""), "",
+                  S["cf_deep"].format(v=result.get("deep_cause", "")), "", S["cf_note"]]
 
     elif b == "novelist":
         bible = result.get("bible", {}) or {}
-        lines += [f"## 📖 长篇：《{result.get('title','')}》", "",
-                  f"**Logline：** {result.get('logline','')}", "",
-                  "### 故事圣经（全书脊柱）",
-                  f"- **世界观**：{bible.get('world','')}",
-                  f"- **核心冲突引擎**：{bible.get('conflict_engine','')}",
-                  f"- **胜利条件**：{bible.get('win_condition','')}",
-                  f"- **结构性宿命（主题）**：{bible.get('structural_ceiling','')}",
-                  f"- **主题**：{bible.get('theme','')}", "", "**POV 角色**"]
+        lines += [S["novel_h"].format(title=result.get("title", "")), "",
+                  S["novel_logline"].format(v=result.get("logline", "")), "",
+                  S["novel_bible_h"],
+                  S["novel_world"].format(v=bible.get("world", "")),
+                  S["novel_conflict"].format(v=bible.get("conflict_engine", "")),
+                  S["novel_win"].format(v=bible.get("win_condition", "")),
+                  S["novel_ceiling"].format(v=bible.get("structural_ceiling", "")),
+                  S["novel_theme"].format(v=bible.get("theme", "")), "", S["novel_pov_h"]]
         for c in bible.get("pov_characters", []) or []:
-            lines.append(f"- **{c.get('name','')}**（{c.get('role','')}）：{c.get('arc','')}")
-        lines += ["", "### 全书章纲"]
+            lines.append(S["novel_pov"].format(name=c.get("name", ""), role=c.get("role", ""), arc=c.get("arc", "")))
+        lines += ["", S["novel_outline_h"]]
         for ch in result.get("outline", []) or []:
-            lines.append(f"- **第 {ch.get('chapter','?')} 章 {ch.get('title','')}**"
-                         f"（{ch.get('pov','')}）：{ch.get('beat','')} —— 转折：{ch.get('turn','')}")
-        lines += ["", "---", "", f"## 正文（本次成稿 {len(result.get('chapters', []))} 章）"]
+            lines.append(S["novel_outline"].format(chapter=ch.get("chapter", "?"), title=ch.get("title", ""),
+                                                   pov=ch.get("pov", ""), beat=ch.get("beat", ""), turn=ch.get("turn", "")))
+        lines += ["", "---", "", S["novel_main_h"].format(n=len(result.get("chapters", [])))]
         for ch in result.get("chapters", []) or []:
-            lines += ["", f"### 第 {ch.get('chapter','?')} 章　{ch.get('title','')}",
-                      f"*POV：{ch.get('pov','')}*", "", ch.get("prose", "")]
-        lines += ["", "---", "（长篇创作产物，不写入校准日志；状态账本已保存，可续写）"]
+            lines += ["", S["novel_ch_h"].format(chapter=ch.get("chapter", "?"), title=ch.get("title", "")),
+                      S["novel_ch_pov"].format(pov=ch.get("pov", "")), "", ch.get("prose", "")]
+        lines += ["", "---", S["novel_note"]]
 
     elif b == "screenplay":
-        lines += [f"## 🎬 剧本 + 分镜：《{result.get('title','')}》", "",
-                  f"**Logline：** {result.get('logline','')}",
-                  f"**整体视觉风格：** {result.get('style','')}", ""]
+        lines += [S["screen_h"].format(title=result.get("title", "")), "",
+                  S["screen_logline"].format(v=result.get("logline", "")),
+                  S["screen_style"].format(v=result.get("style", "")), ""]
         chars = result.get("characters", [])
         if chars:
-            lines.append("### 角色设定（AI 生成形象锚点）")
+            lines.append(S["screen_chars_h"])
             for c in chars:
-                lines.append(f"- **{c.get('name','')}**：{c.get('look','')}")
+                lines.append(S["screen_char"].format(name=c.get("name", ""), look=c.get("look", "")))
             lines.append("")
         for sc in result.get("scenes", []):
-            lines.append(f"### 第 {sc.get('scene_no','?')} 场　{sc.get('heading','')}")
+            lines.append(S["screen_scene_h"].format(no=sc.get("scene_no", "?"), heading=sc.get("heading", "")))
             if sc.get("synopsis"):
                 lines.append(f"> {sc['synopsis']}")
             lines.append("")
@@ -322,8 +674,8 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                 lines.append(f"- **{d.get('character','')}**{par}：{d.get('line','')}")
             shots = sc.get("shots", [])
             if shots:
-                lines += ["", "**分镜表**", "",
-                          "| 镜号 | 景别 | 机位 | 运镜 | 时长 | 画面 | 声音 | AI 生成提示词 |",
+                lines += ["", S["screen_shots_h"], "",
+                          S["screen_table_h"],
                           "|---|---|---|---|---|---|---|---|"]
                 for s in shots:
                     row = [str(s.get("shot_no", "")), s.get("size", ""), s.get("angle", ""),
@@ -332,40 +684,40 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
                     row = [str(x).replace("\n", " ").replace("|", "／") for x in row]
                     lines.append("| " + " | ".join(row) + " |")
             lines.append("")
-        lines += [f"**全片共 {len(result.get('scenes', []))} 场 / {result.get('total_shots', 0)} 镜**",
-                  "", "（创作产物，不写入校准日志）"]
+        lines += [S["screen_total"].format(n=len(result.get("scenes", [])), m=result.get("total_shots", 0)),
+                  "", S["screen_note"]]
 
     elif b == "strange" and result.get("fiction"):
-        lines += ["## 🎭 创作模式：情节生成器（破局决策树）", "",
-                  f"**主角的胜利条件：** {result.get('win_condition','')}", "", "### 候选情节线（按戏剧张力排序）"]
+        lines += [S["strange_fic_h"], "",
+                  S["strange_fic_win"].format(v=result.get("win_condition", "")), "", S["strange_fic_cand_h"]]
         for p in result.get("branches", []):
-            base = "（读者预期主线）" if p.get("is_baseline") else ""
-            lines.append(f"#### {p.get('name','')}{base} — 戏剧合理度 {to_prob(p.get('p_win')):.0%}")
-            lines.append(f"- 反派最强反击/转折：{p.get('counter_move','')}")
-            lines.append(f"- 主角命门（故事钩子）：{p.get('fatal_weakness','')}")
+            base = S["strange_fic_base"] if p.get("is_baseline") else ""
+            lines.append(S["strange_fic_branch"].format(name=p.get("name", ""), base=base, p=f"{to_prob(p.get('p_win')):.0%}"))
+            lines.append(S["strange_fic_counter"].format(v=p.get("counter_move", "")))
+            lines.append(S["strange_fic_weak"].format(v=p.get("fatal_weakness", "")))
             lines.append("")
-        hy = "（复合结构）" if result.get("is_hybrid") else ""
-        lines += [f"## 🎬 推荐主线：{result.get('best_path','')}{hy}",
-                  f"**故事基调：{result.get('verdict','')}**", "",
-                  f"**结构性宿命（主题所在）：** {result.get('structural_ceiling','')}",
-                  f"**其他情节线为何逊色：** {result.get('why_others_fail','')}", "",
-                  f"**故事内核：** {result.get('key_question','')}", "",
-                  "（创作输出，不写入校准日志）"]
+        hy = S["strange_fic_hybrid"] if result.get("is_hybrid") else ""
+        lines += [S["strange_fic_best"].format(path=result.get("best_path", ""), hy=hy),
+                  S["strange_fic_tone"].format(v=result.get("verdict", "")), "",
+                  S["strange_fic_ceiling"].format(v=result.get("structural_ceiling", "")),
+                  S["strange_fic_why"].format(v=result.get("why_others_fail", "")), "",
+                  S["strange_fic_core"].format(v=result.get("key_question", "")), "",
+                  S["strange_fic_note"]]
 
     elif b == "strange":
-        lines += ["## 🌀 破局搜索（决策树+对抗推演）", "",
-                  f"**胜利条件：** {result.get('win_condition','')}", "", "### 各分支推演（按胜率排序）"]
+        lines += [S["strange_h"], "",
+                  S["strange_win"].format(v=result.get("win_condition", "")), "", S["strange_branches_h"]]
         for p in result.get("branches", []):
-            base = "（基线）" if p.get("is_baseline") else ""
-            lines.append(f"#### {p.get('name','')}{base} — P(win) {to_prob(p.get('p_win')):.0%}")
-            lines.append(f"- 对手最强反制：{p.get('counter_move','')}")
-            lines.append(f"- 致命脆弱点：{p.get('fatal_weakness','')}")
+            base = S["strange_base"] if p.get("is_baseline") else ""
+            lines.append(S["strange_branch"].format(name=p.get("name", ""), base=base, p=f"{to_prob(p.get('p_win')):.0%}"))
+            lines.append(S["strange_counter"].format(v=p.get("counter_move", "")))
+            lines.append(S["strange_weak"].format(v=p.get("fatal_weakness", "")))
             lines.append("")
-        hy = "（混合路径）" if result.get("is_hybrid") else ""
-        lines += [f"## 🎯 最优破局：{result.get('best_path','')}{hy}",
-                  f"**胜率 {to_prob(result.get('probability')):.0%} — 裁决：{result.get('verdict','')}**", "",
-                  f"**结构性天花板：** {result.get('structural_ceiling','')}",
-                  f"**其他路径为何失败：** {result.get('why_others_fail','')}"]
+        hy = S["strange_hybrid"] if result.get("is_hybrid") else ""
+        lines += [S["strange_best"].format(path=result.get("best_path", ""), hy=hy),
+                  S["strange_rate"].format(p=f"{to_prob(result.get('probability')):.0%}", v=result.get("verdict", "")), "",
+                  S["strange_ceiling"].format(v=result.get("structural_ceiling", "")),
+                  S["strange_why"].format(v=result.get("why_others_fail", ""))]
 
     # Universal forecast-quality footer — rendered for ANY backend that
     # emits these fields, so every report gains a confidence band, a
@@ -375,20 +727,20 @@ def render(seed: str, route: dict, result: dict, pid: str | None) -> str:
     meta = []
     conf = result.get("confidence")
     if conf:
-        label = {"low": "低", "medium": "中", "high": "高"}.get(str(conf).strip().lower(), str(conf))
-        meta.append(f"- **置信度：** {label}")
+        label = S["conf_label"].get(str(conf).strip().lower(), str(conf))
+        meta.append(S["meta_conf"].format(v=label))
     wwcm = result.get("what_would_change_my_mind")
     if wwcm:
-        meta.append(f"- **什么会改变判断：** {wwcm}")
+        meta.append(S["meta_wwcm"].format(v=wwcm))
     ka = result.get("key_assumptions")
     if ka:
         if isinstance(ka, list):
-            meta.append("- **关键假设：**")
+            meta.append(S["meta_ka"])
             meta += [f"  - {a}" for a in ka if a]
         else:
-            meta.append(f"- **关键假设：** {ka}")
+            meta.append(f"{S['meta_ka']} {ka}")
     if meta:
-        lines += ["", "### 🎯 预测质量"] + meta
+        lines += ["", S["meta_h"]] + meta
 
     if result.get("caveat"):
         lines += ["", "---", f"⚠️ {result['caveat']}"]
